@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: proxy
+    env: docker
+    dockerfilePath: Dockerfile.proxy
+    autoDeploy: true
+    envVars:
+      - key: PORT
+        value: 8080

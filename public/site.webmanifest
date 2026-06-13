@@ -1,0 +1,35 @@
+{
+  "name": "Safe Rides — Townwize",
+  "short_name": "Townwize",
+  "description": "Book safe, reliable private and RideTogether rides in Bahria Town Karachi with Townwize.",
+  "start_url": "https://www.townwize.com/",
+  "display": "standalone",
+  "background_color": "#03311C",
+  "theme_color": "#03311C",
+  "icons": [
+    {
+      "src": "/favicon-196x196-dark.png",
+      "sizes": "196x196",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/favicon-128-dark.png",
+      "sizes": "128x128",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/apple-touch-icon-152x152-dark.png",
+      "sizes": "152x152",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/mstile-310x310-dark.png",
+      "sizes": "310x310",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

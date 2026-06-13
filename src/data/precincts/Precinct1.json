@@ -1,0 +1,231 @@
+{
+  "id": "p1",
+  "name": "Precinct 1",
+  "alias": "Entrance Precinct",
+  "type": "Residential",
+  "status": "Developed",
+  "category": "Developed",
+  "description": "Precinct 1 is one of the oldest and most developed precincts near the main gate of Bahria Town Karachi. It features upscale villas, commercial spaces, and excellent accessibility via Main Jinnah Avenue.",
+  "boundary": [
+    {
+      "lat": 24.9892592,
+      "lng": 67.3061163
+    },
+    {
+      "lat": 24.9902024,
+      "lng": 67.3087556
+    },
+    {
+      "lat": 24.9902972,
+      "lng": 67.3090507
+    },
+    {
+      "lat": 24.9906814,
+      "lng": 67.3101772
+    },
+    {
+      "lat": 24.9907835,
+      "lng": 67.310322
+    },
+    {
+      "lat": 24.9924314,
+      "lng": 67.3096176
+    },
+    {
+      "lat": 24.9928228,
+      "lng": 67.3107655
+    },
+    {
+      "lat": 24.9930342,
+      "lng": 67.311324
+    },
+    {
+      "lat": 24.9917628,
+      "lng": 67.3123111
+    },
+    {
+      "lat": 24.9911891,
+      "lng": 67.3128261
+    },
+    {
+      "lat": 24.9928519,
+      "lng": 67.3167743
+    },
+    {
+      "lat": 24.9940577,
+      "lng": 67.3201914
+    },
+    {
+      "lat": 24.9942425,
+      "lng": 67.3201968
+    },
+    {
+      "lat": 25.0003199,
+      "lng": 67.3178311
+    },
+    {
+      "lat": 25.0012874,
+      "lng": 67.3174931
+    },
+    {
+      "lat": 25.0012533,
+      "lng": 67.3173376
+    },
+    {
+      "lat": 25.0015742,
+      "lng": 67.3172517
+    },
+    {
+      "lat": 25.0020798,
+      "lng": 67.3172678
+    },
+    {
+      "lat": 25.0048899,
+      "lng": 67.3179545
+    },
+    {
+      "lat": 25.0033876,
+      "lng": 67.3159589
+    },
+    {
+      "lat": 25.0031591,
+      "lng": 67.3139687
+    },
+    {
+      "lat": 25.0032661,
+      "lng": 67.313223
+    },
+    {
+      "lat": 25.0034411,
+      "lng": 67.3128475
+    },
+    {
+      "lat": 25.0032515,
+      "lng": 67.3127885
+    },
+    {
+      "lat": 25.0031105,
+      "lng": 67.3126276
+    },
+    {
+      "lat": 25.0029841,
+      "lng": 67.3115815
+    },
+    {
+      "lat": 25.0024153,
+      "lng": 67.3062547
+    },
+    {
+      "lat": 25.0013749,
+      "lng": 67.3067857
+    },
+    {
+      "lat": 25.0014332,
+      "lng": 67.3073275
+    },
+    {
+      "lat": 24.9995468,
+      "lng": 67.3080893
+    },
+    {
+      "lat": 24.9962018,
+      "lng": 67.3095109
+    },
+    {
+      "lat": 24.9959053,
+      "lng": 67.3086955
+    },
+    {
+      "lat": 24.9940188,
+      "lng": 67.3058362
+    },
+    {
+      "lat": 24.9935569,
+      "lng": 67.3057826
+    },
+    {
+      "lat": 24.9932214,
+      "lng": 67.3055036
+    },
+    {
+      "lat": 24.9925359,
+      "lng": 67.305332
+    },
+    {
+      "lat": 24.9919378,
+      "lng": 67.305112
+    },
+    {
+      "lat": 24.9910043,
+      "lng": 67.305391
+    },
+    {
+      "lat": 24.9892592,
+      "lng": 67.3061163
+    }
+  ],
+  "center": {
+    "lat": 24.9965,
+    "lng": 67.3085
+  },
+  "roads": [
+    {
+      "name": "Main Jinnah Avenue",
+      "type": "main",
+      "path": [
+        {
+          "lat": 25.030192,
+          "lng": 67.284981
+        },
+        {
+          "lat": 25.045021,
+          "lng": 67.290482
+        }
+      ]
+    },
+    {
+      "name": "Precinct 1 Boulevard",
+      "type": "internal",
+      "path": [
+        {
+          "lat": 25.032,
+          "lng": 67.287
+        },
+        {
+          "lat": 25.033,
+          "lng": 67.288
+        }
+      ]
+    }
+  ],
+  "amenities": [
+    {
+      "name": "Masjid-e-Aashiq",
+      "type": "mosque",
+      "coords": {
+        "lat": 25.0322,
+        "lng": 67.2875
+      },
+      "description": "Central mosque serving the residents of Precinct 1."
+    },
+    {
+      "name": "Mini Park",
+      "type": "park",
+      "coords": {
+        "lat": 25.0326,
+        "lng": 67.2881
+      },
+      "description": "A small community park offering greenery and seating."
+    },
+    {
+      "name": "Imtiaz Super Market",
+      "type": "market",
+      "coords": {
+        "lat": 25.030882,
+        "lng": 67.289912
+      },
+      "description": "Major grocery and retail outlet near Precinct 1 entrance."
+    }
+  ],
+  "updatedAt": "2025-10-09T00:00:00Z"
+}

@@ -1,0 +1,84 @@
+// townwize-frontend/src/layouts/PassengerLayout.jsx
+
+import { useEffect } from "react";
+import { Outlet, useLocation, useNavigate } from "react-router-dom";
+import Navbar from "../components/shared/Navbar";
+import Footer from "../components/shared/Footer";
+import api from "../services/api";
+
+const ACTIVE_RIDE_STATUSES = new Set([
+  "REQUESTED",
+  "DRIVER_ASSIGNED",
+  "EN_ROUTE",
+  "ARRIVED",
+  "ON_TRIP",
+]);
+
+const PassengerLayout = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const authRaw = localStorage.getItem("auth");
+    if (!authRaw) return;
+
+    let auth;
+    try {
+      auth = JSON.parse(authRaw);
+    } catch {
+      localStorage.removeItem("auth");
+      return;
+    }
+
+    if (!auth?.user || auth.user.role !== "passenger") return;
+
+    const rideId = localStorage.getItem("activePassengerRideId");
+    if (!rideId) return;
+
+    const verifyActiveRide = async () => {
+      try {
+        const res = await api.get(`/rides/${rideId}`);
+        if (cancelled) return;
+
+        const ride = res?.data?.data;
+        if (!ACTIVE_RIDE_STATUSES.has(ride?.status)) {
+          localStorage.removeItem("activePassengerRideId");
+          return;
+        }
+
+        if (!location.pathname.startsWith("/passenger/live-tracking")) {
+          navigate(`/passenger/live-tracking/${rideId}`, { replace: true });
+        }
+      } catch (err) {
+        if (cancelled) return;
+        if ([400, 404].includes(err?.response?.status)) {
+          localStorage.removeItem("activePassengerRideId");
+        }
+      }
+    };
+
+    verifyActiveRide();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [location.pathname, navigate]);
+
+  return (
+    <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-townwize-primaryDark text-gray-900 dark:text-white">
+      <div className="passenger-layout-navbar">
+        <Navbar />
+      </div>
+      <main className="passenger-layout-main flex-grow w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <Outlet />
+      </main>
+      <div className="passenger-layout-footer">
+        <Footer />
+      </div>
+    </div>
+  );
+};
+
+export default PassengerLayout;

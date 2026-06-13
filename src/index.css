@@ -1,0 +1,773 @@
+/* === Import Inter Font === */
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@100,200,300,600;700&display=swap");
+
+/* === Import TailwindCSS v4.x.x === */
+@import "tailwindcss";
+@import "tailwindcss/utilities";
+
+/* === Theme (Townwize) === */
+@theme {
+  /* Brand Colors */
+  --color-townwize-primary: #03311C;
+  --color-townwize-primaryDark: #0B242A;
+  --color-townwize-accent: #17BEBB;
+  --color-townwize-success: #00F57A;
+
+  /* Backgrounds */
+  --color-townwize-bgLight: #F9FAFB;
+  --color-townwize-bgDark: #1F2937;
+
+  /* Text */
+  --color-townwize-textPrimary: #03311C;
+  --color-townwize-textSecondary: #6B7280;
+  --color-townwize-textContent: #f5f5f5;
+
+  /* Font */
+  --font-sans: "Inter", system-ui, sans-serif;
+
+  /* Error, Warnings & Status */
+  --color-townwize-e1: #E48811;
+  --color-townwize-progR: #e61212;
+  --color-townwize-prog1: #f7f4ea;
+  --color-townwize-prog2: #DED9E2;
+  --color-townwize-prog3: #C0B9DD;
+  --color-townwize-prog4: #80A1D4;
+  --color-townwize-progS: #75C9C8;
+
+  /* Alert Colors */
+  --color-townwize-success: #22C55E;
+  --color-townwize-info: #3B82F6;
+  --color-townwize-warning: #FBBF24;
+  --color-townwize-danger: #EF4444;
+
+}
+
+/* === Dark mode class-based only === */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* === Base Defaults === */
+html,
+body {
+  @apply min-h-screen font-sans antialiased bg-townwize-bgLight text-townwize-textSecondary;
+}
+
+.dark body {
+  @apply bg-townwize-bgDark text-white;
+}
+
+/* Headings / Paragraphs */
+h1 {
+  @apply font-black text-townwize-textPrimary dark:text-white;
+}
+
+h2,
+h4,
+h5,
+h6 {
+  @apply font-bold text-townwize-textPrimary dark:text-white;
+}
+
+walletheading1 {
+  @apply font-bold text-white;
+}
+
+p:not([class*="text-"]) {
+  @apply text-townwize-textSecondary dark:text-townwize-textContent leading-relaxed;
+}
+
+a {
+  @apply text-townwize-primary hover:text-townwize-accent transition-colors;
+}
+
+.dark a {
+  @apply text-townwize-textContent hover:text-townwize-accent;
+}
+
+/* Alternate link variants */
+.link-primary {
+  @apply text-townwize-primary hover:text-townwize-accent;
+}
+
+.link-secondary {
+  @apply text-townwize-textSecondary hover:text-townwize-primary;
+}
+
+.link-sub-secondary {
+  @apply text-townwize-textSecondary hover:text-townwize-bgDark;
+}
+
+.link-logo-light {
+  @apply text-townwize-textContent hover:text-shadow-townwize-accent;
+}
+
+.link-accent {
+  @apply text-townwize-accent hover:text-townwize-primary;
+}
+
+/* Footer styles */
+.footer {
+  @apply bg-townwize-bgLight text-townwize-textSecondary dark:bg-townwize-primaryDark dark:text-townwize-textContent py-10;
+}
+
+/* footer links*/
+
+.footer a {
+  @apply transition-colors;
+}
+
+.footer a:hover {
+  @apply text-townwize-primary;
+  /* hover in light mode */
+}
+
+.dark .footer a:hover {
+  @apply text-townwize-accent;
+  /* hover in dark mode */
+}
+
+.footer h4 {
+  @apply font-semibold mb-3 text-townwize-textPrimary dark:text-white;
+}
+
+/*********** REUSABLE UI Components **********/
+/* ==========================================/*
+   Custom DatePicker Theme (Townwize)
+/* ==========================================/*
+
+/* Common */
+.react-datepicker {
+  border: none !important;
+  font-family: 'Inter', sans-serif;
+  border-radius: 0.75rem !important;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  background: white !important;
+  /* Light mode bg */
+}
+
+.dark .react-datepicker {
+  background: #0B242A !important;
+  /* Dark mode bg */
+}
+
+/* Header */
+.react-datepicker__header {
+  background: white !important;
+  border-bottom: none !important;
+  padding: 0.5rem 0.75rem;
+}
+
+.dark .react-datepicker__header {
+  background: #0B242A !important;
+  /* primaryDark */
+}
+
+/* Month + Year */
+.react-datepicker__current-month,
+.react-datepicker__month-read-view,
+.react-datepicker__year-read-view {
+  color: #103139 !important;
+  /* primary */
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.dark .react-datepicker__current-month,
+.dark .react-datepicker__month-read-view,
+.dark .react-datepicker__year-read-view {
+  color: #F5CB5C !important;
+  /* accent */
+}
+
+/* Nav arrows */
+.react-datepicker__navigation-icon::before {
+  border-color: #103139 !important;
+  /* primary */
+}
+
+.dark .react-datepicker__navigation-icon::before {
+  border-color: #F5CB5C !important;
+  /* accent */
+}
+
+/* Day names */
+.react-datepicker__day-name {
+  color: #0B242A !important;
+  /* primaryDark */
+  font-weight: 500;
+}
+
+.dark .react-datepicker__day-name {
+  color: #F5CB5C !important;
+}
+
+/* Days */
+.react-datepicker__day {
+  color: #103139 !important;
+  font-size: 0.9rem;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+}
+
+.dark .react-datepicker__day {
+  color: #F5CB5C !important;
+}
+
+/* Hover Effect - Desktop */
+.react-datepicker__day:hover {
+  background: rgba(245, 203, 92, 0.2) !important;
+  /* accent tint */
+  color: #103139 !important;
+  /* primary text */
+  border-radius: 50% !important;
+  transition: background 0.2s ease;
+  /* smooth fade */
+}
+
+/* Dark Mode Hover */
+.dark .react-datepicker__day:hover {
+  background: rgba(245, 203, 92, 0.25) !important;
+  /* slightly stronger tint */
+  color: #F5CB5C !important;
+  border-radius: 50% !important;
+  transition: background 0.2s ease;
+}
+
+/* Active (for mobile tap) */
+.react-datepicker__day:active {
+  background: #F5CB5C !important;
+  /* solid accent */
+  color: #103139 !important;
+  border-radius: 50% !important;
+}
+
+.dark .react-datepicker__day:active {
+  background: #F5CB5C !important;
+  color: #103139 !important;
+  border-radius: 50% !important;
+}
+
+/* Selected Day */
+.react-datepicker__day--selected,
+.react-datepicker__day--keyboard-selected {
+  background: #F5CB5C !important;
+  /* accent */
+  color: #103139 !important;
+  /* primary */
+  border-radius: 50% !important;
+  /* force circle */
+  font-weight: 600;
+}
+
+/* Dark Mode Selected */
+.dark .react-datepicker__day--selected,
+.dark .react-datepicker__day--keyboard-selected {
+  background: #F5CB5C !important;
+  /* accent */
+  color: #0B242A !important;
+  /* primaryDark text */
+  border-radius: 50% !important;
+  font-weight: 600;
+}
+
+/* Today */
+.react-datepicker__day--today {
+  border: 1px solid #F5CB5C !important;
+  border-radius: 50%;
+  font-weight: 600;
+}
+
+/* Today Button */
+.react-datepicker__today-button {
+  background: #F5CB5C !important;
+  color: #103139 !important;
+  font-weight: 600;
+  border-radius: 0 0 0.75rem 0.75rem;
+}
+
+/* Today (ring only) */
+.react-datepicker__day--today {
+  border: 2px solid #F5CB5C !important;
+  /* accent outline */
+  background: transparent !important;
+  /* no fill */
+  color: #103139 !important;
+  /* primary text */
+  border-radius: 50% !important;
+  font-weight: 600;
+}
+
+.dark .react-datepicker__day--today {
+  border: 2px solid #F5CB5C !important;
+  /* accent outline */
+  background: transparent !important;
+  color: #F5CB5C !important;
+  border-radius: 50% !important;
+  font-weight: 600;
+}
+
+/* Disabled past dates */
+.react-datepicker__day--disabled {
+  color: #ccc !important;
+  pointer-events: none;
+  opacity: 0.4;
+}
+
+.dark .react-datepicker__day--disabled {
+  color: #555 !important;
+  opacity: 0.4;
+}
+
+/* Buttons */
+.btn-primary {
+  @apply px-4 py-2 rounded-xl bg-townwize-primary text-white font-semibold hover:bg-townwize-primaryDark hover:text-townwize-accent transition;
+}
+
+.dark .btn-primary {
+  @apply bg-townwize-bgLight text-townwize-primary hover:opacity-90 dark:hover:bg-townwize-accent dark:hover:text-townwize-primary;
+}
+
+.btn-accent {
+  @apply px-4 py-2 rounded-xl bg-townwize-accent text-townwize-primary font-semibold hover:opacity-90 transition;
+}
+
+.btn-accent-app-download-light {
+  @apply px-4 py-2 rounded-xl bg-townwize-accent text-slate-600 font-semibold hover:text-townwize-bgDark hover:opacity-90 transition;
+}
+
+.dark .btn-accent {
+  @apply bg-townwize-primary text-white hover:bg-townwize-primaryDark;
+}
+
+.btn-outline {
+  @apply px-4 py-2 rounded-xl border border-townwize-primary text-townwize-primary font-medium hover:bg-townwize-primary hover:text-white transition;
+}
+
+.dark .btn-outline {
+  @apply border-townwize-accent text-townwize-accent hover:bg-townwize-accent hover:text-townwize-primary;
+}
+
+/* Success button */
+.btn-success {
+  @apply px-4 py-3 rounded-xl bg-townwize-success text-black font-semibold hover:opacity-90 transition;
+}
+
+/* Text success */
+.text-success {
+  @apply text-townwize-success;
+}
+
+/* Ring success */
+.ring-success {
+  @apply ring-2 ring-townwize-success;
+}
+
+/* Card */
+.card {
+  @apply bg-white dark:bg-townwize-primaryDark rounded-xl shadow-none dark:border-gray-600 p-6;
+}
+
+.card-app-download {
+  @apply bg-none dark:bg-none rounded-xl shadow-none border-none dark:border-none;
+}
+
+/* Input */
+.input {
+  @apply w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-townwize-textPrimary placeholder-townwize-textSecondary focus:outline-none focus:ring-2 focus:ring-townwize-primary;
+}
+
+/* Dark mode fix for feature card icons */
+.dark .card img {
+  filter: brightness(0) invert(1);
+}
+
+.dark .card-app-download img {
+  filter: brightness(0) invert(1);
+}
+
+/* Always show logo in white (since navbar is always dark) */
+.logo-img {
+  filter: brightness(0) invert(1);
+}
+
+/* Navbar logo is always white */
+.navbar-logo {
+  filter: none;
+}
+
+.dark .navbar-logo {
+  filter: brightness(1) invert(9) contrast(2) hue-rotate(180deg) saturate(4) sepia(0.5) grayscale(0.3);
+}
+
+/* Footer logo: teal in light mode, white in dark mode */
+.footer-logo {
+  filter: none;
+}
+
+.dark .footer-logo {
+  filter: brightness(1) invert(9) contrast(2) hue-rotate(180deg) saturate(4) sepia(0.5) grayscale(0.3);
+}
+
+
+/* :root .dark .logo-img,
+.dark .logo-img {
+  filter: brightness(1) contrast(9) invert(3) hue-rotate(180deg) saturate(4) sepia(0.5) grayscale(0.3);
+} */
+
+/* Feature images (Private, RideTogether, Safety) */
+.feature-img {
+  filter: none;
+}
+
+.dark .feature-img {
+  filter: brightness(0) invert(1) contrast(1.2) saturate(1.2);
+}
+
+/* animation utilities */
+@keyframes float {
+
+  0%,
+  100% {
+    transform: translateY(0) rotate(45deg);
+  }
+
+  50% {
+    transform: translateY(-10px) rotate(45deg);
+  }
+}
+
+@keyframes pulse-slow {
+
+  0%,
+  100% {
+    opacity: 0.6;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+.animate-pulse-slow {
+  animation: pulse-slow 8s ease-in-out infinite;
+}
+
+@keyframes slow {
+
+  0%,
+  100% {
+    transform: translateY(0) rotate(45deg);
+  }
+
+  50% {
+    transform: translateY(-5px) rotate(45deg);
+  }
+}
+
+.animate-slow {
+  animation: slow 10s ease-in-out infinite;
+}
+
+
+/* FaceLiveness */
+
+@keyframes pulse-green {
+
+  0%,
+  100% {
+    border-color: #22c55e;
+  }
+
+  /* green-500 */
+  50% {
+    border-color: #86efac;
+  }
+
+  /* green-300 */
+}
+
+@keyframes pulse-red {
+
+  0%,
+  100% {
+    border-color: #ef4444;
+  }
+
+  /* red-500 */
+  50% {
+    border-color: #fca5a5;
+  }
+
+  /* red-300 */
+}
+
+.pulse-green {
+  animation: pulse-green 1s ease-in-out 2;
+}
+
+.pulse-red {
+  animation: pulse-red 1s ease-in-out 2;
+}
+
+@keyframes guide-pulse {
+
+  0%,
+  100% {
+    opacity: 0.3;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.6;
+    transform: scale(1.05);
+  }
+}
+
+.guide-circle {
+  animation: guide-pulse 2s ease-in-out infinite;
+}
+
+.guide-circle {
+  animation: guide-pulse 2s ease-in-out infinite;
+  border-color: white;
+}
+
+.guide-circle.green {
+  border-color: #22c55e;
+  /* Tailwind green-500 */
+}
+
+.guide-circle.red {
+  border-color: #ef4444;
+  /* Tailwind red-500 */
+}
+
+/* ✅ Safe-area support for Android devices with status bar overlap */
+.pt-safe {
+  padding-top: env(safe-area-inset-top);
+}
+
+/* Fade-in animation */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.25s ease-in-out;
+}
+
+/* 🌐 Townwize Map Controls */
+.gm-control-active,
+.gmnoprint {
+  border-radius: 12px !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2) !important;
+}
+
+.townwize-locate-btn {
+  background-color: #103139;
+  color: white;
+  border: none;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 18px;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.3);
+  transition: all 0.2s ease-in-out;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.townwize-locate-btn:hover {
+  background-color: #0B242A;
+  transform: scale(1.05);
+}
+
+/* =====================
+   Fade-In Utility (Townwize)
+   ===================== */
+@keyframes fadeTransition {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in {
+  animation: fadeTransition 0.45s ease-out forwards;
+}
+
+/* ============================
+   AnimatedHero mount animation
+   ============================ */
+@keyframes heroScaleIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.92) translateY(6px);
+  }
+
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0px);
+  }
+}
+
+.hero-scale-in {
+  animation: heroScaleIn 0.55s cubic-bezier(0.42, 0, 0.58, 1) forwards;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.6s ease-out forwards;
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+
+  100% {
+    transform: translateX(300%);
+  }
+}
+
+.route-active-glow {
+  filter: drop-shadow(0 0 6px rgba(245, 203, 92, 0.45)) drop-shadow(0 0 10px rgba(245, 203, 92, 0.25));
+}
+
+.tw-shimmer {
+  position: relative;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.tw-shimmer::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -150px;
+  height: 100%;
+  width: 150px;
+  background: linear-gradient(90deg,
+      rgba(255, 255, 255, 0) 0%,
+      rgba(255, 255, 255, 0.4) 50%,
+      rgba(255, 255, 255, 0) 100%);
+  animation: tw-shimmer-move 1.2s infinite;
+}
+
+@keyframes tw-shimmer-move {
+  0% {
+    left: -150px;
+  }
+
+  100% {
+    left: 100%;
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fadeInUp {
+  animation: fadeInUp 1s ease-out;
+}
+
+/* iOS safe-area support */
+:root {
+  --safe-top: env(safe-area-inset-top);
+  --safe-bottom: env(safe-area-inset-bottom);
+}
+
+.pt-safe {
+  padding-top: var(--safe-top);
+}
+
+.pb-safe {
+  padding-bottom: var(--safe-bottom);
+}
+
+@media print {
+  body.trip-receipt-print-mode .passenger-layout-navbar,
+  body.trip-receipt-print-mode .passenger-layout-footer,
+  body.trip-receipt-print-mode .print\:hidden {
+    display: none !important;
+  }
+
+  body.trip-receipt-print-mode,
+  body.trip-receipt-print-mode html {
+    background: #fff !important;
+  }
+
+  body.trip-receipt-print-mode .passenger-layout-main {
+    max-width: none !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  body.trip-receipt-print-mode .trip-receipt-page {
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 18px !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    background: #fff !important;
+    color: #000 !important;
+  }
+
+  body.trip-receipt-print-mode .trip-receipt-shell {
+    grid-template-columns: 1.7fr 1fr !important;
+    gap: 12px !important;
+    align-items: stretch !important;
+    page-break-inside: avoid !important;
+  }
+
+  body.trip-receipt-print-mode .trip-receipt-highlight,
+  body.trip-receipt-print-mode .trip-receipt-summary {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  body.trip-receipt-print-mode .trip-receipt-summary {
+    margin-top: 12px !important;
+  }
+}

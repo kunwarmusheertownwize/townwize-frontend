@@ -1,0 +1,10 @@
+{
+  "appId": "com.townwize.app",
+  "appName": "Townwize",
+  "webDir": "dist",
+  "bundledWebRuntime": false,
+  "server": {
+    "androidScheme": "http",
+    "cleartext": true
+  }
+}

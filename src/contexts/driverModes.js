@@ -1,0 +1,8 @@
+//File:src\contexts\driverModes.js
+
+export const DRIVER_MODES = {
+  OFFLINE: "OFFLINE",
+  ONLINE_IDLE: "ONLINE_IDLE",
+  INCOMING_REQUEST: "INCOMING_REQUEST",
+  ACTIVE_TRIP: "ACTIVE_TRIP",
+};
