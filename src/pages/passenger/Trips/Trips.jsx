@@ -29,9 +29,8 @@ const fareOf = (ride) =>
   Number(ride.fareAdjustment?.finalFare || ride.fareEstimate || 0).toLocaleString();
 
 const distanceOf = (ride) => {
-  const km = ride.fareAdjustment?.actualDistanceKm
-    || ride.estimatedFareBreakdown?.distanceKm
-    || 0;
+  const actual = ride.fareAdjustment?.actualDistanceKm;
+  const km = actual != null ? actual : (ride.estimatedFareBreakdown?.distanceKm ?? 0);
   return km > 0 ? `${Number(km).toFixed(1)} km` : null;
 };
 

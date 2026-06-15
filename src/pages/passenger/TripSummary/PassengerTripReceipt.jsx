@@ -22,7 +22,7 @@ const toLocationText = (value) => {
 
 const completionLabel = (reason) => {
   const labels = {
-    normal_dropoff: "Completed at destination",
+    normal_dropoff: "Trip completed",
     early_end: "Ended early",
     passenger_request: "Ended on passenger request",
     admin_closed: "Closed by support",

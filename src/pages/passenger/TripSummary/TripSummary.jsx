@@ -248,7 +248,7 @@ const TripSummary = () => {
       <div className="flex items-start justify-between gap-4">
         <div>
       <h2 className="text-2xl font-bold text-townwize-primary dark:text-townwize-accent">
-        Trip Summary
+        Confirm Your Ride
       </h2>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
         Review your trip details before confirming.
