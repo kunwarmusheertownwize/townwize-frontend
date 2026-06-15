@@ -36,6 +36,8 @@ const DriverLiveTracking = () => {
   const rideStatusRef = useRef(rideStatus);
   const tripDistanceKmRef = useRef(0);
   const lastTripPositionRef = useRef(null);
+  const lastHeadingRef = useRef(null);
+  const prevDriverPositionRef = useRef(null);
 
   const { setDriverMode, incomingRide } = useDriverMode();
 
@@ -49,6 +51,36 @@ const DriverLiveTracking = () => {
         Math.cos((b.lat * Math.PI) / 180) *
         Math.sin(dLng / 2) ** 2;
     return R * 2 * Math.asin(Math.sqrt(s));
+  };
+
+  const bearingDeg = (from, to) => {
+    const dLng = ((to.lng - from.lng) * Math.PI) / 180;
+    const lat1 = (from.lat * Math.PI) / 180;
+    const lat2 = (to.lat * Math.PI) / 180;
+    const y = Math.sin(dLng) * Math.cos(lat2);
+    const x =
+      Math.cos(lat1) * Math.sin(lat2) -
+      Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLng);
+    return ((Math.atan2(y, x) * 180) / Math.PI + 360) % 360;
+  };
+
+  const lookAhead = (pos, heading, distMeters) => {
+    const R = 6371000;
+    const bRad = (heading * Math.PI) / 180;
+    const latRad = (pos.lat * Math.PI) / 180;
+    const lngRad = (pos.lng * Math.PI) / 180;
+    const d = distMeters / R;
+    const newLat = Math.asin(
+      Math.sin(latRad) * Math.cos(d) +
+        Math.cos(latRad) * Math.sin(d) * Math.cos(bRad)
+    );
+    const newLng =
+      lngRad +
+      Math.atan2(
+        Math.sin(bRad) * Math.sin(d) * Math.cos(latRad),
+        Math.cos(d) - Math.sin(latRad) * Math.sin(newLat)
+      );
+    return { lat: (newLat * 180) / Math.PI, lng: (newLng * 180) / Math.PI };
   };
 
   const persistActiveTrip = (next) => {
@@ -67,6 +99,7 @@ const DriverLiveTracking = () => {
     if (rideStatus === "ON_TRIP") {
       tripDistanceKmRef.current = 0;
       lastTripPositionRef.current = null;
+      lastHeadingRef.current = null;
     }
   }, [rideStatus]);
 
@@ -227,11 +260,39 @@ const DriverLiveTracking = () => {
     return () => { cancelled = true; };
   }, [driverPosition, lastKnownPosition]);
 
-  // Marker position update — synchronous on every GPS change, no async involved
+  // Marker + camera update — navigation mode during ON_TRIP, standard follow otherwise
   useEffect(() => {
     if (!driverMarkerRef.current || !driverPosition) return;
     driverMarkerRef.current.position = driverPosition;
-    if (mapInstanceRef.current) mapInstanceRef.current.setCenter(driverPosition);
+
+    if (!mapInstanceRef.current) return;
+
+    const isOnTrip = rideStatusRef.current === "ON_TRIP";
+
+    // Update heading whenever driver moves at least 5m (filters GPS jitter)
+    if (
+      prevDriverPositionRef.current &&
+      haversineM(prevDriverPositionRef.current, driverPosition) > 5
+    ) {
+      lastHeadingRef.current = bearingDeg(prevDriverPositionRef.current, driverPosition);
+    }
+    prevDriverPositionRef.current = driverPosition;
+
+    const heading = lastHeadingRef.current;
+
+    if (isOnTrip && heading !== null) {
+      // Navigation mode: rotate to heading, tilt 45°, zoom 18, driver at bottom-third
+      mapInstanceRef.current.setHeading(heading);
+      mapInstanceRef.current.setTilt(45);
+      mapInstanceRef.current.setZoom(18);
+      mapInstanceRef.current.panTo(lookAhead(driverPosition, heading, 120));
+    } else {
+      // Standard follow mode: north-up, no tilt, zoom 15
+      mapInstanceRef.current.setHeading(0);
+      mapInstanceRef.current.setTilt(0);
+      mapInstanceRef.current.setZoom(15);
+      mapInstanceRef.current.setCenter(driverPosition);
+    }
   }, [driverPosition]);
 
   // Route polyline — redraws on status change or when driver moves >150 m
@@ -243,7 +304,7 @@ const DriverLiveTracking = () => {
 
     // Skip reroute if status unchanged and driver hasn't moved >150 m
     if (!statusChanged && routeRendererRef.current) {
-      if (lastRouteOriginRef.current && haversineM(driverPosition, lastRouteOriginRef.current) < 150) return;
+      if (lastRouteOriginRef.current && haversineM(driverPosition, lastRouteOriginRef.current) < 40) return;
     }
 
     lastRouteStatusRef.current = rideStatus;
@@ -269,6 +330,7 @@ const DriverLiveTracking = () => {
 
     const renderer = new google.maps.DirectionsRenderer({
       suppressMarkers: true,
+      preserveViewport: true,
       polylineOptions: {
         strokeColor: rideStatus === "ON_TRIP" ? "#03311C" : "#17BEBB",
         strokeWeight: 5,
