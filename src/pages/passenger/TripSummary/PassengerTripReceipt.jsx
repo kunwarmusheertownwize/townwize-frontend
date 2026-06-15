@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { authFetch } from "../../../utils/authFetch";
+import { isNative } from "../../../utils/platform";
 
 const toMoney = (n) => `${Number(n || 0).toLocaleString()} PKR`;
 const toDateTime = (value) => (value ? new Date(value).toLocaleString() : "-");
@@ -108,6 +109,109 @@ export default function PassengerTripReceipt() {
       ? `Final fare increased by ${toMoney(fare.adjustment)} after the trip was completed.`
       : `Final fare decreased by ${toMoney(Math.abs(fare.adjustment))} after the trip was completed.`
     : "Final fare matched the estimate shown at booking.";
+
+  // ─── Mobile (Capacitor) — simplified stacked receipt ─────────────────────
+  if (isNative()) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
+        {/* Header banner with fare */}
+        <div className="bg-townwize-primary px-5 pt-6 pb-8 text-white">
+          <h2 className="text-2xl font-extrabold">Trip Receipt</h2>
+          <p className="text-xs text-white/60 mt-1">{toDateTime(receiptDate)}</p>
+          <p className="text-xs text-white/40 mt-0.5">ID: {ride?._id || rideId}</p>
+          {!loading && !error && (
+            <div className="mt-5">
+              <p className="text-xs text-white/70 uppercase tracking-wider">Total Paid</p>
+              <p className="text-5xl font-extrabold mt-1">{toMoney(fare.final)}</p>
+              <p className="text-xs text-white/60 mt-2 leading-relaxed">{adjustmentMessage}</p>
+            </div>
+          )}
+        </div>
+
+        {loading && <p className="p-5 text-sm text-gray-500">Loading receipt...</p>}
+        {error && <p className="p-5 text-sm text-red-600">{error}</p>}
+
+        {!loading && !error && (
+          <div className="px-4 py-5 space-y-4">
+            {/* Route card */}
+            <div className="bg-white dark:bg-gray-900 rounded-2xl p-4 space-y-3 border border-gray-100 dark:border-gray-800">
+              <div>
+                <p className="text-[10px] uppercase tracking-widest text-gray-400">Pickup</p>
+                <p className="text-sm font-semibold mt-0.5 text-gray-800 dark:text-gray-100">
+                  {toLocationText(ride?.pickup)}
+                </p>
+              </div>
+              <div>
+                <p className="text-[10px] uppercase tracking-widest text-gray-400">Dropoff</p>
+                <p className="text-sm font-semibold mt-0.5 text-gray-800 dark:text-gray-100">
+                  {toLocationText(ride?.dropoff)}
+                </p>
+              </div>
+              <div className="flex gap-6 pt-1 flex-wrap">
+                <div>
+                  <p className="text-[10px] uppercase tracking-widest text-gray-400">Status</p>
+                  <p className="text-sm font-semibold mt-0.5">{ride?.status || "-"}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] uppercase tracking-widest text-gray-400">Distance / Time</p>
+                  <p className="text-sm font-semibold mt-0.5">{actualTripLabel}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] uppercase tracking-widest text-gray-400">Ride Type</p>
+                  <p className="text-sm font-semibold mt-0.5">{rideLabel}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Fare breakdown */}
+            <div className="bg-white dark:bg-gray-900 rounded-2xl p-4 border border-gray-100 dark:border-gray-800">
+              <h3 className="font-bold text-townwize-primary dark:text-white mb-3">Fare Summary</h3>
+              <div className="space-y-2 text-sm">
+                {[
+                  ["Base Fare",    fare.baseFare],
+                  ["Distance Fare", fare.distanceFare],
+                  ["Time Fare",    fare.timeFare],
+                  ...(Number(fare.waitFare || 0) > 0   ? [["Wait Fare",   fare.waitFare]]   : []),
+                  ["Platform Fee", fare.platformFee],
+                  ...(Number(fare.taxAmount || 0) > 0  ? [["SST",         fare.taxAmount]]  : []),
+                ].map(([label, value]) => (
+                  <div key={label} className="flex justify-between">
+                    <span className="text-gray-500 dark:text-gray-400">{label}</span>
+                    <span>{toMoney(value)}</span>
+                  </div>
+                ))}
+                <div className="border-t border-gray-200 dark:border-gray-700 pt-2 mt-1 space-y-1">
+                  <div className="flex justify-between text-xs text-gray-400">
+                    <span>Estimated at booking</span>
+                    <span>{toMoney(fare.estimated)}</span>
+                  </div>
+                  {hasAdjustment && (
+                    <div className="flex justify-between text-xs text-gray-400">
+                      <span>Adjustment</span>
+                      <span>{toMoney(fare.adjustment)}</span>
+                    </div>
+                  )}
+                </div>
+                <div className="flex justify-between font-bold text-base border-t border-gray-200 dark:border-gray-700 pt-2">
+                  <span>Total paid</span>
+                  <span className="text-townwize-primary dark:text-townwize-accent">
+                    {toMoney(fare.final)}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <button
+              className="w-full rounded-xl bg-townwize-primary py-4 text-white font-semibold"
+              onClick={() => navigate("/passenger/home", { replace: true })}
+            >
+              Back to Home
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="trip-receipt-page max-w-5xl mx-auto mt-6 bg-white dark:bg-townwize-primaryDark p-6 md:p-8 rounded-2xl shadow-lg space-y-6 border border-gray-100 dark:border-gray-700">

@@ -33,7 +33,6 @@ export default function GlobalIncomingRequest() {
         if (!socket) return;
 
         const onRideRequested = (payload) => {
-            console.log("🚗 Ride requested:", payload);
             setIncomingRide(payload);                 // ✅ STORE RIDE
             setDriverMode(DRIVER_MODES.INCOMING_REQUEST);
         };

@@ -34,7 +34,6 @@ const getRideCreateErrorMessage = (payload, status) => {
 
 const TripSummary = () => {
   const { state } = useLocation();
-  console.log("TripSummary state:", state);
 
   const navigate = useNavigate();
   //const socket = useRideSocket();

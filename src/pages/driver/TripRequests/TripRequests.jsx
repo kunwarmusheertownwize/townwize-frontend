@@ -13,17 +13,7 @@ const TripRequests = () => {
   const [request, setRequest] = useState(null);
   const [timeLeft, setTimeLeft] = useState(REQUEST_TIMEOUT);
   const [searching, setSearching] = useState(false);
-  const [driverEmail, setDriverEmail] = useState("");
   const { driverMode, setDriverMode, incomingRide, setIncomingRide } = useDriverMode();
-
-  useEffect(() => {
-    try {
-      const auth = JSON.parse(localStorage.getItem("auth") || "{}");
-      setDriverEmail(auth?.user?.email || "");
-    } catch {
-      setDriverEmail("");
-    }
-  }, []);
 
   useEffect(() => {
     if (!incomingRide) {
@@ -69,9 +59,7 @@ const TripRequests = () => {
     };
 
     hydrateFromActiveRide();
-    return () => {
-      mounted = false;
-    };
+    return () => { mounted = false; };
   }, [navigate, setDriverMode, setIncomingRide]);
 
   useEffect(() => {
@@ -160,7 +148,7 @@ const TripRequests = () => {
         <div className="text-sm">
           <p className="mb-3">Go offline? You will not receive new ride requests.</p>
           <div className="flex justify-end gap-3">
-            <button onClick={closeToast} className="px-3 py-1 text-townwize-danger hover:underline">
+            <button onClick={closeToast} className="px-3 py-1 text-gray-500 hover:underline">
               Cancel
             </button>
             <button
@@ -192,6 +180,7 @@ const TripRequests = () => {
     );
   };
 
+  // Live location broadcast while online
   useEffect(() => {
     if (!navigator.geolocation) return undefined;
     let latestCoords = null;
@@ -204,10 +193,7 @@ const TripRequests = () => {
 
     const watchId = navigator.geolocation.watchPosition(
       (pos) => {
-        latestCoords = {
-          lat: pos.coords.latitude,
-          lng: pos.coords.longitude,
-        };
+        latestCoords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
         sendLocation();
       },
       () => {},
@@ -223,61 +209,133 @@ const TripRequests = () => {
     };
   }, []);
 
-  return (
-    <div className="mx-auto mt-8 max-w-3xl space-y-4">
-      <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-        <h1 className="text-2xl font-bold">Incoming Ride</h1>
-        <p className="mt-1 text-sm text-gray-500">New trip request nearby</p>
-        {driverEmail && (
-          <p className="mt-1 text-xs text-gray-500">Signed in as {driverEmail}</p>
-        )}
+  // ── Timer urgency colour ────────────────────────────────────────────────────
+  const timerPct = (timeLeft / REQUEST_TIMEOUT) * 100;
+  const timerColor =
+    timerPct > 50 ? "bg-townwize-accent" : timerPct > 25 ? "bg-amber-400" : "bg-red-500";
 
-        {searching ? (
-          <div className="flex flex-col items-center justify-center py-16 text-gray-500">
-            <div className="mb-4 h-10 w-10 animate-spin rounded-full border-4 border-gray-300 border-t-townwize-primary" />
-            <p className="text-sm">Searching for nearby ride requests...</p>
+  // ── Render ──────────────────────────────────────────────────────────────────
+  return (
+    <div className="mx-auto mt-8 max-w-lg space-y-4">
+
+      {/* ── Waiting / Searching ── */}
+      {!request && (
+        <div className="rounded-2xl border border-gray-200 bg-white p-8 text-center shadow-sm dark:bg-townwize-primaryDark">
+          <div className="mb-5 flex items-center justify-center">
+            <span className="relative flex h-14 w-14 items-center justify-center rounded-full bg-townwize-accent/10">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-townwize-accent opacity-30" />
+              <span className="inline-block h-6 w-6 rounded-full bg-townwize-accent" />
+            </span>
           </div>
-        ) : !request ? (
-          <>
-            <div className="py-12 text-center text-gray-500">Waiting for ride requests...</div>
-            <div className="mt-6 flex justify-center">
-              <button onClick={handleGoOffline} className="rounded-xl bg-townwize-danger px-6 py-3 font-semibold text-white">
-                Go Offline
-              </button>
+          <h1 className="text-xl font-bold text-gray-900 dark:text-white">
+            {searching ? "Searching…" : "Waiting for Requests"}
+          </h1>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            {searching
+              ? "Looking for nearby ride requests"
+              : "You're online. Ride requests will appear here."}
+          </p>
+
+          <button
+            onClick={handleGoOffline}
+            className="mt-8 rounded-xl border border-gray-300 px-6 py-2.5 text-sm font-semibold text-gray-600 transition hover:bg-gray-100 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
+          >
+            Go Offline
+          </button>
+        </div>
+      )}
+
+      {/* ── Incoming Request ── */}
+      {request && (
+        <div className="rounded-2xl border border-townwize-accent/40 bg-white shadow-md dark:bg-townwize-primaryDark">
+          {/* Header */}
+          <div className="rounded-t-2xl bg-townwize-accent/10 px-6 py-4">
+            <p className="text-xs font-semibold uppercase tracking-widest text-townwize-accent">
+              New Ride Request
+            </p>
+            <div className="mt-1 flex items-end justify-between">
+              <span className="text-3xl font-black text-gray-900 dark:text-white">
+                {request.fare} <span className="text-base font-semibold">PKR</span>
+              </span>
+              <span className="rounded-full bg-townwize-primary/10 px-3 py-1 text-xs font-semibold text-townwize-primary dark:bg-white/10 dark:text-white">
+                {request.rideType}
+              </span>
             </div>
-          </>
-        ) : (
-          <>
-            <div className="mt-4 rounded-xl border border-gray-200 bg-gray-50 p-4">
-              <div className="grid gap-2 text-sm sm:grid-cols-2">
-                <p><span className="font-semibold">Pickup:</span> {request.pickup}</p>
-                <p><span className="font-semibold">Dropoff:</span> {request.dropoff}</p>
-                <p><span className="font-semibold">Distance:</span> {request.distanceKm} km</p>
-                <p><span className="font-semibold">ETA to pickup:</span> {request.etaToPickup}</p>
-                <p><span className="font-semibold">Fare:</span> {request.fare} PKR</p>
-                <p><span className="font-semibold">Ride Type:</span> {request.rideType}</p>
+          </div>
+
+          {/* Route */}
+          <div className="space-y-3 px-6 py-4">
+            <div className="flex gap-3">
+              <div className="flex flex-col items-center pt-1">
+                <span className="h-3 w-3 rounded-full bg-townwize-accent" />
+                <span className="my-1 h-8 w-px bg-gray-300 dark:bg-gray-600" />
+                <span className="h-3 w-3 rounded-full bg-townwize-primary dark:bg-white" />
+              </div>
+              <div className="space-y-4 text-sm">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">Pickup</p>
+                  <p className="font-medium text-gray-900 dark:text-white">{request.pickup}</p>
+                </div>
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">Dropoff</p>
+                  <p className="font-medium text-gray-900 dark:text-white">{request.dropoff}</p>
+                </div>
               </div>
             </div>
 
-            <div className="mt-4 h-1.5 overflow-hidden rounded bg-gray-200">
-              <div className="h-full bg-townwize-primary transition-all" style={{ width: `${(timeLeft / REQUEST_TIMEOUT) * 100}%` }} />
+            <div className="flex gap-4 rounded-xl bg-gray-50 px-4 py-3 text-sm dark:bg-white/5">
+              <div className="text-center">
+                <p className="text-xs text-gray-400">Distance</p>
+                <p className="font-semibold text-gray-900 dark:text-white">{request.distanceKm} km</p>
+              </div>
+              <div className="w-px bg-gray-200 dark:bg-gray-600" />
+              <div className="text-center">
+                <p className="text-xs text-gray-400">ETA to pickup</p>
+                <p className="font-semibold text-gray-900 dark:text-white">{request.etaToPickup}</p>
+              </div>
             </div>
-            <p className="mt-2 text-xs text-gray-500">Auto-expiring in {timeLeft}s</p>
+          </div>
 
-            <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
-              <button onClick={handleReject} className="rounded-xl bg-gray-200 py-3 font-semibold text-gray-700 dark:bg-gray-700 dark:text-gray-200">
-                Reject
-              </button>
-              <button onClick={handleAccept} className="rounded-xl bg-townwize-primary py-3 font-semibold text-white">
-                Accept
-              </button>
-              <button onClick={handleGoOffline} className="rounded-xl bg-townwize-danger py-3 text-sm font-semibold text-white">
-                Go Offline
-              </button>
+          {/* Timer bar */}
+          <div className="px-6">
+            <div className="h-1.5 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
+              <div
+                className={`h-full transition-all ${timerColor}`}
+                style={{ width: `${timerPct}%` }}
+              />
             </div>
-          </>
-        )}
-      </div>
+            <p className="mt-1 text-right text-xs text-gray-400">
+              Expires in {timeLeft}s
+            </p>
+          </div>
+
+          {/* Actions */}
+          <div className="grid grid-cols-2 gap-3 p-6 pt-3">
+            <button
+              onClick={handleReject}
+              className="rounded-xl border border-gray-300 py-3.5 font-semibold text-gray-700 transition hover:bg-gray-100 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700"
+            >
+              Decline
+            </button>
+            <button
+              onClick={handleAccept}
+              className="rounded-xl bg-townwize-accent py-3.5 font-semibold text-townwize-primary shadow-md shadow-townwize-accent/30 transition hover:brightness-110 active:scale-[0.98]"
+            >
+              Accept
+            </button>
+          </div>
+
+          {/* Separate go-offline link */}
+          <div className="border-t border-gray-100 px-6 py-3 text-center dark:border-gray-700">
+            <button
+              onClick={handleGoOffline}
+              className="text-xs text-gray-400 hover:text-townwize-danger hover:underline"
+            >
+              Go offline instead
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

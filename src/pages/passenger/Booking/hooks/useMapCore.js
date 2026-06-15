@@ -58,7 +58,6 @@ export default function useMapCore({ onMapClick }) {
                     fullscreenControl: true,
                 });
 
-
                 // Map click handler
                 mapInstanceRef.current.addListener("click", (e) => {
                     if (typeof onMapClick === "function") {

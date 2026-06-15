@@ -7,6 +7,7 @@ import { DRIVER_MODES } from "../../../contexts/driverModes";
 import { loadGoogleMaps } from "../../../utils/googleMapsLoader";
 import api from "../../../services/api";
 import { getSocket } from "../../../hooks/useRideSocket";
+import { isNative } from "../../../utils/platform";
 
 const DriverLiveTracking = () => {
   const navigate = useNavigate();
@@ -20,6 +21,7 @@ const DriverLiveTracking = () => {
   const [rideStatus, setRideStatus] = useState(request?.status);
   const [lastKnownPosition, setLastKnownPosition] = useState(null);
   const [driverPosition, setDriverPosition] = useState(null);
+  const [mapReady, setMapReady] = useState(false);
   const [arriving, setArriving] = useState(false);
   const [startingTrip, setStartingTrip] = useState(false);
   const [endingTrip, setEndingTrip] = useState(false);
@@ -27,6 +29,10 @@ const DriverLiveTracking = () => {
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
   const driverMarkerRef = useRef(null);
+  const destinationMarkerRef = useRef(null);
+  const routeRendererRef = useRef(null);
+  const lastRouteStatusRef = useRef(null);
+  const lastRouteOriginRef = useRef(null);
 
   const { setDriverMode, incomingRide } = useDriverMode();
 
@@ -96,10 +102,7 @@ const DriverLiveTracking = () => {
         const coords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
         setDriverPosition(coords);
         setLastKnownPosition(coords);
-
-        if (driverMarkerRef.current) driverMarkerRef.current.position = coords;
-        if (mapInstanceRef.current) mapInstanceRef.current.setCenter(coords);
-
+        // Marker and map center are updated in the useEffect below
         if (rideId) {
           api.post("/driver/location", { rideId, lat: coords.lat, lng: coords.lng }).catch(() => {});
         }
@@ -152,27 +155,28 @@ const DriverLiveTracking = () => {
     };
   }, [rideId, request, setDriverMode]);
 
+  // One-time map + marker initialization — runs when first GPS fix arrives
   useEffect(() => {
     const position = driverPosition || lastKnownPosition;
-    if (!position) return;
+    if (!position || mapInstanceRef.current) return; // skip if already initialized
 
-    let mounted = true;
+    let cancelled = false;
     loadGoogleMaps()
       .then(async () => {
-        if (!mounted || !mapRef.current) return;
+        if (cancelled || !mapRef.current || mapInstanceRef.current) return;
         await google.maps.importLibrary("maps");
         await google.maps.importLibrary("marker");
+        if (cancelled || mapInstanceRef.current) return;
 
-        if (!mapInstanceRef.current) {
-          mapInstanceRef.current = new google.maps.Map(mapRef.current, {
-            center: position,
-            zoom: 15,
-            mapId: import.meta.env.VITE_GOOGLE_MAP_ID,
-            gestureHandling: "greedy",
-            streetViewControl: false,
-            mapTypeControl: false,
-          });
-        }
+        mapInstanceRef.current = new google.maps.Map(mapRef.current, {
+          center: position,
+          zoom: 15,
+          mapId: import.meta.env.VITE_GOOGLE_MAP_ID,
+          gestureHandling: "greedy",
+          streetViewControl: false,
+          mapTypeControl: false,
+        });
+        setMapReady(true);
 
         const markerEl = document.createElement("div");
         markerEl.style.width = "16px";
@@ -181,22 +185,105 @@ const DriverLiveTracking = () => {
         markerEl.style.background = "#103139";
         markerEl.style.border = "2px solid #fff";
 
-        if (!driverMarkerRef.current) {
-          driverMarkerRef.current = new google.maps.marker.AdvancedMarkerElement({
-            map: mapInstanceRef.current,
-            position,
-            content: markerEl,
-          });
-        } else {
-          driverMarkerRef.current.position = position;
-        }
+        driverMarkerRef.current = new google.maps.marker.AdvancedMarkerElement({
+          map: mapInstanceRef.current,
+          position,
+          content: markerEl,
+        });
       })
       .catch(() => toast.error("Failed to load Google Maps"));
 
-    return () => {
-      mounted = false;
-    };
+    return () => { cancelled = true; };
   }, [driverPosition, lastKnownPosition]);
+
+  // Marker position update — synchronous on every GPS change, no async involved
+  useEffect(() => {
+    if (!driverMarkerRef.current || !driverPosition) return;
+    driverMarkerRef.current.position = driverPosition;
+    if (mapInstanceRef.current) mapInstanceRef.current.setCenter(driverPosition);
+  }, [driverPosition]);
+
+  const haversineM = (a, b) => {
+    const R = 6371000;
+    const dLat = ((b.lat - a.lat) * Math.PI) / 180;
+    const dLng = ((b.lng - a.lng) * Math.PI) / 180;
+    const s =
+      Math.sin(dLat / 2) ** 2 +
+      Math.cos((a.lat * Math.PI) / 180) *
+        Math.cos((b.lat * Math.PI) / 180) *
+        Math.sin(dLng / 2) ** 2;
+    return R * 2 * Math.asin(Math.sqrt(s));
+  };
+
+  // Route polyline — redraws on status change or when driver moves >150 m
+  useEffect(() => {
+    if (!mapReady || !mapInstanceRef.current || !window.google?.maps) return;
+    if (!driverPosition) return;
+
+    const statusChanged = lastRouteStatusRef.current !== rideStatus;
+
+    // Skip reroute if status unchanged and driver hasn't moved >150 m
+    if (!statusChanged && routeRendererRef.current) {
+      if (lastRouteOriginRef.current && haversineM(driverPosition, lastRouteOriginRef.current) < 150) return;
+    }
+
+    lastRouteStatusRef.current = rideStatus;
+    lastRouteOriginRef.current = driverPosition;
+
+    // Clear previous route
+    if (routeRendererRef.current) {
+      routeRendererRef.current.setMap(null);
+      routeRendererRef.current = null;
+    }
+
+    const destination =
+      rideStatus === "DRIVER_ASSIGNED" ? pickupAddress :
+      rideStatus === "ON_TRIP" ? dropoffAddress : null;
+
+    if (!destination) return;
+
+    // Clear previous destination marker
+    if (destinationMarkerRef.current) {
+      destinationMarkerRef.current.map = null;
+      destinationMarkerRef.current = null;
+    }
+
+    const renderer = new google.maps.DirectionsRenderer({
+      suppressMarkers: true,
+      polylineOptions: {
+        strokeColor: rideStatus === "ON_TRIP" ? "#03311C" : "#17BEBB",
+        strokeWeight: 5,
+        strokeOpacity: 0.85,
+      },
+    });
+    renderer.setMap(mapInstanceRef.current);
+    routeRendererRef.current = renderer;
+
+    new google.maps.DirectionsService().route(
+      {
+        origin: driverPosition,
+        destination,
+        travelMode: google.maps.TravelMode.DRIVING,
+      },
+      (result, status) => {
+        if (status !== "OK" || !routeRendererRef.current) return;
+        routeRendererRef.current.setDirections(result);
+
+        // Place a destination pin at the last leg's end location
+        const legs = result.routes[0]?.legs;
+        const endLatLng = legs?.[legs.length - 1]?.end_location;
+        if (endLatLng && mapInstanceRef.current) {
+          const pinEl = document.createElement("div");
+          pinEl.style.cssText = "width:14px;height:14px;border-radius:50%;background:#EF4444;border:2px solid #fff;box-shadow:0 0 0 3px rgba(239,68,68,0.3)";
+          destinationMarkerRef.current = new google.maps.marker.AdvancedMarkerElement({
+            map: mapInstanceRef.current,
+            position: endLatLng,
+            content: pinEl,
+          });
+        }
+      }
+    );
+  }, [rideStatus, driverPosition, mapReady, pickupAddress, dropoffAddress]);
 
   useEffect(() => {
     if (!incomingRide?.status) return;
@@ -237,7 +324,10 @@ const DriverLiveTracking = () => {
     if (!rideId || rideStatus !== "ON_TRIP" || endingTrip) return;
     setEndingTrip(true);
     try {
-      await api.post(`/rides/${rideId}/status`, { status: "COMPLETED" });
+      await api.post(`/rides/${rideId}/status`, {
+        status: "COMPLETED",
+        actualDistanceKm: request?.distanceKm,
+      });
       toast.success("Trip completed successfully");
 
       const tripSummaryPayload = { pickup: pickupAddress, dropoff: dropoffAddress, rideType, fare, rideId };
@@ -255,15 +345,116 @@ const DriverLiveTracking = () => {
 
   if (!hasRequest) return null;
 
+  const statusLabel =
+    (rideStatus === "DRIVER_ASSIGNED" && "En route to pickup") ||
+    (rideStatus === "ARRIVED" && "Arrived at pickup") ||
+    (rideStatus === "ON_TRIP" && "On trip") ||
+    "";
+
+  const actionButtons = (
+    <div className="flex flex-wrap gap-3">
+      {rideStatus === "DRIVER_ASSIGNED" && (
+        <>
+          <button
+            onClick={openNavigation}
+            className="min-w-[180px] flex-1 rounded-xl bg-townwize-primary py-3 font-semibold text-white"
+          >
+            Navigate to Pickup
+          </button>
+          <button
+            onClick={handleArrivedAtPickup}
+            disabled={arriving}
+            className={`flex-1 rounded-xl py-3 font-semibold ${
+              arriving ? "cursor-not-allowed bg-gray-400" : "bg-green-600 text-white"
+            }`}
+          >
+            Arrived
+          </button>
+        </>
+      )}
+      {rideStatus === "ARRIVED" && (
+        <button
+          onClick={handleStartTrip}
+          disabled={startingTrip}
+          className={`flex-1 rounded-xl py-3 font-semibold ${
+            startingTrip ? "cursor-not-allowed bg-gray-400" : "bg-townwize-primary text-white"
+          }`}
+        >
+          Start Trip
+        </button>
+      )}
+      {rideStatus === "ON_TRIP" && (
+        <button
+          onClick={handleCompleteTrip}
+          disabled={endingTrip}
+          className={`flex-1 rounded-xl py-3 font-semibold ${
+            endingTrip ? "cursor-not-allowed bg-gray-400" : "bg-red-600 text-white"
+          }`}
+        >
+          End Trip
+        </button>
+      )}
+      <button
+        onClick={() => toast.info("Calling passenger...")}
+        className="rounded-xl bg-gray-200 px-4 py-3 text-sm dark:bg-gray-700"
+      >
+        Call
+      </button>
+    </div>
+  );
+
+  // ─── Mobile (Capacitor) — full-screen map + floating bottom card ──────────
+  if (isNative()) {
+    return (
+      <div className="fixed inset-0 bg-gray-900">
+        {/* Status header — respects safe-area notch */}
+        <div
+          className="absolute top-0 left-0 right-0 z-10 border-b border-gray-200 bg-white shadow-sm dark:bg-townwize-primaryDark px-4 pb-3"
+          style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 12px)" }}
+        >
+          <h1 className="text-lg font-bold">Active Trip</h1>
+          {statusLabel && (
+            <span className="text-sm text-gray-500">{statusLabel}</span>
+          )}
+        </div>
+
+        {/* Map fills screen below header */}
+        <div ref={mapRef} className="absolute inset-0 top-[76px] z-0" />
+
+        {/* Bottom action card */}
+        <div
+          className="absolute bottom-0 left-0 right-0 z-50 rounded-t-2xl border-t border-gray-200 bg-white shadow-2xl dark:bg-townwize-primaryDark px-4 pt-4"
+          style={{ paddingBottom: "env(safe-area-inset-bottom, 16px)" }}
+        >
+          <div className="w-10 h-1 bg-gray-300 dark:bg-gray-700 rounded-full mx-auto mb-3" />
+          <div className="space-y-1 text-sm mb-4">
+            <div className="flex items-start gap-3">
+              <span className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full bg-townwize-accent" />
+              <p className="font-medium leading-snug">{pickupAddress}</p>
+            </div>
+            <div className="flex items-start gap-3">
+              <span className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full bg-red-500" />
+              <p className="text-gray-500 leading-snug">{dropoffAddress}</p>
+            </div>
+            <div className="flex gap-4 mt-2 text-xs text-gray-400">
+              <span>{rideType}</span>
+              <span className="font-semibold text-townwize-primary dark:text-white">
+                {fare} PKR
+              </span>
+            </div>
+          </div>
+          {actionButtons}
+        </div>
+      </div>
+    );
+  }
+
+  // ─── Web ──────────────────────────────────────────────────────────────────
   return (
     <div className="relative h-[calc(100vh-120px)] bg-gray-50">
       <div className="z-10 border-b border-gray-200 bg-white p-4 shadow-sm dark:bg-townwize-primaryDark">
         <h1 className="text-lg font-bold">Active Trip</h1>
-        <span className="text-sm text-gray-500">
-          {rideStatus === "DRIVER_ASSIGNED" && "En route to pickup"}
-          {rideStatus === "ARRIVED" && "Arrived at pickup"}
-          {rideStatus === "ON_TRIP" && "On trip"}
-        </span>
+        {statusLabel && <span className="text-sm text-gray-500">{statusLabel}</span>}
       </div>
 
       <div ref={mapRef} className="absolute inset-0 top-[72px] z-0" />
@@ -275,53 +466,7 @@ const DriverLiveTracking = () => {
           <p><strong>Ride Type:</strong> {rideType}</p>
           <p><strong>Fare:</strong> {fare} PKR</p>
         </div>
-
-        <div className="mt-4 flex flex-wrap gap-3">
-          {rideStatus === "DRIVER_ASSIGNED" && (
-            <>
-              <button onClick={openNavigation} className="min-w-[220px] flex-1 rounded-xl bg-townwize-primary py-3 font-semibold text-white">
-                Navigate to Pickup
-              </button>
-              <button
-                onClick={handleArrivedAtPickup}
-                disabled={arriving}
-                className={`flex-1 rounded-xl py-3 font-semibold ${
-                  arriving ? "cursor-not-allowed bg-gray-400" : "bg-green-600 text-white"
-                }`}
-              >
-                Arrived
-              </button>
-            </>
-          )}
-
-          {rideStatus === "ARRIVED" && (
-            <button
-              onClick={handleStartTrip}
-              disabled={startingTrip}
-              className={`flex-1 rounded-xl py-3 font-semibold ${
-                startingTrip ? "cursor-not-allowed bg-gray-400" : "bg-townwize-primary text-white"
-              }`}
-            >
-              Start Trip
-            </button>
-          )}
-
-          {rideStatus === "ON_TRIP" && (
-            <button
-              onClick={handleCompleteTrip}
-              disabled={endingTrip}
-              className={`flex-1 rounded-xl py-3 font-semibold ${
-                endingTrip ? "cursor-not-allowed bg-gray-400" : "bg-red-600 text-white"
-              }`}
-            >
-              End Trip
-            </button>
-          )}
-
-          <button onClick={() => toast.info("Calling passenger...")} className="rounded-xl bg-gray-200 px-4 py-3 text-sm dark:bg-gray-700">
-            Call
-          </button>
-        </div>
+        <div className="mt-4">{actionButtons}</div>
       </div>
     </div>
   );

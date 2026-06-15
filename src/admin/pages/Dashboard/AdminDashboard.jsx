@@ -58,31 +58,34 @@ export default function AdminDashboard() {
   }, []);
 
   const money = (n) => `${Number(n || 0).toLocaleString()} PKR`;
-  const v = (x) => (loading ? "..." : x);
 
   return (
     <div className="space-y-6">
       <h1 className="text-xl font-semibold">Dashboard</h1>
       {error ? <div className="rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div> : null}
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-        <KPI label="Active Rides" value={v(data.activeRides)} />
-        <KPI label="Rides Today" value={v(data.ridesToday)} />
-        <KPI label="Open Cases" value={v(data.openCases)} />
-        <KPI label="Open Tickets" value={v(data.openTickets)} />
-        <KPI label="Gross Revenue" value={v(money(data.grossRevenue))} />
-        <KPI label="Commission" value={v(money(data.commission))} />
-        <KPI label="Completed Trips" value={v(data.completedTrips)} />
-        <KPI label="Cancelled Trips" value={v(data.cancelledTrips)} />
+        <KPI label="Active Rides" value={data.activeRides} loading={loading} />
+        <KPI label="Rides Today" value={data.ridesToday} loading={loading} />
+        <KPI label="Open Cases" value={data.openCases} loading={loading} />
+        <KPI label="Open Tickets" value={data.openTickets} loading={loading} />
+        <KPI label="Gross Revenue" value={money(data.grossRevenue)} loading={loading} />
+        <KPI label="Commission" value={money(data.commission)} loading={loading} />
+        <KPI label="Completed Trips" value={data.completedTrips} loading={loading} />
+        <KPI label="Cancelled Trips" value={data.cancelledTrips} loading={loading} />
       </div>
     </div>
   );
 }
 
-function KPI({ label, value }) {
+function KPI({ label, value, loading }) {
   return (
     <div className="rounded-xl border bg-white p-4">
       <div className="text-xs text-gray-500">{label}</div>
-      <div className="text-lg font-bold">{value}</div>
+      {loading ? (
+        <div className="mt-1 h-6 w-16 animate-pulse rounded bg-gray-200" />
+      ) : (
+        <div className="text-lg font-bold">{value}</div>
+      )}
     </div>
   );
 }

@@ -1,5 +1,5 @@
 // 📄 src/pages/Landing/Landing.jsx
-import { Link } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 import {
     FaCar,
     FaUsers,
@@ -16,16 +16,71 @@ import { QRCodeSVG } from "qrcode.react";
 import Navbar from "../components/shared/Navbar";
 import { useNavigate } from "react-router-dom";
 import { motion as Motion, AnimatePresence } from "framer-motion";
-
-
 import { useState } from "react";
 import { FaQuestionCircle } from "react-icons/fa";
 import Footer from "../components/shared/Footer";
+import { isNative } from "../utils/platform";
+import { useAuth } from "../hooks/useAuth";
 
 const Landing = () => {
     const navigate = useNavigate();
     const [openIndex, setOpenIndex] = useState(null);
     const toggle = (index) => setOpenIndex(openIndex === index ? null : index);
+    const { isAuthenticated, user, loading } = useAuth();
+
+    // ─── Mobile (Capacitor) — skip marketing page entirely ───────────────────
+    if (isNative()) {
+        if (loading) return null; // Splash screen covers this gap
+
+        if (isAuthenticated) {
+            return user?.role === "driver"
+                ? <Navigate to="/driver/home" replace />
+                : <Navigate to="/passenger/home" replace />;
+        }
+
+        return (
+            <div
+                style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "#03311C" }}
+                className="flex flex-col"
+            >
+                {/* Logo + tagline — top two-thirds */}
+                <div
+                    className="flex-1 flex flex-col items-center justify-center px-10 gap-5"
+                    style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}
+                >
+                    <img src="/logo-white.png" alt="Townwize" className="w-52" />
+                    <p className="text-white/60 text-sm text-center leading-relaxed">
+                        Safe, verified rides within<br />Bahria Town Karachi
+                    </p>
+                </div>
+
+                {/* CTA buttons — bottom third */}
+                <div
+                    className="px-6 pb-10 space-y-3"
+                    style={{ paddingBottom: "env(safe-area-inset-bottom, 40px)" }}
+                >
+                    <p className="text-white/30 text-xs text-center mb-5 uppercase tracking-widest">
+                        BTK Residents Only
+                    </p>
+                    <button
+                        onClick={() => navigate("/login")}
+                        className="w-full py-4 rounded-2xl font-bold text-base"
+                        style={{ background: "#17BEBB", color: "#fff" }}
+                    >
+                        Log In
+                    </button>
+                    <button
+                        onClick={() => navigate("/register")}
+                        className="w-full py-4 rounded-2xl font-semibold text-base text-white"
+                        style={{ border: "2px solid rgba(255,255,255,0.25)" }}
+                    >
+                        Create Account
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
     // ✅ Detect browser back/forward and re-mount Google Maps cleanly
     window.addEventListener("popstate", () => {
         sessionStorage.setItem("forceReload", "1");

@@ -1,9 +1,9 @@
 
 //src/components/shared/Navbar.jsx
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 
-import { FaSun, FaMoon, FaUserCircle, FaChevronDown } from "react-icons/fa";
+import { FaSun, FaMoon, FaUserCircle, FaChevronDown, FaBell } from "react-icons/fa";
 import { useTheme } from "../../hooks/useTheme";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
@@ -17,6 +17,8 @@ import LanguageModal from "../common/LanguageModal";
 
 import { useTranslation } from "react-i18next";
 import i18n from "../../i18n";
+import api from "../../services/api";
+import { getSocket } from "../../hooks/useRideSocket";
 
 
 const Navbar = () => {
@@ -47,6 +49,40 @@ const Navbar = () => {
   }
 
   const navigate = useNavigate();
+
+  // Notification unread count
+  const [unreadCount, setUnreadCount] = useState(0);
+  const unreadIntervalRef = useRef(null);
+
+  useEffect(() => {
+    if (!user || (user.role !== "passenger" && user.role !== "driver")) return;
+
+    const fetchCount = () => {
+      api.get("/notifications/unread-count")
+        .then((res) => setUnreadCount(res?.data?.data?.count || 0))
+        .catch(() => {});
+    };
+
+    fetchCount();
+    unreadIntervalRef.current = setInterval(fetchCount, 60000);
+
+    // Real-time: increment badge when a notification arrives via socket
+    const socket = getSocket();
+    const onNew = () => setUnreadCount((c) => c + 1);
+    socket.on("notification:new", onNew);
+
+    return () => {
+      clearInterval(unreadIntervalRef.current);
+      socket.off("notification:new", onNew);
+    };
+  }, [user]);
+
+  const notifPath = user?.role === "driver" ? "/driver/notifications" : "/passenger/notifications";
+
+  const handleBellClick = () => {
+    setUnreadCount(0);
+    handleNav(notifPath);
+  };
 
   // Dropdown States
   const [aboutOpen, setAboutOpen] = useState(false);
@@ -227,6 +263,22 @@ const Navbar = () => {
               <FaBars className="text-xl" />
             </button>
 
+            {/* Notification bell — passenger & driver only */}
+            {user && (user.role === "passenger" || user.role === "driver") && (
+              <button
+                onClick={handleBellClick}
+                className="relative hidden md:flex items-center justify-center p-2 rounded-lg text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition cursor-pointer"
+                aria-label="Notifications"
+              >
+                <FaBell className="text-lg" />
+                {unreadCount > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
+                    {unreadCount > 9 ? "9+" : unreadCount}
+                  </span>
+                )}
+              </button>
+            )}
+
             <button
               onClick={() => handleNav("/help")}
               className="hidden md:block text-gray-700 dark:text-gray-300 hover:text-townwize-primary dark:hover:text-townwize-accent transition cursor-pointer"
@@ -282,6 +334,7 @@ const Navbar = () => {
                             { label: t("wallet"), path: "/passenger/wallet" },
                             { label: t("account"), path: "/passenger/account" },
                             { label: t("settings"), path: "/passenger/settings" },
+                            { label: "Support", path: "/passenger/support" },
                           ].map((item) => (
                             <button
                               key={item.path}
@@ -525,6 +578,7 @@ const Navbar = () => {
                           { label: t("rideHistory"), path: "/passenger/trips" },
                           { label: t("account"), path: "/passenger/account" },
                           { label: t("settings"), path: "/passenger/settings" },
+                          { label: "Support", path: "/passenger/support" },
                           { label: t("drive"), path: "/driver/register" },
                         ].map((item) => (
                           <button
@@ -551,6 +605,7 @@ const Navbar = () => {
                           { label: "Dashboard", path: "/driver/home" },
                           { label: "Profile", path: "/driver/profile" },
                           { label: "Earnings", path: "/driver/earnings" },
+                          { label: "Support", path: "/driver/support" },
                           { label: "Settings", path: "/driver/settings" },
                         ].map((item) => (
                           <button

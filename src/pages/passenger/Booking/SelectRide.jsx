@@ -1,7 +1,7 @@
 //File: townwize-frontend\src\pages\passenger\Booking\SelectRide.jsx
 /* global google */
 import React from "react";
-import { useState, useEffect, useCallback, useMemo, } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import LocationField from "../../../components/passenger/LocationField";
 import PassengerLayout from "../../../layouts/PassengerLayout";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -165,6 +165,10 @@ const SelectRide = () => {
   const handleMarkerUpdated = useCallback(() => {
     setMarkerVersion((value) => value + 1);
   }, []);
+  // Prevents tryRestore from re-running after it has already placed markers once.
+  // Without this, setPickup/setDropoff inside the geocode callbacks would re-trigger
+  // the effect (they were in the dep array), causing an infinite geocode → route loop.
+  const restoredRef = useRef(false);
   // Multiple Route Choice States
   //const [selectedRouteIndex, setSelectedRouteIndex] = useState(0);
 
@@ -210,9 +214,14 @@ const SelectRide = () => {
     if (!window.google?.maps) return;
     const geocoder = await getGeocoder();
     geocoder.geocode({ location: latLng }, (results, status) => {
-      if (status === "OK" && results?.[0]) {
-        setter(results[0].formatted_address);
-      }
+      if (status !== "OK" || !results?.length) return;
+      // Skip Plus Code type results — they produce unintelligible codes like "49C5+6MR"
+      const usable = results.filter((r) => !r.types?.includes("plus_code"));
+      const best = usable[0] ?? results[0];
+      const address = best.formatted_address
+        .replace(/^[A-Z0-9]{4,8}\+[A-Z0-9]{2,3}[, ]+/, "")
+        .trim();
+      setter(address);
     });
   }, []);
   // --- NEW HOOKS: Markers ---
@@ -542,7 +551,6 @@ const SelectRide = () => {
     const watchId = navigator.geolocation.watchPosition(
       (pos) => {
         const { latitude, longitude, accuracy } = pos.coords;
-        console.log("REFINED GPS (SelectRide):", latitude, longitude, "accuracy:", accuracy);
         // Wait for a reasonably accurate fix
         if (accuracy <= 50) {
           navigator.geolocation.clearWatch(watchId);
@@ -590,17 +598,7 @@ const SelectRide = () => {
       // clear persisted SelectRide state on successful completion
       sessionStorage.removeItem("selectRideState");
 
-      console.log("🚕 FINAL TRIP PAYLOAD", {
-  pickup,
-  dropoff,
-  pickupCoords: pickupMarkerRef.current?.position?.toJSON?.(),
-  dropoffCoords: dropoffMarkerRef.current?.position?.toJSON?.(),
-  distanceKm: effectiveDistanceKm,
-  etaMinutes: effectiveEtaMinutes,
-  fare,
-});
-
-// helper to normalise marker positions
+      // helper to normalise marker positions
 const getLatLng = (pos) => {
   if (!pos) return null;
   return typeof pos.lat === "function"
@@ -732,21 +730,18 @@ navigate("/passenger/trip-summary", {
   }), [dropoff, dropoffSuggestions, handleGPS, updateMapMarker, coreMapInstanceRef, coreMapsReadyRef]);
 
 
-  // --- DEBUG: Verify navigation + map readiness ---
-  useEffect(() => {
-    console.log("🧭 SelectRide debug snapshot:", {
-      state,
-      mapReady: coreMapsReadyRef.current,
-      hasMapInstance: !!coreMapInstanceRef.current,
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state, coreMapsReadyRef.current]);
 
   // === Restore original behavior: Auto-place markers if coming from previous screen ===
   useEffect(() => {
     let checkTimer;
+    // Reset guard whenever effectiveState changes (new navigation intent).
+    restoredRef.current = false;
 
     const tryRestore = async () => {
+      // Only run once per navigation — without this guard, setPickup/setDropoff
+      // called inside the geocode callbacks would trigger this same effect (they
+      // were previously in the dep array), creating an endless geocode → route loop.
+      if (restoredRef.current) return;
       if (!coreMapsReadyRef.current || !coreMapInstanceRef.current) {
         // keep polling until map is truly ready
         checkTimer = setTimeout(tryRestore, 200);
@@ -755,7 +750,7 @@ navigate("/passenger/trip-summary", {
 
       if (!effectiveState?.pickup || !effectiveState?.dropoff) return;
 
-      console.log("🧭 ✅ Running delayed restore once map ready");
+      restoredRef.current = true; // mark done before async work so re-renders can't slip past
 
       const geocoder = await getGeocoder();
 
@@ -776,8 +771,12 @@ navigate("/passenger/trip-summary", {
 
     tryRestore();
     return () => clearTimeout(checkTimer);
+    // Depend on the string values, NOT the effectiveState object.
+    // effectiveState is rebuilt via JSON.parse on every render (new reference each
+    // time), so using the object as a dep would re-run this effect on every render,
+    // reset restoredRef, and re-geocode → flicker. Primitive strings compare by value.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [effectiveState, pickup, stop, dropoff]);
+  }, [effectiveState?.pickup, effectiveState?.dropoff]);
 
   // 🧭 Auto-draw route when markers change
   useEffect(() => {
@@ -785,33 +784,6 @@ navigate("/passenger/trip-summary", {
     requestRoute();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pickup, stop, dropoff, markerVersion]);
-
-  // ✅ Step 7: Always re-trigger marker restore once the map is fully ready
-  useEffect(() => {
-    if (!coreMapsReadyRef.current || !coreMapInstanceRef.current) return;
-    if (!effectiveState?.pickup || !effectiveState?.dropoff) return;
-
-    console.log("🧭 Forced restore fired after map ready");
-
-    (async () => {
-      const geocoder = await getGeocoder();
-
-      geocoder.geocode({ address: effectiveState.pickup }, (results, status) => {
-        if (status === "OK" && results?.[0]?.geometry?.location) {
-          updateMapMarker(results[0].geometry.location, "pickup");
-          setPickup(results[0].formatted_address);
-        }
-      });
-
-      geocoder.geocode({ address: effectiveState.dropoff }, (results, status) => {
-        if (status === "OK" && results?.[0]?.geometry?.location) {
-          updateMapMarker(results[0].geometry.location, "dropoff");
-          setDropoff(results[0].formatted_address);
-        }
-      });
-    })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [coreMapsReadyRef.current, coreMapInstanceRef.current, effectiveState]);
 
   return (
     <>

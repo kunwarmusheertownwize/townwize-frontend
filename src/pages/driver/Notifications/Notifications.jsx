@@ -1,100 +1,117 @@
-import { useState } from "react";
+import { useEffect, useState, useCallback } from "react";
+import { FaBell, FaCheckDouble } from "react-icons/fa";
+import api from "../../../services/api";
 
-const MOCK_NOTIFICATIONS = [
-    {
-        id: "NTF-001",
-        title: "New Ride Request",
-        message: "A nearby passenger is requesting a ride.",
-        time: "5 min ago",
-        type: "ride",
-        read: false,
-    },
-    {
-        id: "NTF-002",
-        title: "Trip Completed",
-        message: "Your trip has been completed successfully.",
-        time: "Yesterday",
-        type: "trip",
-        read: true,
-    },
-    {
-        id: "NTF-003",
-        title: "System Update",
-        message: "New features have been added to improve your experience.",
-        time: "2 days ago",
-        type: "system",
-        read: true,
-    },
-];
+const TYPE_STYLE = {
+  RIDE_ACCEPTED:  { border: "border-townwize-accent",  dot: "bg-townwize-accent" },
+  TRIP_COMPLETED: { border: "border-green-500",        dot: "bg-green-500" },
+  RIDE_CANCELLED: { border: "border-red-400",          dot: "bg-red-400" },
+  SYSTEM:         { border: "border-gray-400",         dot: "bg-gray-400" },
+};
 
-const typeStyles = {
-    ride: "border-blue-500",
-    trip: "border-green-500",
-    system: "border-gray-400",
+const formatTime = (iso) => {
+  const diff = Date.now() - new Date(iso);
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1)  return "Just now";
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24)  return `${hrs}h ago`;
+  return new Date(iso).toLocaleDateString("en-PK", { day: "numeric", month: "short" });
 };
 
 const DriverNotifications = () => {
-    const [notifications, setNotifications] = useState(MOCK_NOTIFICATIONS);
+  const [items, setItems]     = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [marking, setMarking] = useState(false);
 
-    const markAsRead = (id) => {
-        setNotifications((prev) =>
-            prev.map((n) =>
-                n.id === id ? { ...n, read: true } : n
-            )
-        );
-    };
+  const fetchNotifications = useCallback(() => {
+    setLoading(true);
+    api.get("/notifications?limit=50")
+      .then((res) => setItems(res?.data?.data?.items || []))
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
 
-    return (
-        <div className="max-w-4xl mx-auto mt-8 px-4">
-            {/* Header */}
-            <div className="mb-6">
-                <h1 className="text-2xl font-bold">Notifications</h1>
-                <p className="text-sm text-gray-500">
-                    Recent updates and alerts
-                </p>
-            </div>
+  useEffect(() => { fetchNotifications(); }, [fetchNotifications]);
 
-            {/* Empty State */}
-            {notifications.length === 0 ? (
-                <div className="text-gray-500 py-12 text-center">
-                    No notifications yet
-                </div>
-            ) : (
-                <div className="space-y-3">
-                    {notifications.map((n) => (
-                        <button
-                            key={n.id}
-                            type="button"
-                            onClick={() => markAsRead(n.id)}
-                            aria-pressed={n.read}
-                            className={`w-full text-left cursor-pointer p-4 bg-white dark:bg-townwize-primaryDark rounded-xl shadow-sm border-l-4
-                            focus-visible:outline-none
-                            focus-visible:ring-2
-                            focus-visible:ring-townwize-primary
-                            focus-visible:ring-offset-2
-                            ${typeStyles[n.type]}
-                            ${n.read ? "opacity-80" : "bg-blue-50 dark:bg-opacity-90"}
-                        `}
-                        >
-                            
-                            <div className="flex items-center justify-between mb-1">
-                                <h3 className="font-semibold text-sm">
-                                    {n.title}
-                                </h3>
-                                <span className="text-xs text-gray-400">
-                                    {n.time}
-                                </span>
-                            </div>
+  const markOne = async (id) => {
+    setItems((prev) => prev.map((n) => n._id === id ? { ...n, read: true } : n));
+    api.patch(`/notifications/${id}/read`).catch(() => {});
+  };
 
-                            <p className="text-sm text-gray-600 dark:text-gray-300">
-                                {n.message}
-                            </p>
-                        </button>
-                    ))}
-                </div>
-            )}
+  const markAll = async () => {
+    if (marking) return;
+    setMarking(true);
+    await api.patch("/notifications/read-all").catch(() => {});
+    setItems((prev) => prev.map((n) => ({ ...n, read: true })));
+    setMarking(false);
+  };
+
+  const unreadCount = items.filter((n) => !n.read).length;
+
+  return (
+    <div className="max-w-2xl mx-auto px-4 py-6 space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-xl font-bold text-townwize-primary dark:text-white">Notifications</h1>
+          {unreadCount > 0 && (
+            <p className="text-xs text-gray-400 mt-0.5">{unreadCount} unread</p>
+          )}
         </div>
-    );
+        {unreadCount > 0 && (
+          <button
+            onClick={markAll}
+            disabled={marking}
+            className="flex items-center gap-1.5 text-xs font-medium text-townwize-accent hover:underline disabled:opacity-50"
+          >
+            <FaCheckDouble /> Mark all read
+          </button>
+        )}
+      </div>
+
+      {loading ? (
+        <div className="space-y-3">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="h-16 animate-pulse rounded-2xl bg-gray-100 dark:bg-gray-800" />
+          ))}
+        </div>
+      ) : items.length === 0 ? (
+        <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-gray-200 dark:border-gray-700 bg-white dark:bg-townwize-primaryDark py-16 text-gray-400">
+          <FaBell className="text-4xl" />
+          <p className="text-sm">No notifications yet.</p>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {items.map((n) => {
+            const style = TYPE_STYLE[n.type] || TYPE_STYLE.SYSTEM;
+            return (
+              <button
+                key={n._id}
+                type="button"
+                onClick={() => markOne(n._id)}
+                className={`w-full text-left rounded-2xl border-l-4 ${style.border} bg-white dark:bg-townwize-primaryDark px-4 py-3 shadow-sm transition hover:shadow-md ${
+                  n.read ? "opacity-70" : ""
+                }`}
+              >
+                <div className="flex items-start gap-3">
+                  <span className={`mt-1 h-2 w-2 shrink-0 rounded-full ${style.dot} ${n.read ? "opacity-0" : ""}`} />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className={`text-sm font-semibold ${n.read ? "text-gray-600 dark:text-gray-300" : "text-gray-900 dark:text-white"}`}>
+                        {n.title}
+                      </p>
+                      <span className="shrink-0 text-xs text-gray-400">{formatTime(n.createdAt)}</span>
+                    </div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{n.body}</p>
+                  </div>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
 };
 
 export default DriverNotifications;

@@ -5,6 +5,7 @@ import { FaEnvelope, FaLock } from "react-icons/fa";
 import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "react-toastify";
 import api from "../../services/api";
+import { isNative } from "../../utils/platform";
 
 import AuthHeader from "../../components/auth/AuthHeader";
 import { useAuth } from "../../hooks/useAuth";
@@ -54,6 +55,15 @@ function Login() {
     });
 
     login(res.data.data);
+
+    // Native (Capacitor): cookies are blocked cross-origin, store tokens in
+    // localStorage so api.js can attach them as Authorization headers instead.
+    if (isNative()) {
+      const { accessToken, refreshToken } = res.data.data;
+      if (accessToken) localStorage.setItem("_tw_at", accessToken);
+      if (refreshToken) localStorage.setItem("_tw_rt", refreshToken);
+    }
+
     toast.success("Logged in successfully");
 
     const role = res.data.data.user.role;

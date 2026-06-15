@@ -167,51 +167,12 @@ const Home = () => {
     };
   }, []);
 
-  // Format Google address, force BTK context if inside BTK, else fallback to normal
+  // Return the full formatted address Google provides, stripping any Plus Code prefix.
   const formatAddress = (result) => {
     if (!result) return "";
-
-    const formatted =
-      result.formatted_address ||
-      result.formattedAddress ||
-      "";
-
-    // ✅ If already mentions Bahria Town Karachi → enforce clean BTK style
-    if (formatted && formatted.toLowerCase().includes("bahria town karachi")) {
-      const comps = result.address_components || result.addressComponents || [];
-      const get = (type) => {
-        const c = comps.find((x) => (x.types || []).includes(type));
-        return c ? (c.long_name || c.longText || "") : "";
-      };
-
-      // Precinct if available, else neighborhood/sublocality
-      const precinct =
-        get("neighborhood") ||
-        get("sublocality") ||
-        get("sublocality_level_1") || "";
-
-      return `${precinct ? precinct + ", " : ""}Bahria Town Karachi, Karachi, Pakistan`;
-    }
-
-    // ✅ Otherwise just use the original formatted address (out-of-bounds safe)
-    if (formatted) return formatted;
-
-    // Fallback manual build
-    const comps = result.address_components || result.addressComponents || [];
-    const get = (type) => {
-      const c = comps.find((x) => (x.types || []).includes(type));
-      return c ? (c.long_name || c.longText || "") : "";
-    };
-
-    const parts = [
-      get("street_number"),
-      get("route"),
-      get("locality"),
-      get("administrative_area_level_1"),
-      get("country"),
-    ].filter(Boolean);
-
-    return parts.join(", ");
+    const formatted = result.formatted_address || result.formattedAddress || "";
+    // Strip leading Plus Code (e.g. "49C5+6MR, Phase 8…" → "Phase 8…")
+    return formatted.replace(/^[A-Z0-9]{4,8}\+[A-Z0-9]{2,3}[, ]+/, "").trim();
   };
 
   const navigate = useNavigate();
@@ -468,7 +429,6 @@ const Home = () => {
     // reset pickup coords — prevents wrong marker on SelectRide
     currentCoordsRef.current = null;
 
-    console.log("SWAPPED:", { pickup, dropoff });
   };
 
   /* useEffect(() => {

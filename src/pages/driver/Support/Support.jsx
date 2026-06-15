@@ -1,9 +1,5 @@
-const DriverSupport = () => {
-  return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold">Driver Support</h1>
-      <p>Need help? Contact Townwize support anytime. 📞</p>
-    </div>
-  );
-};
+import SupportPage from "../../../components/shared/SupportPage";
+
+const DriverSupport = () => <SupportPage />;
+
 export default DriverSupport;

@@ -10,6 +10,8 @@ export default function useRouteEngine({
 }) {
     const directionsServiceRef = useRef(null);
     const directionsRendererRef = useRef(null);
+    const altPolylinesRef = useRef([]);          // alternative route polylines
+    const routeLabelMarkersRef = useRef([]);     // numbered bubbles per route
 
     const routeOverlayRef = useRef(null);       // holds base polyline + moving marker
     const routeTimerRef = useRef(null);
@@ -47,6 +49,7 @@ export default function useRouteEngine({
                 strokeColor: "#031D23", // near townwize.primaryDark
                 strokeOpacity: 0.9,
                 strokeWeight: 5,
+                zIndex: 3,
                 map,
             });
 
@@ -136,6 +139,12 @@ export default function useRouteEngine({
             directionsServiceRef.current = new google.maps.DirectionsService();
         }
 
+        // Clear previous alt route polylines and label bubbles
+        altPolylinesRef.current.forEach((p) => p.setMap(null));
+        altPolylinesRef.current = [];
+        routeLabelMarkersRef.current.forEach((m) => { m.map = null; });
+        routeLabelMarkersRef.current = [];
+
         // Recreate renderer each time (new Maps behavior)
         if (directionsRendererRef.current) {
             directionsRendererRef.current.setMap(null);
@@ -157,44 +166,91 @@ export default function useRouteEngine({
                 waypoints,
                 travelMode: google.maps.TravelMode.DRIVING,
                 optimizeWaypoints: true,
-                provideRouteAlternatives: false,
+                provideRouteAlternatives: true,
             },
-            async (result, status) => {      //  ✅ THIS is the correct final form
+            (result, status) => {
                 if (status !== "OK" || !result) {
                     toast.error(`Route error: ${status}`);
                     setIsCalculatingRoute(false);
                     return;
                 }
 
-                const route = result.routes[0];
                 directionsRendererRef.current.setDirections(result);
 
-                // Decode polyline
-                let path = [];
-                try {
-                    const { encoding } = await google.maps.importLibrary("geometry");
-                    path = encoding.decodePath(
-                        route.overview_polyline?.points || route.overview_polyline
-                    );
-                } catch (err) {
-                    console.error("Polyline decode failed:", err);
-                }
+                // overview_path is already an array of LatLng — no decode needed
+                const allPaths = result.routes.map((r) => r.overview_path);
 
-                // Animate
-                animateRouteOverlay(path);
+                // activateRoute: animate route idx, draw all others as clickable blue alts
+                const activateRoute = (idx) => {
+                    altPolylinesRef.current.forEach((p) => p.setMap(null));
+                    altPolylinesRef.current = [];
+                    routeLabelMarkersRef.current.forEach((m) => { m.map = null; });
+                    routeLabelMarkersRef.current = [];
 
-                // ETA + distance
-                let totalSeconds = 0;
-                let totalMeters = 0;
+                    allPaths.forEach((p, i) => {
+                        if (i === idx) return;
+                        const alt = new google.maps.Polyline({
+                            path: p,
+                            map: mapInstanceRef.current,
+                            strokeColor: "#60A5FA",
+                            strokeWeight: 4,
+                            strokeOpacity: 0.65,
+                            zIndex: 1,
+                            clickable: true,
+                        });
+                        alt.addListener("click", () => activateRoute(i));
+                        altPolylinesRef.current.push(alt);
+                    });
 
-                route.legs.forEach((leg) => {
-                    totalSeconds += leg.duration.value;
-                    totalMeters += leg.distance.value;
-                });
+                    // Numbered bubbles at the midpoint of each route
+                    allPaths.forEach((p, i) => {
+                        if (!p.length) return;
+                        const mid = p[Math.floor(p.length / 2)];
+                        const isActive = i === idx;
 
-                setEtaText(route.legs.at(-1).duration.text);
-                setEtaValue(totalSeconds);
-                setDistanceKm(totalMeters / 1000);
+                        const el = document.createElement("div");
+                        el.style.cssText = [
+                            "width:28px", "height:28px", "border-radius:50%",
+                            `background:${isActive ? "#03311C" : "#ffffff"}`,
+                            `color:${isActive ? "#ffffff" : "#60A5FA"}`,
+                            `border:2px solid ${isActive ? "#ffffff" : "#60A5FA"}`,
+                            "display:flex", "align-items:center", "justify-content:center",
+                            "font-weight:700", "font-size:13px", "font-family:sans-serif",
+                            "box-shadow:0 2px 8px rgba(0,0,0,0.30)",
+                            "cursor:pointer", "user-select:none",
+                            "transition:transform 0.15s",
+                        ].join(";");
+                        el.textContent = String(i + 1);
+
+                        if (!isActive) {
+                            el.addEventListener("mouseenter", () => { el.style.transform = "scale(1.2)"; });
+                            el.addEventListener("mouseleave", () => { el.style.transform = "scale(1)"; });
+                            el.addEventListener("click", () => activateRoute(i));
+                        }
+
+                        const marker = new google.maps.marker.AdvancedMarkerElement({
+                            position: mid,
+                            map: mapInstanceRef.current,
+                            content: el,
+                            zIndex: isActive ? 10 : 5,
+                        });
+                        routeLabelMarkersRef.current.push(marker);
+                    });
+
+                    animateRouteOverlay(allPaths[idx]);
+
+                    let totalSeconds = 0;
+                    let totalMeters = 0;
+                    result.routes[idx].legs.forEach((leg) => {
+                        totalSeconds += leg.duration.value;
+                        totalMeters += leg.distance.value;
+                    });
+                    setEtaText(result.routes[idx].legs.at(-1).duration.text);
+                    setEtaValue(totalSeconds);
+                    setDistanceKm(totalMeters / 1000);
+                };
+
+                activateRoute(0);
 
                 if (routeTimerRef.current) clearTimeout(routeTimerRef.current);
                 setTimeout(() => setIsCalculatingRoute(false), 100);

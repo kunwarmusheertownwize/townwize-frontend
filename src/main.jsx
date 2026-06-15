@@ -3,7 +3,6 @@
 //document.documentElement.classList.remove('dark');
 
 import { StrictMode } from 'react';
-console.log("🌐 Starting BT Rides app...");
 import { createRoot } from 'react-dom/client';
 import './index.css';
 import App from './App.jsx';

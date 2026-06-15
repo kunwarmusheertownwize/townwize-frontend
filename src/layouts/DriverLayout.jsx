@@ -4,11 +4,12 @@ import { useEffect, useRef, useState } from "react";
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import Navbar from "../components/shared/Navbar";
 import { toast } from "react-toastify";
-import { FaFacebookF, FaTwitter, FaInstagram } from "react-icons/fa";
+import { FaFacebookF, FaTwitter, FaInstagram, FaHome, FaHistory, FaMoneyBillWave, FaUser } from "react-icons/fa";
 import { useDriverMode } from "../contexts/useDriverMode";
 import { DRIVER_MODES } from "../contexts/driverModes";
 import GlobalIncomingRequest from "../components/driver/GlobalIncomingRequest";
 import api from "../services/api";
+import { isNative } from "../utils/platform";
 
 
 const SAFE_PATHS = [
@@ -114,8 +115,9 @@ const DriverLayout = ({ title }) => {
         hasWarnedRef.current = true;
       }
 
+      // Keep them offline but don't force-redirect — Home.jsx blocks going online,
+      // and drivers should still be able to view their dashboard, trips, and earnings.
       setDriverMode(DRIVER_MODES.OFFLINE);
-      navigate("/driver/profile", { replace: true });
     }
   }, [driverEligibility, location.pathname, setDriverMode, navigate]);
 
@@ -241,6 +243,81 @@ const DriverLayout = ({ title }) => {
       toast.info("Incoming request waiting for your response.");
     }
   }, [driverMode, location.pathname]);
+
+  // ─── Mobile (Capacitor) — bottom tab bar, no Navbar/footer ───────────────
+  if (isNative()) {
+    const DRIVER_FULLSCREEN = ["/driver/live-tracking", "/driver/trip-requests"];
+    const showDriverTabs = !DRIVER_FULLSCREEN.some((p) => location.pathname.startsWith(p));
+
+    const driverTabs = [
+      { label: "Home",     icon: FaHome,         path: "/driver/home" },
+      { label: "Trips",    icon: FaHistory,      path: "/driver/trips" },
+      { label: "Earnings", icon: FaMoneyBillWave, path: "/driver/earnings" },
+      { label: "Profile",  icon: FaUser,         path: "/driver/profile" },
+    ];
+
+    return (
+      <div
+        className="fixed inset-0 flex flex-col bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-white"
+        style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}
+      >
+        <GlobalIncomingRequest />
+        <div
+          className="flex-1 overflow-y-auto overflow-x-hidden"
+          style={{
+            paddingBottom: showDriverTabs
+              ? "calc(64px + env(safe-area-inset-bottom, 0px))"
+              : "env(safe-area-inset-bottom, 0px)",
+          }}
+        >
+          <Outlet />
+        </div>
+
+        {showDriverTabs && (
+          <nav
+            className="fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800"
+            style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
+          >
+            <div className="flex h-16">
+              {driverTabs.map(({ label, icon: Icon, path }) => {
+                const active =
+                  location.pathname === path ||
+                  location.pathname.startsWith(path + "/");
+                return (
+                  <button
+                    key={path}
+                    onClick={() => navigate(path)}
+                    className="relative flex-1 flex flex-col items-center justify-center gap-[3px] touch-manipulation active:scale-95 transition-transform duration-100 outline-none select-none"
+                  >
+                    {active && (
+                      <span className="absolute top-0 w-8 h-[3px] rounded-b-full bg-townwize-accent" />
+                    )}
+                    <Icon
+                      size={active ? 23 : 21}
+                      className={`transition-colors duration-150 ${
+                        active
+                          ? "text-townwize-accent"
+                          : "text-gray-400 dark:text-gray-500"
+                      }`}
+                    />
+                    <span
+                      className={`text-[10px] font-semibold tracking-wide transition-colors duration-150 ${
+                        active
+                          ? "text-townwize-accent"
+                          : "text-gray-400 dark:text-gray-500"
+                      }`}
+                    >
+                      {label}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </nav>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-full bg-gray-100 dark:bg-townwize-bgDark text-gray-900 dark:text-white">

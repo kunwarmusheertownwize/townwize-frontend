@@ -7,6 +7,8 @@ import Unauthorized from "../pages/Public/Unauthorized";
 // Layouts
 import PassengerLayout from "../layouts/PassengerLayout";
 import PassengerAppLayout from "../layouts/PassengerAppLayout";
+import { isNative } from "../utils/platform";
+import MobileHome from "../pages/passenger/Home/MobileHome";
 import DriverLayout from "../layouts/DriverLayout";
 import AuthGuard from "../components/auth/AuthHeader";
 
@@ -35,6 +37,7 @@ import PassengerDashboard from "../pages/passenger/Dashboard/PassengerDashboard"
 import PassengerAccount from "../pages/passenger/Account/Account";
 import PassengerSettings from "../pages/passenger/Settings/Settings";
 import PassengerTripReceipt from "../pages/passenger/TripSummary/PassengerTripReceipt";
+import PassengerSupport from "../pages/passenger/Support/Support";
 
 // Driver Screens
 import DriverHome from "../pages/driver/Home/Home";
@@ -76,7 +79,7 @@ const AppRoutes = () => {
             </PassengerGuard>
           }
         >
-          <Route path="/passenger/home" element={<Home />} />
+          <Route path="/passenger/home" element={isNative() ? <MobileHome /> : <Home />} />
 
           {/* Dashboard pages */}
           <Route path="/passenger/dashboard" element={<PassengerDashboard />} />
@@ -96,6 +99,7 @@ const AppRoutes = () => {
           />
           <Route path="/passenger/booking" element={<Booking />} />
           <Route path="/passenger/trips" element={<PassengerTrips />} />
+          <Route path="/passenger/support" element={<PassengerSupport />} />
         </Route>
 
         {/* ---------------------------- */}

@@ -1,25 +1,120 @@
-import PassengerLayout from '../../../layouts/PassengerLayout';
+import { useEffect, useState, useCallback } from "react";
+import { FaBell, FaCheckDouble } from "react-icons/fa";
+import api from "../../../services/api";
+import PassengerLayout from "../../../layouts/PassengerLayout";
+
+const TYPE_STYLE = {
+  RIDE_ACCEPTED:  { border: "border-townwize-accent",  dot: "bg-townwize-accent" },
+  DRIVER_ARRIVED: { border: "border-blue-400",         dot: "bg-blue-400" },
+  TRIP_STARTED:   { border: "border-green-500",        dot: "bg-green-500" },
+  TRIP_COMPLETED: { border: "border-townwize-primary", dot: "bg-townwize-primary" },
+  RIDE_CANCELLED: { border: "border-red-400",          dot: "bg-red-400" },
+  SYSTEM:         { border: "border-gray-400",         dot: "bg-gray-400" },
+};
+
+const formatTime = (iso) => {
+  const diff = Date.now() - new Date(iso);
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1)  return "Just now";
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24)  return `${hrs}h ago`;
+  return new Date(iso).toLocaleDateString("en-PK", { day: "numeric", month: "short" });
+};
 
 const Notifications = () => {
-  const loading = false; // simulate loading
-  const notifications = []; // simulate empty
+  const [items, setItems]     = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [marking, setMarking] = useState(false);
+
+  const fetchNotifications = useCallback(() => {
+    setLoading(true);
+    api.get("/notifications?limit=50")
+      .then((res) => setItems(res?.data?.data?.items || []))
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  useEffect(() => { fetchNotifications(); }, [fetchNotifications]);
+
+  const markOne = async (id) => {
+    setItems((prev) => prev.map((n) => n._id === id ? { ...n, read: true } : n));
+    api.patch(`/notifications/${id}/read`).catch(() => {});
+  };
+
+  const markAll = async () => {
+    if (marking) return;
+    setMarking(true);
+    await api.patch("/notifications/read-all").catch(() => {});
+    setItems((prev) => prev.map((n) => ({ ...n, read: true })));
+    setMarking(false);
+  };
+
+  const unreadCount = items.filter((n) => !n.read).length;
 
   return (
     <PassengerLayout title="Notifications">
-      {loading ? (
-        <p className="text-sm text-gray-500 dark:text-gray-400">Loading notifications...</p>
-      ) : notifications.length === 0 ? (
-        <p className="text-sm text-gray-500 dark:text-gray-400">No notifications yet.</p>
-      ) : (
-        <div className="space-y-4">
-          {notifications.map((n, idx) => (
-            <div key={idx} className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow">
-              <p className="text-sm text-gray-800 dark:text-gray-200">{n.message}</p>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{n.time}</p>
-            </div>
-          ))}
+      <div className="max-w-2xl mx-auto space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-xl font-bold text-townwize-primary dark:text-white">Notifications</h1>
+            {unreadCount > 0 && (
+              <p className="text-xs text-gray-400 mt-0.5">{unreadCount} unread</p>
+            )}
+          </div>
+          {unreadCount > 0 && (
+            <button
+              onClick={markAll}
+              disabled={marking}
+              className="flex items-center gap-1.5 text-xs font-medium text-townwize-accent hover:underline disabled:opacity-50"
+            >
+              <FaCheckDouble /> Mark all read
+            </button>
+          )}
         </div>
-      )}
+
+        {loading ? (
+          <div className="space-y-3">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-16 animate-pulse rounded-2xl bg-gray-100 dark:bg-gray-800" />
+            ))}
+          </div>
+        ) : items.length === 0 ? (
+          <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-gray-200 dark:border-gray-700 bg-white dark:bg-townwize-primaryDark py-16 text-gray-400">
+            <FaBell className="text-4xl" />
+            <p className="text-sm">No notifications yet.</p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {items.map((n) => {
+              const style = TYPE_STYLE[n.type] || TYPE_STYLE.SYSTEM;
+              return (
+                <button
+                  key={n._id}
+                  type="button"
+                  onClick={() => markOne(n._id)}
+                  className={`w-full text-left rounded-2xl border-l-4 ${style.border} bg-white dark:bg-townwize-primaryDark px-4 py-3 shadow-sm transition hover:shadow-md ${
+                    n.read ? "opacity-70" : ""
+                  }`}
+                >
+                  <div className="flex items-start gap-3">
+                    <span className={`mt-1 h-2 w-2 shrink-0 rounded-full ${style.dot} ${n.read ? "opacity-0" : ""}`} />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-2">
+                        <p className={`text-sm font-semibold ${n.read ? "text-gray-600 dark:text-gray-300" : "text-gray-900 dark:text-white"}`}>
+                          {n.title}
+                        </p>
+                        <span className="shrink-0 text-xs text-gray-400">{formatTime(n.createdAt)}</span>
+                      </div>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{n.body}</p>
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </div>
     </PassengerLayout>
   );
 };

@@ -7,11 +7,13 @@ import {
   FaWallet,
   FaCog,
   FaSignOutAlt,
+  FaChevronRight,
 } from "react-icons/fa";
 import { toast } from "react-toastify";
 import { AuthContext } from "../../../contexts/AuthContextBase";
 import { ThemeContext } from "../../../contexts/ThemeContext";
 import { useNavigate } from "react-router-dom";
+import { isNative } from "../../../utils/platform";
 
 export default function Profile() {
   const [activeTab, setActiveTab] = useState("personal");
@@ -33,6 +35,173 @@ export default function Profile() {
     { key: "wallet", label: "Wallet Balance", icon: <FaWallet /> },
     { key: "settings", label: "Settings", icon: <FaCog /> },
   ];
+
+  // ─── Mobile (Capacitor) — settings-list style with accordion sections ────
+  if (isNative()) {
+    const handleLogout = () => {
+      toast.info("Logging you out...", { autoClose: 800 });
+      setTimeout(() => {
+        logout();
+        toast.success("You've been logged out safely.");
+        navigate("/login");
+      }, 900);
+    };
+
+    return (
+      <div className="min-h-screen bg-gray-100 dark:bg-gray-950">
+        {/* Profile header */}
+        <div className="bg-townwize-primary px-5 pt-6 pb-6 space-y-4">
+          <div className="flex items-center gap-4">
+            <img
+              src={
+                user?.profilePicture ||
+                `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=103139&color=fff&size=120`
+              }
+              alt="Avatar"
+              className="w-16 h-16 rounded-2xl object-cover border-2 border-white/20"
+            />
+            <div>
+              <h2 className="text-lg font-bold text-white">{displayName}</h2>
+              <p className="text-xs text-white/50 mt-0.5">{passengerId}</p>
+              <div className="flex gap-2 mt-2 flex-wrap">
+                <span className="text-[10px] px-2 py-0.5 bg-white/15 text-white rounded-full">
+                  {user?.ridesCompleted || 0} rides
+                </span>
+                {user?.rating && (
+                  <span className="text-[10px] px-2 py-0.5 bg-white/15 text-white rounded-full">
+                    {user.rating} ⭐
+                  </span>
+                )}
+                <span className="text-[10px] px-2 py-0.5 bg-green-500/30 text-green-200 rounded-full">
+                  Verified Rider
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Accordion sections */}
+        <div className="mt-3 bg-white dark:bg-gray-900 rounded-2xl mx-3 overflow-hidden divide-y divide-gray-100 dark:divide-gray-800">
+          {tabs.map((tab) => (
+            <div key={tab.key}>
+              <button
+                onClick={() => setActiveTab(activeTab === tab.key ? null : tab.key)}
+                className="w-full flex items-center justify-between px-5 py-4 touch-manipulation active:bg-gray-50 dark:active:bg-gray-800"
+              >
+                <div className="flex items-center gap-3">
+                  <span className="text-townwize-primary dark:text-townwize-accent">
+                    {tab.icon}
+                  </span>
+                  <span className="text-sm font-medium text-gray-800 dark:text-gray-100">
+                    {tab.label}
+                  </span>
+                </div>
+                <FaChevronRight
+                  className={`text-gray-300 dark:text-gray-600 text-xs transition-transform duration-200 ${
+                    activeTab === tab.key ? "rotate-90" : ""
+                  }`}
+                />
+              </button>
+
+              {activeTab === tab.key && (
+                <div className="px-5 pb-5 pt-1 bg-gray-50 dark:bg-gray-800/50">
+                  {tab.key === "personal" && (
+                    <div className="space-y-2 text-sm text-gray-700 dark:text-gray-300">
+                      <p><span className="font-medium">Name:</span> {displayName}</p>
+                      <p><span className="font-medium">Phone:</span> {displayPhone}</p>
+                      <p><span className="font-medium">Email:</span> {displayEmail}</p>
+                    </div>
+                  )}
+
+                  {tab.key === "verification" && (
+                    <div className="space-y-3">
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        Upload CNIC, BTK Proof, and Selfie Verification.
+                      </p>
+                      <button className="px-4 py-2.5 bg-townwize-primary text-white text-sm font-semibold rounded-xl">
+                        Upload Documents
+                      </button>
+                    </div>
+                  )}
+
+                  {tab.key === "history" && (
+                    <div className="space-y-3">
+                      {[1, 2].map((i) => (
+                        <div
+                          key={i}
+                          className="p-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900"
+                        >
+                          <div className="flex justify-between items-start">
+                            <span className="text-sm font-medium">
+                              Precinct 01 → BTK Head Office
+                            </span>
+                            <span className="text-xs text-gray-400 shrink-0 ml-2">Oct 10</span>
+                          </div>
+                          <div className="flex justify-between items-center mt-2">
+                            <span className="font-semibold text-green-600 dark:text-green-400 text-sm">
+                              PKR 380
+                            </span>
+                            <span className="text-[10px] bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 px-2 py-0.5 rounded-full">
+                              Completed
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {tab.key === "wallet" && (
+                    <div className="space-y-3">
+                      <div className="p-4 rounded-xl bg-townwize-primary text-white">
+                        <p className="text-xs text-white/70">Current Balance</p>
+                        <h4 className="text-2xl font-bold mt-1">
+                          PKR {user?.walletBalance?.toLocaleString() || "0.00"}
+                        </h4>
+                      </div>
+                      <button className="w-full py-3 bg-townwize-primary text-white text-sm font-semibold rounded-xl">
+                        Add Funds
+                      </button>
+                    </div>
+                  )}
+
+                  {tab.key === "settings" && (
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-600 dark:text-gray-300">Dark Mode</span>
+                        <button
+                          onClick={toggleTheme}
+                          className={`relative w-12 h-6 rounded-full transition-all ${
+                            darkMode ? "bg-green-600" : "bg-gray-300"
+                          }`}
+                        >
+                          <span
+                            className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-all ${
+                              darkMode ? "translate-x-6" : ""
+                            }`}
+                          />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+
+        {/* Logout row */}
+        <div className="mt-3 bg-white dark:bg-gray-900 rounded-2xl mx-3 overflow-hidden mb-4">
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center gap-3 px-5 py-4 text-red-500 touch-manipulation active:bg-red-50 dark:active:bg-red-950"
+          >
+            <FaSignOutAlt />
+            <span className="text-sm font-medium">Logout</span>
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full px-4 sm:px-6 max-w-5xl mx-auto">

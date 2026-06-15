@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { AuthContext } from "./AuthContextBase";
+import { SplashScreen } from "@capacitor/splash-screen";
+import { isNative } from "../utils/platform";
 
 export function AuthProvider({ children }) {
   const [auth, setAuth] = useState(null);
@@ -17,15 +19,26 @@ export function AuthProvider({ children }) {
       }
     }
     setLoading(false);
+    // Hide the splash after a minimum visible time so the logo is seen.
+    // launchAutoHide:true is a safety net at 2000ms if this never fires.
+    if (isNative()) {
+      setTimeout(() => {
+        SplashScreen.hide({ fadeOutDuration: 400 });
+      }, 1200);
+    }
   }, []);
 
   const login = (payload) => {
-    localStorage.setItem("auth", JSON.stringify(payload));
-    setAuth(payload);
+    // Store only user identity — tokens live in httpOnly cookies set by the server
+    const session = { user: payload?.user ?? payload };
+    localStorage.setItem("auth", JSON.stringify(session));
+    setAuth(session);
   };
 
   const logout = () => {
     localStorage.removeItem("auth");
+    localStorage.removeItem("_tw_at");
+    localStorage.removeItem("_tw_rt");
     setAuth(null);
   };
 
@@ -34,7 +47,6 @@ export function AuthProvider({ children }) {
       value={{
         auth,
         user: auth?.user || null,
-        token: auth?.tokens?.accessToken || null,
         role: auth?.user?.role || null,
         isAuthenticated: !!auth,
         loading,

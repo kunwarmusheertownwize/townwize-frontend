@@ -5,6 +5,8 @@ import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import Navbar from "../components/shared/Navbar";
 import Footer from "../components/shared/Footer";
 import api from "../services/api";
+import MobilePassengerLayout from "./MobilePassengerLayout";
+import { isNative } from "../utils/platform";
 
 const ACTIVE_RIDE_STATUSES = new Set([
   "REQUESTED",
@@ -65,6 +67,10 @@ const PassengerLayout = () => {
       cancelled = true;
     };
   }, [location.pathname, navigate]);
+
+  if (isNative()) {
+    return <MobilePassengerLayout />;
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-townwize-primaryDark text-gray-900 dark:text-white">
