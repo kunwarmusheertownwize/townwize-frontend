@@ -30,6 +30,7 @@ import Profile from "../pages/passenger/Profile/Profile";
 import TripRequest from "../pages/passenger/TripRequest/TripRequest";
 import Login from "../pages/auth/Login";
 import ForgotPassword from "../pages/auth/ForgotPassword";
+import ResetPassword from "../pages/auth/ResetPassword";
 import OTPVerify from "../pages/auth/OTPVerify";
 import VerifyEmail from "../pages/auth/VerifyEmail";
 import Booking from "../pages/passenger/Booking/Booking";
@@ -111,6 +112,7 @@ const AppRoutes = () => {
         <Route path="/verify" element={<OTPVerify />} />
         <Route path="/verify-email" element={<VerifyEmail />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
         {/*Driver Registration */}
         <Route path="/driver/register" element={<DriverRegister />} />
 
