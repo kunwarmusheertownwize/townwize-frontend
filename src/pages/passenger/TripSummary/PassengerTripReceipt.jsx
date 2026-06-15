@@ -81,15 +81,12 @@ function RatingModal({ rideId, onDone }) {
 
         <div className="px-6 py-6 space-y-5">
           {/* Stars */}
-          <div className="flex justify-center gap-3">
+          <div className="flex justify-center gap-3" onMouseLeave={() => setHovered(0)}>
             {[1, 2, 3, 4, 5].map((n) => (
               <button
                 key={n}
                 type="button"
                 onMouseEnter={() => setHovered(n)}
-                onMouseLeave={() => setHovered(0)}
-                onTouchStart={() => setHovered(n)}
-                onTouchEnd={() => setHovered(0)}
                 onClick={() => setSelected(n)}
                 className="focus:outline-none transition-transform active:scale-90"
               >
