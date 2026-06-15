@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { FaStar } from "react-icons/fa";
 import { useNavigate, useParams } from "react-router-dom";
 import { authFetch } from "../../../utils/authFetch";
 import { isNative } from "../../../utils/platform";
@@ -31,12 +32,127 @@ const completionLabel = (reason) => {
   return labels[reason] || String(reason).replace(/_/g, " ");
 };
 
+function RatingModal({ rideId, onDone }) {
+  const [hovered, setHovered] = useState(0);
+  const [selected, setSelected] = useState(0);
+  const [comment, setComment] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+
+  const handleSubmit = async () => {
+    if (!selected) return;
+    setSubmitting(true);
+    try {
+      await authFetch(`${import.meta.env.VITE_API_BASE_URL}/rides/${rideId}/rate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ stars: selected, comment }),
+      });
+    } catch {
+      // non-blocking — close regardless
+    } finally {
+      setSubmitting(false);
+      setSubmitted(true);
+      setTimeout(onDone, 1200);
+    }
+  };
+
+  const starLabels = ["", "Poor", "Fair", "Good", "Great", "Excellent"];
+  const display = hovered || selected;
+
+  if (submitted) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 px-4 pb-6 sm:pb-0">
+        <div className="w-full max-w-sm bg-white dark:bg-gray-900 rounded-2xl p-8 text-center space-y-3 shadow-2xl">
+          <div className="text-5xl">⭐</div>
+          <p className="text-lg font-bold text-gray-900 dark:text-white">Thanks for your feedback!</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 px-4 pb-6 sm:pb-0">
+      <div className="w-full max-w-sm bg-white dark:bg-gray-900 rounded-2xl shadow-2xl overflow-hidden">
+        <div className="bg-townwize-primary px-6 pt-6 pb-8 text-white text-center">
+          <p className="text-xs uppercase tracking-widest text-white/60 mb-1">How was your ride?</p>
+          <h3 className="text-xl font-bold">Rate your Wizer</h3>
+        </div>
+
+        <div className="px-6 py-6 space-y-5">
+          {/* Stars */}
+          <div className="flex justify-center gap-3">
+            {[1, 2, 3, 4, 5].map((n) => (
+              <button
+                key={n}
+                type="button"
+                onMouseEnter={() => setHovered(n)}
+                onMouseLeave={() => setHovered(0)}
+                onTouchStart={() => setHovered(n)}
+                onTouchEnd={() => setHovered(0)}
+                onClick={() => setSelected(n)}
+                className="focus:outline-none transition-transform active:scale-90"
+              >
+                <FaStar
+                  className={`text-4xl transition-colors ${
+                    n <= display
+                      ? "text-yellow-400"
+                      : "text-gray-200 dark:text-gray-700"
+                  }`}
+                />
+              </button>
+            ))}
+          </div>
+
+          {display > 0 && (
+            <p className="text-center text-sm font-semibold text-townwize-primary dark:text-townwize-accent">
+              {starLabels[display]}
+            </p>
+          )}
+
+          {/* Comment */}
+          <textarea
+            value={comment}
+            onChange={(e) => setComment(e.target.value.slice(0, 300))}
+            placeholder="Add a comment (optional)"
+            rows={3}
+            className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2.5 text-sm text-gray-800 dark:text-white placeholder-gray-400 resize-none outline-none focus:border-townwize-primary"
+          />
+
+          <button
+            type="button"
+            onClick={handleSubmit}
+            disabled={!selected || submitting}
+            className={`w-full py-3.5 rounded-xl font-semibold text-white transition-colors ${
+              selected && !submitting
+                ? "bg-townwize-primary active:bg-townwize-primaryDark"
+                : "bg-gray-300 dark:bg-gray-700 cursor-not-allowed"
+            }`}
+          >
+            {submitting ? "Submitting…" : "Submit Rating"}
+          </button>
+
+          <button
+            type="button"
+            onClick={onDone}
+            className="w-full py-2 text-sm text-gray-400 dark:text-gray-500 hover:text-gray-600"
+          >
+            Skip for now
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function PassengerTripReceipt() {
   const { rideId } = useParams();
   const navigate = useNavigate();
   const [ride, setRide] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [showRating, setShowRating] = useState(false);
+  const ratingShownRef = useRef(false);
 
   useEffect(() => {
     let mounted = true;
@@ -47,7 +163,18 @@ export default function PassengerTripReceipt() {
         const res = await authFetch(`${import.meta.env.VITE_API_BASE_URL}/rides/${rideId}`);
         const json = await res.json();
         if (!res.ok) throw new Error(json?.error?.message || json?.message || "Failed to load receipt");
-        if (mounted) setRide(json?.data || json);
+        const rideData = json?.data || json;
+        if (mounted) {
+          setRide(rideData);
+          if (
+            !ratingShownRef.current &&
+            rideData?.status === "COMPLETED" &&
+            !rideData?.passengerRating?.stars
+          ) {
+            ratingShownRef.current = true;
+            setShowRating(true);
+          }
+        }
       } catch (e) {
         if (mounted) setError(e?.message || "Failed to load receipt");
       } finally {
@@ -114,6 +241,7 @@ export default function PassengerTripReceipt() {
   if (isNative()) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
+        {showRating && <RatingModal rideId={rideId} onDone={() => setShowRating(false)} />}
         {/* Header banner with fare */}
         <div className="bg-townwize-primary px-5 pt-6 pb-8 text-white">
           <h2 className="text-2xl font-extrabold">Trip Receipt</h2>
@@ -214,6 +342,8 @@ export default function PassengerTripReceipt() {
   }
 
   return (
+    <>
+    {showRating && <RatingModal rideId={rideId} onDone={() => setShowRating(false)} />}
     <div className="trip-receipt-page max-w-5xl mx-auto mt-6 bg-white dark:bg-townwize-primaryDark p-6 md:p-8 rounded-2xl shadow-lg space-y-6 border border-gray-100 dark:border-gray-700">
       <div className="flex items-start justify-between gap-4">
         <div>
@@ -317,5 +447,6 @@ export default function PassengerTripReceipt() {
         </button>
       </div>
     </div>
+    </>
   );
 }
