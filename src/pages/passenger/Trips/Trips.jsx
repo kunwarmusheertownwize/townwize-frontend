@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
-import { FaCarSide, FaChevronLeft, FaChevronRight } from "react-icons/fa";
+import { Link, useNavigate } from "react-router-dom";
+import { FaCarSide, FaChevronLeft, FaChevronRight, FaStar } from "react-icons/fa";
 import api from "../../../services/api";
 
 const STATUS_META = {
@@ -37,6 +37,7 @@ const distanceOf = (ride) => {
 const LIMIT = 10;
 
 export default function PassengerTrips() {
+  const navigate = useNavigate();
   const [rides, setRides]     = useState([]);
   const [total, setTotal]     = useState(0);
   const [pages, setPages]     = useState(1);
@@ -100,10 +101,13 @@ export default function PassengerTrips() {
             {rides.map((ride) => {
               const meta = STATUS_META[ride.status] || { label: ride.status, cls: "bg-gray-100 text-gray-600" };
               const dist = distanceOf(ride);
+              const isCompleted = ride.status === "COMPLETED";
+              const rated = ride.passengerRating?.stars;
               return (
                 <div
                   key={ride._id}
-                  className="rounded-2xl border border-gray-100 bg-white dark:bg-townwize-primaryDark dark:border-gray-700 p-4 shadow-sm"
+                  onClick={() => isCompleted && navigate(`/passenger/trip-receipt/${ride._id}`)}
+                  className={`rounded-2xl border border-gray-100 bg-white dark:bg-townwize-primaryDark dark:border-gray-700 p-4 shadow-sm ${isCompleted ? "cursor-pointer hover:border-townwize-primary/40 hover:shadow-md transition-shadow" : ""}`}
                 >
                   <div className="flex items-start justify-between gap-3">
                     {/* Route */}
@@ -139,6 +143,16 @@ export default function PassengerTrips() {
                     <span className="text-xs text-gray-400">
                       {formatDate(ride.createdAt)} · {formatTime(ride.createdAt)}
                     </span>
+                    {isCompleted && rated && (
+                      <span className="flex items-center gap-1 rounded-full bg-yellow-50 dark:bg-yellow-900/20 px-2 py-0.5 text-xs font-semibold text-yellow-600 dark:text-yellow-400">
+                        <FaStar className="text-[10px]" /> {rated}
+                      </span>
+                    )}
+                    {isCompleted && !rated && (
+                      <span className="rounded-full border border-townwize-primary/40 px-2 py-0.5 text-xs font-semibold text-townwize-primary dark:text-townwize-accent">
+                        Rate
+                      </span>
+                    )}
                     <span className="ml-auto text-xs text-gray-400 capitalize">
                       {ride.rideType?.toLowerCase().replace("_", " ")} · {ride.carType}
                     </span>
