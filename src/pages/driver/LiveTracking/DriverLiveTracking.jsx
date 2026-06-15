@@ -33,8 +33,23 @@ const DriverLiveTracking = () => {
   const routeRendererRef = useRef(null);
   const lastRouteStatusRef = useRef(null);
   const lastRouteOriginRef = useRef(null);
+  const rideStatusRef = useRef(rideStatus);
+  const tripDistanceKmRef = useRef(0);
+  const lastTripPositionRef = useRef(null);
 
   const { setDriverMode, incomingRide } = useDriverMode();
+
+  const haversineM = (a, b) => {
+    const R = 6371000;
+    const dLat = ((b.lat - a.lat) * Math.PI) / 180;
+    const dLng = ((b.lng - a.lng) * Math.PI) / 180;
+    const s =
+      Math.sin(dLat / 2) ** 2 +
+      Math.cos((a.lat * Math.PI) / 180) *
+        Math.cos((b.lat * Math.PI) / 180) *
+        Math.sin(dLng / 2) ** 2;
+    return R * 2 * Math.asin(Math.sqrt(s));
+  };
 
   const persistActiveTrip = (next) => {
     setActiveRequest(next);
@@ -46,6 +61,14 @@ const DriverLiveTracking = () => {
   const dropoffAddress = request?.dropoff;
   const rideType = request?.rideType;
   const fare = request?.fare;
+
+  useEffect(() => {
+    rideStatusRef.current = rideStatus;
+    if (rideStatus === "ON_TRIP") {
+      tripDistanceKmRef.current = 0;
+      lastTripPositionRef.current = null;
+    }
+  }, [rideStatus]);
 
   useEffect(() => {
     if (!request) return;
@@ -102,7 +125,15 @@ const DriverLiveTracking = () => {
         const coords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
         setDriverPosition(coords);
         setLastKnownPosition(coords);
-        // Marker and map center are updated in the useEffect below
+
+        if (rideStatusRef.current === "ON_TRIP") {
+          if (lastTripPositionRef.current) {
+            const distM = haversineM(lastTripPositionRef.current, coords);
+            if (distM > 5) tripDistanceKmRef.current += distM / 1000;
+          }
+          lastTripPositionRef.current = coords;
+        }
+
         if (rideId) {
           api.post("/driver/location", { rideId, lat: coords.lat, lng: coords.lng }).catch(() => {});
         }
@@ -202,18 +233,6 @@ const DriverLiveTracking = () => {
     driverMarkerRef.current.position = driverPosition;
     if (mapInstanceRef.current) mapInstanceRef.current.setCenter(driverPosition);
   }, [driverPosition]);
-
-  const haversineM = (a, b) => {
-    const R = 6371000;
-    const dLat = ((b.lat - a.lat) * Math.PI) / 180;
-    const dLng = ((b.lng - a.lng) * Math.PI) / 180;
-    const s =
-      Math.sin(dLat / 2) ** 2 +
-      Math.cos((a.lat * Math.PI) / 180) *
-        Math.cos((b.lat * Math.PI) / 180) *
-        Math.sin(dLng / 2) ** 2;
-    return R * 2 * Math.asin(Math.sqrt(s));
-  };
 
   // Route polyline — redraws on status change or when driver moves >150 m
   useEffect(() => {
@@ -326,7 +345,7 @@ const DriverLiveTracking = () => {
     try {
       await api.post(`/rides/${rideId}/status`, {
         status: "COMPLETED",
-        actualDistanceKm: request?.distanceKm,
+        actualDistanceKm: parseFloat(tripDistanceKmRef.current.toFixed(3)),
       });
       toast.success("Trip completed successfully");
 
