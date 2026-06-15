@@ -91,7 +91,7 @@ function RatingModal({ rideId, onDone }) {
                 className="focus:outline-none transition-transform active:scale-90"
               >
                 <FaStar
-                  className={`text-4xl transition-colors ${
+                  className={`text-4xl ${
                     n <= display
                       ? "text-yellow-400"
                       : "text-gray-200 dark:text-gray-700"
@@ -101,11 +101,9 @@ function RatingModal({ rideId, onDone }) {
             ))}
           </div>
 
-          {display > 0 && (
-            <p className="text-center text-sm font-semibold text-townwize-primary dark:text-townwize-accent">
-              {starLabels[display]}
-            </p>
-          )}
+          <p className="text-center text-sm font-semibold text-townwize-primary dark:text-townwize-accent h-5">
+            {starLabels[display] || ""}
+          </p>
 
           {/* Comment */}
           <textarea
