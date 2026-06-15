@@ -82,6 +82,8 @@ const LiveTracking = () => {
   const altRoutesRef = useRef([]);
   const tripZoomAppliedRef = useRef(false); // set exactly once when ON_TRIP begins
 
+  const [etaSeconds, setEtaSeconds] = useState(null);
+
   const [confirmCancel, setConfirmCancel] = useState(false);
   const [cancelling, setCancelling] = useState(false);
   const [tripBlocked, setTripBlocked] = useState(false);
@@ -93,6 +95,13 @@ const LiveTracking = () => {
     rideRef.current = ride;
   }, [ride]);
 
+  // ETA countdown — ticks every second between directions refreshes
+  useEffect(() => {
+    const status = String(rideStatus || "").toUpperCase();
+    if (etaSeconds == null || etaSeconds <= 0 || status === "ARRIVED" || status === "ON_TRIP") return;
+    const t = setTimeout(() => setEtaSeconds((s) => Math.max(0, s - 1)), 1000);
+    return () => clearTimeout(t);
+  }, [etaSeconds, rideStatus]);
 
   // ─────────────────────────────────────────────
   // Fetch active ride (authoritative backend state)
@@ -454,6 +463,12 @@ const LiveTracking = () => {
         renderer.setDirections(result);
         routeRendererRef.current = renderer;
 
+        // Update ETA from directions response (only while driver is en route to pickup)
+        if (rideStatus === "DRIVER_ASSIGNED" || rideStatus === "EN_ROUTE") {
+          const secs = result.routes[0]?.legs?.[0]?.duration?.value;
+          if (secs != null) setEtaSeconds(secs);
+        }
+
         // After setDirections the renderer may shift the viewport even with
         // preserveViewport:true on some browsers. Force navigation view again.
         if (rideStatus === "ON_TRIP") {
@@ -628,6 +643,10 @@ const LiveTracking = () => {
 
   const stage = getPassengerRideStage(ride.status);
   const isSearching = String(ride.status || "").toUpperCase() === "REQUESTED";
+  const driverInfo = ride?.driverInfo || null;
+  const showDriverInfo = driverInfo && !isSearching;
+  const etaMinutes = etaSeconds != null ? Math.max(1, Math.ceil(etaSeconds / 60)) : null;
+  const showEta = etaMinutes != null && ["DRIVER_ASSIGNED", "EN_ROUTE"].includes(String(ride.status || "").toUpperCase());
 
   // ─── Mobile (Capacitor) — full-screen map with floating bottom card ───────
   // Use explicit top/left/width/height instead of CSS `inset` shorthand —
@@ -699,6 +718,36 @@ const LiveTracking = () => {
                 </p>
               </div>
             </div>
+
+            {/* Driver info card */}
+            {showDriverInfo && (
+              <div className="flex items-center gap-3 pt-1 border-t border-gray-100 dark:border-gray-800">
+                <div className="h-10 w-10 rounded-full bg-townwize-primary flex items-center justify-center shrink-0">
+                  <span className="text-white font-bold text-sm">
+                    {(driverInfo.name || "W")[0].toUpperCase()}
+                  </span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-sm text-gray-800 dark:text-gray-100">{driverInfo.name}</p>
+                  {driverInfo.vehicle && (
+                    <p className="text-xs text-gray-400 truncate">
+                      {[driverInfo.vehicle.color, driverInfo.vehicle.make, driverInfo.vehicle.model].filter(Boolean).join(" ")}
+                      {driverInfo.vehicle.plate ? ` · ${driverInfo.vehicle.plate}` : ""}
+                    </p>
+                  )}
+                </div>
+                <div className="text-right shrink-0 space-y-0.5">
+                  {driverInfo.rating && (
+                    <p className="text-xs font-semibold text-yellow-500">⭐ {driverInfo.rating.average}</p>
+                  )}
+                  {showEta && (
+                    <p className="text-xs font-bold text-townwize-primary dark:text-townwize-accent">
+                      {etaMinutes} min
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
 
             {/* Fare + ETA */}
             <div className="flex items-center gap-2 flex-wrap">
@@ -865,6 +914,36 @@ const LiveTracking = () => {
           </div>
         ) : null}
       </div>
+
+      {/* Driver info card — web */}
+      {showDriverInfo && (
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow border border-gray-200 dark:border-gray-700 px-5 py-4 flex items-center gap-4">
+          <div className="h-12 w-12 rounded-full bg-townwize-primary flex items-center justify-center shrink-0">
+            <span className="text-white font-bold text-base">
+              {(driverInfo.name || "W")[0].toUpperCase()}
+            </span>
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="font-bold text-gray-900 dark:text-white">{driverInfo.name}</p>
+            {driverInfo.vehicle && (
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                {[driverInfo.vehicle.color, driverInfo.vehicle.make, driverInfo.vehicle.model].filter(Boolean).join(" ")}
+                {driverInfo.vehicle.plate ? ` · ${driverInfo.vehicle.plate}` : ""}
+              </p>
+            )}
+          </div>
+          <div className="text-right shrink-0 space-y-1">
+            {driverInfo.rating && (
+              <p className="text-sm font-semibold text-yellow-500">⭐ {driverInfo.rating.average} ({driverInfo.rating.count})</p>
+            )}
+            {showEta && (
+              <p className="text-sm font-bold text-townwize-primary dark:text-townwize-accent">
+                ETA {etaMinutes} min
+              </p>
+            )}
+          </div>
+        </div>
+      )}
 
       {fetchError && (
         <div className="rounded-xl bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-800">
