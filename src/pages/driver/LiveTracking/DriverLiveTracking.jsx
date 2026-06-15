@@ -285,7 +285,7 @@ const DriverLiveTracking = () => {
       mapInstanceRef.current.setHeading(heading);
       mapInstanceRef.current.setTilt(45);
       mapInstanceRef.current.setZoom(18);
-      mapInstanceRef.current.panTo(lookAhead(driverPosition, heading, 120));
+      mapInstanceRef.current.panTo(lookAhead(driverPosition, heading, 50));
     } else {
       // Standard follow mode: north-up, no tilt, zoom 15
       mapInstanceRef.current.setHeading(0);

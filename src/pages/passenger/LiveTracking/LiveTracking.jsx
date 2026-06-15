@@ -405,7 +405,7 @@ const LiveTracking = () => {
 
     // When trip starts: zoom in, center on driver, hide the static pickup dot
     if (statusChanged && rideStatus === "ON_TRIP" && mapInstanceRef.current) {
-      mapInstanceRef.current.setZoom(14);
+      mapInstanceRef.current.setZoom(16);
       mapInstanceRef.current.panTo(origin);
       if (pickupMarkerRef.current) {
         pickupMarkerRef.current.map = null; // remove from map — pickup is now behind us
@@ -416,7 +416,7 @@ const LiveTracking = () => {
       // Reroute only if driver has moved >150 m from the last drawn origin —
       // applies to both DRIVER_ASSIGNED and ON_TRIP to keep route in sync
       if (routeRendererRef.current) {
-        if (lastRouteOriginRef.current && haversineM(origin, lastRouteOriginRef.current) < 150) return;
+        if (lastRouteOriginRef.current && haversineM(origin, lastRouteOriginRef.current) < 40) return;
       }
     }
 
@@ -457,7 +457,7 @@ const LiveTracking = () => {
         // After setDirections the renderer may shift the viewport even with
         // preserveViewport:true on some browsers. Force navigation view again.
         if (rideStatus === "ON_TRIP") {
-          map.setZoom(14);
+          map.setZoom(16);
           map.panTo(capturedOrigin);
         }
 
@@ -504,12 +504,8 @@ const LiveTracking = () => {
     const currentStatus = rideRef.current?.status;
 
     if (currentStatus === "ON_TRIP") {
-      // Set navigation zoom exactly once when the first ON_TRIP GPS arrives.
-      // Using a ref (not getZoom()) avoids the race where the map is at zoom
-      // 15 from init (so the < 13 guard never fires) or where the renderer's
-      // async setDirections call resets the viewport before we can check.
       if (!tripZoomAppliedRef.current) {
-        map.setZoom(14);
+        map.setZoom(16);
         tripZoomAppliedRef.current = true;
       }
       map.panTo(pos);
