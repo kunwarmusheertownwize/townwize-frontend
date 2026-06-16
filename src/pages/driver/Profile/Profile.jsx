@@ -1,8 +1,28 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { FaStar } from "react-icons/fa";
 import { toast } from "react-toastify";
 import api from "../../../services/api";
 import { useDriverMode } from "../../../contexts/useDriverMode";
+
+const StarRow = ({ average, count }) => {
+  const filled = Math.round(average || 0);
+  return (
+    <div className="flex items-center gap-2">
+      <div className="flex items-center gap-0.5">
+        {[1, 2, 3, 4, 5].map((n) => (
+          <FaStar key={n} className={`text-base ${n <= filled ? "text-yellow-400" : "text-gray-200 dark:text-gray-600"}`} />
+        ))}
+      </div>
+      <span className="text-sm font-semibold text-gray-800 dark:text-gray-100">
+        {average ? Number(average).toFixed(1) : "—"}
+      </span>
+      {count > 0 && (
+        <span className="text-xs text-gray-400">({count} rating{count !== 1 ? "s" : ""})</span>
+      )}
+    </div>
+  );
+};
 
 const DriverProfile = () => {
   const navigate = useNavigate();
@@ -98,6 +118,10 @@ const DriverProfile = () => {
                 ? "Ready"
                 : "Blocked"}
             </p>
+          </div>
+          <div>
+            <p className="text-gray-500">Rating</p>
+            <StarRow average={profile?.rating?.average} count={profile?.rating?.count || 0} />
           </div>
         </div>
       </div>

@@ -4,6 +4,52 @@ import { useNavigate, useParams } from "react-router-dom";
 import { authFetch } from "../../../utils/authFetch";
 import { isNative } from "../../../utils/platform";
 
+const buildShareText = (ride, fare) => {
+  const toMoney = (n) => `${Number(n || 0).toLocaleString()} PKR`;
+  const pickup = ride?.pickup?.address || ride?.pickup?.label || "—";
+  const dropoff = ride?.dropoff?.address || ride?.dropoff?.label || "—";
+  return [
+    "🚕 Townwize Trip Receipt",
+    `From: ${pickup}`,
+    `To: ${dropoff}`,
+    `Total: ${toMoney(fare.final)}`,
+    `ID: ${ride?._id || ""}`,
+  ].join("\n");
+};
+
+const ShareButton = ({ ride, fare, className = "" }) => {
+  const [copied, setCopied] = useState(false);
+
+  const handleShare = async () => {
+    const text = buildShareText(ride, fare);
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: "Townwize Trip Receipt", text });
+        return;
+      } catch {
+        // user cancelled or share failed — fall through to clipboard
+      }
+    }
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // clipboard not available
+    }
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={handleShare}
+      className={`rounded-lg border border-townwize-primary px-3 py-1.5 text-xs font-semibold text-townwize-primary ${className}`}
+    >
+      {copied ? "Copied!" : "Share"}
+    </button>
+  );
+};
+
 const toMoney = (n) => `${Number(n || 0).toLocaleString()} PKR`;
 const toDateTime = (value) => (value ? new Date(value).toLocaleString() : "-");
 const toLocationText = (value) => {
@@ -324,6 +370,9 @@ export default function PassengerTripReceipt() {
               </div>
             </div>
 
+            {!loading && !error && (
+              <ShareButton ride={ride} fare={fare} className="w-full text-center" />
+            )}
             <button
               className="w-full rounded-xl bg-townwize-primary py-4 text-white font-semibold"
               onClick={() => navigate("/passenger/home", { replace: true })}
@@ -357,6 +406,7 @@ export default function PassengerTripReceipt() {
           >
             Print
           </button>
+          {!loading && !error && <ShareButton ride={ride} fare={fare} />}
         </div>
       </div>
 

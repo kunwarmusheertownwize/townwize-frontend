@@ -19,3 +19,13 @@ export async function fetchDriverEarnings() {
     }
   );
 }
+
+export async function fetchPayoutRequests() {
+  const res = await api.get("/driver/payout/requests");
+  return unwrap(res)?.requests || [];
+}
+
+export async function submitPayoutRequest(amount, note = "") {
+  const res = await api.post("/driver/payout/request", { amount, note });
+  return unwrap(res)?.request || null;
+}

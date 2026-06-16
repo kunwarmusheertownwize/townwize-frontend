@@ -1,12 +1,22 @@
 import { useEffect, useState, useCallback } from "react";
 import { FaBell, FaCheckDouble } from "react-icons/fa";
+import { useNavigate } from "react-router-dom";
 import api from "../../../services/api";
 
+const getDeepLink = (n) => {
+  if (n.type === "TRIP_COMPLETED") return "/driver/trips";
+  if (n.type === "RIDE_CANCELLED") return "/driver/home";
+  return null;
+};
+
 const TYPE_STYLE = {
-  RIDE_ACCEPTED:  { border: "border-townwize-accent",  dot: "bg-townwize-accent" },
-  TRIP_COMPLETED: { border: "border-green-500",        dot: "bg-green-500" },
-  RIDE_CANCELLED: { border: "border-red-400",          dot: "bg-red-400" },
-  SYSTEM:         { border: "border-gray-400",         dot: "bg-gray-400" },
+  RIDE_ACCEPTED:      { border: "border-townwize-accent",  dot: "bg-townwize-accent" },
+  TRIP_COMPLETED:     { border: "border-green-500",        dot: "bg-green-500" },
+  RIDE_CANCELLED:     { border: "border-red-400",          dot: "bg-red-400" },
+  CANCEL_WARNING:     { border: "border-orange-400",       dot: "bg-orange-400" },
+  CANCEL_SUSPENSION:  { border: "border-red-600",          dot: "bg-red-600" },
+  PAYOUT_UPDATE:      { border: "border-blue-400",         dot: "bg-blue-400" },
+  SYSTEM:             { border: "border-gray-400",         dot: "bg-gray-400" },
 };
 
 const formatTime = (iso) => {
@@ -20,6 +30,7 @@ const formatTime = (iso) => {
 };
 
 const DriverNotifications = () => {
+  const navigate = useNavigate();
   const [items, setItems]     = useState([]);
   const [loading, setLoading] = useState(true);
   const [marking, setMarking] = useState(false);
@@ -34,9 +45,11 @@ const DriverNotifications = () => {
 
   useEffect(() => { fetchNotifications(); }, [fetchNotifications]);
 
-  const markOne = async (id) => {
-    setItems((prev) => prev.map((n) => n._id === id ? { ...n, read: true } : n));
-    api.patch(`/notifications/${id}/read`).catch(() => {});
+  const markOne = async (n) => {
+    setItems((prev) => prev.map((item) => item._id === n._id ? { ...item, read: true } : item));
+    api.patch(`/notifications/${n._id}/read`).catch(() => {});
+    const link = getDeepLink(n);
+    if (link) navigate(link);
   };
 
   const markAll = async () => {
@@ -88,7 +101,7 @@ const DriverNotifications = () => {
               <button
                 key={n._id}
                 type="button"
-                onClick={() => markOne(n._id)}
+                onClick={() => markOne(n)}
                 className={`w-full text-left rounded-2xl border-l-4 ${style.border} bg-white dark:bg-townwize-primaryDark px-4 py-3 shadow-sm transition hover:shadow-md ${
                   n.read ? "opacity-70" : ""
                 }`}

@@ -1,6 +1,18 @@
 import { useEffect, useState, useCallback } from "react";
 import { FaBell, FaCheckDouble } from "react-icons/fa";
+import { useNavigate } from "react-router-dom";
 import api from "../../../services/api";
+
+const getDeepLink = (n) => {
+  const rideId = n.rideId;
+  if (!rideId) return null;
+  if (["RIDE_ACCEPTED", "DRIVER_ARRIVED", "TRIP_STARTED"].includes(n.type))
+    return `/passenger/live-tracking/${rideId}`;
+  if (["TRIP_COMPLETED", "CANCEL_FEE_APPLIED"].includes(n.type))
+    return `/passenger/trip-receipt/${rideId}`;
+  if (n.type === "RIDE_CANCELLED") return "/passenger/trips";
+  return null;
+};
 
 const TYPE_STYLE = {
   RIDE_ACCEPTED:     { border: "border-townwize-accent",  dot: "bg-townwize-accent" },
@@ -23,6 +35,7 @@ const formatTime = (iso) => {
 };
 
 const Notifications = () => {
+  const navigate = useNavigate();
   const [items, setItems]     = useState([]);
   const [loading, setLoading] = useState(true);
   const [marking, setMarking] = useState(false);
@@ -37,9 +50,11 @@ const Notifications = () => {
 
   useEffect(() => { fetchNotifications(); }, [fetchNotifications]);
 
-  const markOne = async (id) => {
-    setItems((prev) => prev.map((n) => n._id === id ? { ...n, read: true } : n));
-    api.patch(`/notifications/${id}/read`).catch(() => {});
+  const markOne = async (n) => {
+    setItems((prev) => prev.map((item) => item._id === n._id ? { ...item, read: true } : item));
+    api.patch(`/notifications/${n._id}/read`).catch(() => {});
+    const link = getDeepLink(n);
+    if (link) navigate(link);
   };
 
   const markAll = async () => {
@@ -91,7 +106,7 @@ const Notifications = () => {
                 <button
                   key={n._id}
                   type="button"
-                  onClick={() => markOne(n._id)}
+                  onClick={() => markOne(n)}
                   className={`w-full text-left rounded-2xl border-l-4 ${style.border} bg-white dark:bg-townwize-primaryDark px-4 py-3 shadow-sm transition hover:shadow-md ${
                     n.read ? "opacity-70" : ""
                   }`}
