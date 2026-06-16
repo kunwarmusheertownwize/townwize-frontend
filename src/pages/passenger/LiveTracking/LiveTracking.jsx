@@ -979,6 +979,28 @@ const LiveTracking = () => {
         />
       )}
 
+      {/* Route + fare summary */}
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow border border-gray-200 dark:border-gray-700 p-4 space-y-3">
+        <div className="flex items-start gap-3">
+          <span className="mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full bg-townwize-accent" />
+          <div className="min-w-0">
+            <p className="text-[10px] uppercase tracking-wider text-gray-400">Pickup</p>
+            <p className="text-sm font-medium text-gray-800 dark:text-gray-100 leading-snug">{ride.pickup?.address}</p>
+          </div>
+        </div>
+        <div className="flex items-start gap-3">
+          <span className="mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full bg-red-500" />
+          <div className="min-w-0">
+            <p className="text-[10px] uppercase tracking-wider text-gray-400">Dropoff</p>
+            <p className="text-sm text-gray-600 dark:text-gray-300 leading-snug">{ride.dropoff?.address}</p>
+          </div>
+        </div>
+        <div className="border-t border-gray-100 dark:border-gray-700 pt-3 flex items-center justify-between">
+          <span className="text-sm text-gray-500 dark:text-gray-400">Estimated fare</span>
+          <span className="text-base font-bold text-townwize-primary dark:text-white">{ride.fareEstimate} PKR</span>
+        </div>
+      </div>
+
       {/* Back-button blocked during ARRIVED/ON_TRIP */}
       {tripBlocked && (
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow p-4 space-y-3 border border-amber-200 dark:border-amber-700">
