@@ -97,11 +97,11 @@ const LiveTracking = () => {
 
   // ETA countdown — ticks every second between directions refreshes
   useEffect(() => {
-    const status = String(rideStatus || "").toUpperCase();
+    const status = String(ride?.status || "").toUpperCase();
     if (etaSeconds == null || etaSeconds <= 0 || status === "ARRIVED" || status === "ON_TRIP") return;
     const t = setTimeout(() => setEtaSeconds((s) => Math.max(0, s - 1)), 1000);
     return () => clearTimeout(t);
-  }, [etaSeconds, rideStatus]);
+  }, [etaSeconds, ride?.status]);
 
   // ─────────────────────────────────────────────
   // Fetch active ride (authoritative backend state)
