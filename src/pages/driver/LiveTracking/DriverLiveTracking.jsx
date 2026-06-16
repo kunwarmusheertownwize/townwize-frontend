@@ -203,8 +203,15 @@ const DriverLiveTracking = () => {
       const status = payload.status;
       setRideStatus(status);
 
-      const finalStatuses = ["COMPLETED", "CANCELLED"];
-      if (finalStatuses.includes(String(status).toUpperCase())) {
+      if (String(status).toUpperCase() === "CANCELLED") {
+        sessionStorage.removeItem("activeDriverTrip");
+        setDriverMode(DRIVER_MODES.ONLINE_IDLE);
+        toast.info("The passenger has cancelled the ride.");
+        navigate("/driver/home", { replace: true });
+        return;
+      }
+
+      if (String(status).toUpperCase() === "COMPLETED") {
         sessionStorage.removeItem("activeDriverTrip");
         setDriverMode(DRIVER_MODES.ONLINE_IDLE);
         return;
