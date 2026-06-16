@@ -95,4 +95,10 @@ export const acceptRide = (rideId) => api.post(`/rides/${rideId}/accept`);
 export const updateRideStatus = (rideId, status, extra = {}) =>
     api.post(`/rides/${rideId}/status`, { status, ...extra });
 
+// Shared rides (RideTogether)
+export const createSharedRide = (payload) => api.post("/rides/shared", payload);
+export const searchSharedRides = (params) => api.get("/rides/shared/available", { params });
+export const joinSharedRide = (rideId) => api.post(`/rides/${rideId}/join`);
+export const dispatchSharedRide = (rideId) => api.post(`/rides/${rideId}/dispatch`);
+
 export default api;
