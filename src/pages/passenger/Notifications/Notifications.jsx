@@ -1,15 +1,15 @@
 import { useEffect, useState, useCallback } from "react";
 import { FaBell, FaCheckDouble } from "react-icons/fa";
 import api from "../../../services/api";
-import PassengerLayout from "../../../layouts/PassengerLayout";
 
 const TYPE_STYLE = {
-  RIDE_ACCEPTED:  { border: "border-townwize-accent",  dot: "bg-townwize-accent" },
-  DRIVER_ARRIVED: { border: "border-blue-400",         dot: "bg-blue-400" },
-  TRIP_STARTED:   { border: "border-green-500",        dot: "bg-green-500" },
-  TRIP_COMPLETED: { border: "border-townwize-primary", dot: "bg-townwize-primary" },
-  RIDE_CANCELLED: { border: "border-red-400",          dot: "bg-red-400" },
-  SYSTEM:         { border: "border-gray-400",         dot: "bg-gray-400" },
+  RIDE_ACCEPTED:     { border: "border-townwize-accent",  dot: "bg-townwize-accent" },
+  DRIVER_ARRIVED:    { border: "border-blue-400",         dot: "bg-blue-400" },
+  TRIP_STARTED:      { border: "border-green-500",        dot: "bg-green-500" },
+  TRIP_COMPLETED:    { border: "border-townwize-primary", dot: "bg-townwize-primary" },
+  RIDE_CANCELLED:    { border: "border-red-400",          dot: "bg-red-400" },
+  CANCEL_FEE_APPLIED:{ border: "border-orange-400",       dot: "bg-orange-400" },
+  SYSTEM:            { border: "border-gray-400",         dot: "bg-gray-400" },
 };
 
 const formatTime = (iso) => {
@@ -53,8 +53,7 @@ const Notifications = () => {
   const unreadCount = items.filter((n) => !n.read).length;
 
   return (
-    <PassengerLayout title="Notifications">
-      <div className="max-w-2xl mx-auto space-y-4">
+    <div className="max-w-2xl mx-auto px-4 py-6 space-y-4">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-xl font-bold text-townwize-primary dark:text-white">Notifications</h1>
@@ -114,8 +113,7 @@ const Notifications = () => {
             })}
           </div>
         )}
-      </div>
-    </PassengerLayout>
+    </div>
   );
 };
 
