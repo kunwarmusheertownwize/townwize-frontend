@@ -16,6 +16,9 @@ export const updateDriverVehicleApproval = (driverUserId, body) =>
         method: "PATCH",
         body: JSON.stringify(body || {}),
     });
+export const fetchPriorityAlerts = () => call("/admin/drivers/priority-alerts");
+export const unblockDriver = (driverUserId) =>
+    call(`/admin/drivers/${driverUserId}/unblock`, { method: "PATCH", body: JSON.stringify({}) });
 
 export const fetchCases = (params) => {
     const q = new URLSearchParams(params || {}).toString();
@@ -107,3 +110,7 @@ export const fetchAuditLogs = (params) => {
     return call(`/admin/audit${q ? `?${q}` : ""}`);
 };
 export const fetchAuditLogDetail = (id) => call(`/admin/audit/${id}`);
+
+export const fetchCancellationPolicy = () => call("/admin/cancellation-policy");
+export const saveCancellationPolicy = (config) =>
+    call("/admin/cancellation-policy", { method: "PATCH", body: JSON.stringify({ config }) });

@@ -92,7 +92,7 @@ api.interceptors.response.use(
 
 export const createRide = (payload) => api.post("/rides", payload);
 export const acceptRide = (rideId) => api.post(`/rides/${rideId}/accept`);
-export const updateRideStatus = (rideId, status) =>
-    api.post(`/rides/${rideId}/status`, { status });
+export const updateRideStatus = (rideId, status, extra = {}) =>
+    api.post(`/rides/${rideId}/status`, { status, ...extra });
 
 export default api;

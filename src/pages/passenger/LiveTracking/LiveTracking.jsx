@@ -31,6 +31,62 @@ const DriverAvatar = ({ photoUrl, name, size = "h-12 w-12", textSize = "text-bas
   );
 };
 
+const PASSENGER_CANCEL_REASONS = [
+  "Changed my mind",
+  "Driver taking too long",
+  "Booked by mistake",
+  "Found another ride",
+  "Driver not responding",
+  "Other",
+];
+
+const CancelReasonPanel = ({ ride, cancelReason, setCancelReason, cancelling, onKeep, onConfirm, compact }) => {
+  const withinFreeWindow =
+    !ride?.assignedAt ||
+    Date.now() - new Date(ride.assignedAt).getTime() < 3 * 60 * 1000;
+
+  return (
+    <div className={`bg-white dark:bg-gray-800 rounded-xl shadow p-4 space-y-3 ${compact ? "" : ""}`}>
+      <p className="text-sm font-semibold text-gray-800 dark:text-gray-100">Why are you cancelling?</p>
+
+      <select
+        value={cancelReason}
+        onChange={(e) => setCancelReason(e.target.value)}
+        disabled={cancelling}
+        className="w-full rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 px-3 py-2.5 text-sm text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-townwize-primary"
+      >
+        <option value="">Select a reason…</option>
+        {PASSENGER_CANCEL_REASONS.map((r) => (
+          <option key={r} value={r}>{r}</option>
+        ))}
+      </select>
+
+      {ride?.status !== "REQUESTED" && (
+        <div className={`flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium ${withinFreeWindow ? "bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400" : "bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-400"}`}>
+          <span>{withinFreeWindow ? "✓ Free cancellation" : "⚠ 75 PKR cancellation fee applies"}</span>
+        </div>
+      )}
+
+      <div className="flex gap-2">
+        <button
+          onClick={onKeep}
+          disabled={cancelling}
+          className="flex-1 py-2.5 rounded-xl text-sm font-semibold bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 disabled:opacity-60"
+        >
+          Keep Ride
+        </button>
+        <button
+          onClick={onConfirm}
+          disabled={cancelling || !cancelReason}
+          className="flex-1 py-2.5 rounded-xl text-sm font-semibold bg-red-600 text-white disabled:opacity-50"
+        >
+          {cancelling ? "Cancelling…" : "Confirm Cancel"}
+        </button>
+      </div>
+    </div>
+  );
+};
+
 const getPassengerRideStage = (status) => {
   const normalized = String(status || "").toUpperCase();
   if (normalized === "REQUESTED") {
@@ -110,6 +166,7 @@ const LiveTracking = () => {
   const [confirmCancel, setConfirmCancel] = useState(false);
   const [cancelling, setCancelling] = useState(false);
   const [tripBlocked, setTripBlocked] = useState(false);
+  const [cancelReason, setCancelReason] = useState("");
 
   // ─────────────────────────────────────────────
   // Keep rideRef in sync with ride state
@@ -621,13 +678,15 @@ const LiveTracking = () => {
 
   const handleKeepRide = () => {
     setConfirmCancel(false);
+    setCancelReason("");
     setTripBlocked(false);
   };
 
   const handleCancelRide = async () => {
+    if (!cancelReason) return;
     setCancelling(true);
     try {
-      await updateRideStatus(rideId, "CANCELLED");
+      await updateRideStatus(rideId, "CANCELLED", { reason: cancelReason });
     } catch (err) {
       console.error("Cancel failed", err);
     }
@@ -804,32 +863,15 @@ const LiveTracking = () => {
             {/* Cancel flow */}
             {!tripBlocked && canCancel && (
               confirmCancel ? (
-                <div className="space-y-2">
-                  <p className="text-sm font-medium text-center text-gray-700 dark:text-gray-300">
-                    Cancel this ride?
-                    {String(ride.status).toUpperCase() !== "REQUESTED" && (
-                      <span className="block text-xs text-gray-500 mt-0.5">
-                        Your driver will be notified.
-                      </span>
-                    )}
-                  </p>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={handleKeepRide}
-                      disabled={cancelling}
-                      className="flex-1 py-3 rounded-xl text-sm font-semibold bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 disabled:opacity-60"
-                    >
-                      Keep Ride
-                    </button>
-                    <button
-                      onClick={handleCancelRide}
-                      disabled={cancelling}
-                      className="flex-1 py-3 rounded-xl text-sm font-semibold bg-red-600 text-white disabled:opacity-60"
-                    >
-                      {cancelling ? "Cancelling…" : "Yes, Cancel"}
-                    </button>
-                  </div>
-                </div>
+                <CancelReasonPanel
+                  ride={ride}
+                  cancelReason={cancelReason}
+                  setCancelReason={setCancelReason}
+                  cancelling={cancelling}
+                  onKeep={handleKeepRide}
+                  onConfirm={handleCancelRide}
+                  compact
+                />
               ) : (
                 <button
                   onClick={() => setConfirmCancel(true)}
@@ -1021,32 +1063,14 @@ const LiveTracking = () => {
 
       {canCancel && (
         confirmCancel ? (
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow p-4 space-y-3">
-            <p className="text-sm font-medium text-center text-gray-700 dark:text-gray-300">
-              Cancel this ride?
-              {String(ride.status).toUpperCase() !== "REQUESTED" && (
-                <span className="block text-xs text-gray-500 mt-1">
-                  Your driver will be notified.
-                </span>
-              )}
-            </p>
-            <div className="flex gap-3">
-              <button
-                onClick={handleKeepRide}
-                disabled={cancelling}
-                className="flex-1 py-3 rounded-xl font-semibold bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 disabled:opacity-60"
-              >
-                Keep Ride
-              </button>
-              <button
-                onClick={handleCancelRide}
-                disabled={cancelling}
-                className="flex-1 py-3 rounded-xl font-semibold bg-red-600 text-white disabled:opacity-60"
-              >
-                {cancelling ? "Cancelling…" : "Yes, Cancel"}
-              </button>
-            </div>
-          </div>
+          <CancelReasonPanel
+            ride={ride}
+            cancelReason={cancelReason}
+            setCancelReason={setCancelReason}
+            cancelling={cancelling}
+            onKeep={handleKeepRide}
+            onConfirm={handleCancelRide}
+          />
         ) : (
           <button
             onClick={() => setConfirmCancel(true)}

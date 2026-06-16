@@ -19,6 +19,7 @@ import PayoutBatches from "../pages/Finance/PayoutBatches";
 import FeatureFlags from "../pages/Settings/FeatureFlags";
 import Zones from "../pages/Settings/Zones";
 import PricingSettings from "../pages/Settings/PricingSettings";
+import CancellationPolicy from "../pages/Settings/CancellationPolicy";
 
 export default function AdminRoutes() {
     return (
@@ -40,6 +41,7 @@ export default function AdminRoutes() {
             <Route path="settings/features" element={<FeatureFlags />} />
             <Route path="settings/zones" element={<Zones />} />
             <Route path="settings/pricing" element={<PricingSettings />} />
+            <Route path="settings/cancellation" element={<CancellationPolicy />} />
 
             <Route path="audit" element={<AuditLogs />} />
         </Route>

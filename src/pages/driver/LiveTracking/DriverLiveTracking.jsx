@@ -25,6 +25,11 @@ const DriverLiveTracking = () => {
   const [arriving, setArriving] = useState(false);
   const [startingTrip, setStartingTrip] = useState(false);
   const [endingTrip, setEndingTrip] = useState(false);
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [driverCancelReason, setDriverCancelReason] = useState("");
+  const [cancelling, setCancelling] = useState(false);
+  const [arrivedElapsedSec, setArrivedElapsedSec] = useState(0);
+  const [showNoShowConfirm, setShowNoShowConfirm] = useState(false);
 
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
@@ -379,6 +384,13 @@ const DriverLiveTracking = () => {
     setRideStatus(incomingRide.status);
   }, [incomingRide?.rideId, incomingRide?.status, rideId]);
 
+  // Track time since arrival for no-show button (appears after 6 min)
+  useEffect(() => {
+    if (rideStatus !== "ARRIVED") { setArrivedElapsedSec(0); return; }
+    const t = setInterval(() => setArrivedElapsedSec((s) => s + 1), 1000);
+    return () => clearInterval(t);
+  }, [rideStatus]);
+
   const openNavigation = () => {
     if (!pickupAddress) return;
     window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(pickupAddress)}`, "_blank");
@@ -429,6 +441,37 @@ const DriverLiveTracking = () => {
       toast.error("Failed to complete trip");
       setEndingTrip(false);
     }
+  };
+
+  const handleCancelRide = async () => {
+    if (!driverCancelReason || cancelling) return;
+    setCancelling(true);
+    try {
+      await api.post(`/rides/${rideId}/status`, { status: "CANCELLED", reason: driverCancelReason });
+      toast.info("Ride cancelled.");
+    } catch {
+      toast.error("Could not cancel ride. Please try again.");
+      setCancelling(false);
+      return;
+    }
+    sessionStorage.removeItem("activeDriverTrip");
+    setDriverMode(DRIVER_MODES.ONLINE_IDLE);
+    navigate("/driver/home", { replace: true });
+  };
+
+  const handleNoShow = async () => {
+    try {
+      await api.post(`/rides/${rideId}/no-show`);
+      toast.info("No-show recorded. Ride cancelled.");
+    } catch (err) {
+      const msg = err?.response?.data?.message || "Could not record no-show.";
+      toast.error(msg);
+      setShowNoShowConfirm(false);
+      return;
+    }
+    sessionStorage.removeItem("activeDriverTrip");
+    setDriverMode(DRIVER_MODES.ONLINE_IDLE);
+    navigate("/driver/home", { replace: true });
   };
 
   if (!hasRequest) return null;
@@ -491,6 +534,81 @@ const DriverLiveTracking = () => {
     </div>
   );
 
+  const noShowEligible = rideStatus === "ARRIVED" && arrivedElapsedSec >= 360;
+  const noShowRemainingSec = rideStatus === "ARRIVED" ? Math.max(0, 360 - arrivedElapsedSec) : 0;
+
+  const cancelSection = (
+    <div className="space-y-2">
+      {/* No-show button — only after 6 min at ARRIVED */}
+      {rideStatus === "ARRIVED" && (
+        noShowEligible ? (
+          showNoShowConfirm ? (
+            <div className="rounded-xl border border-orange-200 dark:border-orange-800 bg-orange-50 dark:bg-orange-950 p-3 space-y-2">
+              <p className="text-xs font-semibold text-orange-800 dark:text-orange-300">Report passenger no-show?</p>
+              <p className="text-xs text-orange-700 dark:text-orange-400">A 120 PKR no-show fee will be recorded. The ride will be cancelled.</p>
+              <div className="flex gap-2">
+                <button onClick={() => setShowNoShowConfirm(false)} className="flex-1 py-2 rounded-xl text-xs font-semibold bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200">
+                  Back
+                </button>
+                <button onClick={handleNoShow} className="flex-1 py-2 rounded-xl text-xs font-semibold bg-orange-600 text-white">
+                  Confirm No-Show
+                </button>
+              </div>
+            </div>
+          ) : (
+            <button onClick={() => setShowNoShowConfirm(true)} className="w-full py-2.5 rounded-xl text-sm font-semibold border border-orange-300 dark:border-orange-700 text-orange-600 dark:text-orange-400">
+              Passenger No-Show
+            </button>
+          )
+        ) : (
+          <p className="text-center text-xs text-gray-400 dark:text-gray-500">
+            No-show option available in {Math.ceil(noShowRemainingSec / 60)} min {noShowRemainingSec % 60}s
+          </p>
+        )
+      )}
+
+      {/* Cancel ride */}
+      {!showNoShowConfirm && (
+        showCancelModal ? (
+          <div className="rounded-xl border border-red-200 dark:border-red-800 bg-white dark:bg-gray-800 p-3 space-y-2">
+            <p className="text-sm font-semibold text-gray-800 dark:text-gray-100">Why are you cancelling?</p>
+            {rideStatus === "ON_TRIP" && (
+              <div className="rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 px-3 py-2 text-xs text-red-700 dark:text-red-400">
+                ⚠️ Cancelling during an active trip may result in a warning or account suspension.
+              </div>
+            )}
+            <select
+              value={driverCancelReason}
+              onChange={(e) => setDriverCancelReason(e.target.value)}
+              disabled={cancelling}
+              className="w-full rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 px-3 py-2.5 text-sm text-gray-800 dark:text-gray-100 focus:outline-none"
+            >
+              <option value="">Select a reason…</option>
+              <option>Passenger not reachable</option>
+              <option>Incorrect pickup location</option>
+              <option>Vehicle breakdown / issue</option>
+              <option>Personal emergency</option>
+              <option>Passenger behaviour issue</option>
+              <option>Other</option>
+            </select>
+            <div className="flex gap-2">
+              <button onClick={() => { setShowCancelModal(false); setDriverCancelReason(""); }} disabled={cancelling} className="flex-1 py-2 rounded-xl text-xs font-semibold bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 disabled:opacity-60">
+                Back
+              </button>
+              <button onClick={handleCancelRide} disabled={cancelling || !driverCancelReason} className="flex-1 py-2 rounded-xl text-xs font-semibold bg-red-600 text-white disabled:opacity-50">
+                {cancelling ? "Cancelling…" : "Cancel Ride"}
+              </button>
+            </div>
+          </div>
+        ) : (
+          <button onClick={() => setShowCancelModal(true)} className="w-full py-2 rounded-xl text-xs font-medium text-red-500 dark:text-red-400 hover:underline">
+            Cancel ride
+          </button>
+        )
+      )}
+    </div>
+  );
+
   // ─── Mobile (Capacitor) — full-screen map + floating bottom card ──────────
   if (isNative()) {
     return (
@@ -532,6 +650,7 @@ const DriverLiveTracking = () => {
             </div>
           </div>
           {actionButtons}
+          <div className="mt-1">{cancelSection}</div>
         </div>
       </div>
     );
@@ -555,6 +674,7 @@ const DriverLiveTracking = () => {
           <p><strong>Fare:</strong> {fare} PKR</p>
         </div>
         <div className="mt-4">{actionButtons}</div>
+        <div className="mt-1">{cancelSection}</div>
       </div>
     </div>
   );
