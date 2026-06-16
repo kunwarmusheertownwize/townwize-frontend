@@ -144,8 +144,10 @@ export default function PassengerTrips() {
                       {formatDate(ride.createdAt)} · {formatTime(ride.createdAt)}
                     </span>
                     {isCompleted && rated && (
-                      <span className="flex items-center gap-1 rounded-full bg-yellow-50 dark:bg-yellow-900/20 px-2 py-0.5 text-xs font-semibold text-yellow-600 dark:text-yellow-400">
-                        <FaStar className="text-[10px]" /> {rated}
+                      <span className="flex items-center gap-0.5 rounded-full bg-yellow-50 dark:bg-yellow-900/20 px-2 py-0.5">
+                        {[1,2,3,4,5].map((n) => (
+                          <FaStar key={n} className={`text-[9px] ${n <= rated ? "text-yellow-400" : "text-gray-200 dark:text-gray-600"}`} />
+                        ))}
                       </span>
                     )}
                     {isCompleted && !rated && (

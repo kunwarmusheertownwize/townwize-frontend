@@ -1,12 +1,35 @@
 /* global google */
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { FaStar } from "react-icons/fa";
 import { loadGoogleMaps } from "../../../utils/googleMapsLoader";
 import api, { updateRideStatus } from "../../../services/api";
 import { useRideSocket } from "../../../hooks/useRideSocket";
 import { useParams, useNavigate } from "react-router-dom";
 import { isNative } from "../../../utils/platform";
 import { App } from "@capacitor/app";
+
+const StarRating = ({ average, size = "text-sm" }) => {
+  const filled = Math.round(average || 0);
+  return (
+    <div className="flex items-center gap-0.5">
+      {[1, 2, 3, 4, 5].map((n) => (
+        <FaStar key={n} className={`${size} ${n <= filled ? "text-yellow-400" : "text-gray-200 dark:text-gray-600"}`} />
+      ))}
+    </div>
+  );
+};
+
+const DriverAvatar = ({ photoUrl, name, size = "h-12 w-12", textSize = "text-base" }) => {
+  if (photoUrl) {
+    return <img src={photoUrl} alt="" className={`${size} rounded-full object-cover shrink-0 border-2 border-white dark:border-gray-700 shadow`} />;
+  }
+  return (
+    <div className={`${size} rounded-full bg-townwize-primary flex items-center justify-center shrink-0`}>
+      <span className={`text-white font-bold ${textSize}`}>{(name || "W")[0].toUpperCase()}</span>
+    </div>
+  );
+};
 
 const getPassengerRideStage = (status) => {
   const normalized = String(status || "").toUpperCase();
@@ -721,12 +744,8 @@ const LiveTracking = () => {
 
             {/* Driver info card */}
             {showDriverInfo && (
-              <div className="flex items-center gap-3 pt-1 border-t border-gray-100 dark:border-gray-800">
-                <div className="h-10 w-10 rounded-full bg-townwize-primary flex items-center justify-center shrink-0">
-                  <span className="text-white font-bold text-sm">
-                    {(driverInfo.name || "W")[0].toUpperCase()}
-                  </span>
-                </div>
+              <div className="flex items-center gap-3 pt-2 border-t border-gray-100 dark:border-gray-800">
+                <DriverAvatar photoUrl={driverInfo.photoUrl} name={driverInfo.name} size="h-11 w-11" textSize="text-sm" />
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-sm text-gray-800 dark:text-gray-100">{driverInfo.name}</p>
                   {driverInfo.vehicle && (
@@ -735,17 +754,18 @@ const LiveTracking = () => {
                       {driverInfo.vehicle.plate ? ` · ${driverInfo.vehicle.plate}` : ""}
                     </p>
                   )}
-                </div>
-                <div className="text-right shrink-0 space-y-0.5">
                   {driverInfo.rating && (
-                    <p className="text-xs font-semibold text-yellow-500">⭐ {driverInfo.rating.average}</p>
-                  )}
-                  {showEta && (
-                    <p className="text-xs font-bold text-townwize-primary dark:text-townwize-accent">
-                      {etaMinutes} min
-                    </p>
+                    <div className="mt-0.5">
+                      <StarRating average={driverInfo.rating.average} size="text-[10px]" />
+                    </div>
                   )}
                 </div>
+                {showEta && (
+                  <div className="shrink-0 text-right">
+                    <p className="text-[10px] text-gray-400">Arrives in</p>
+                    <p className="text-lg font-extrabold text-townwize-primary dark:text-townwize-accent leading-tight">{etaMinutes} min</p>
+                  </div>
+                )}
               </div>
             )}
 
@@ -813,7 +833,7 @@ const LiveTracking = () => {
               ) : (
                 <button
                   onClick={() => setConfirmCancel(true)}
-                  className="w-full py-3 rounded-xl text-sm font-semibold bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200"
+                  className="w-full py-3 rounded-xl text-sm font-semibold border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400"
                 >
                   Cancel Ride
                 </button>
@@ -918,11 +938,7 @@ const LiveTracking = () => {
       {/* Driver info card — web */}
       {showDriverInfo && (
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow border border-gray-200 dark:border-gray-700 px-5 py-4 flex items-center gap-4">
-          <div className="h-12 w-12 rounded-full bg-townwize-primary flex items-center justify-center shrink-0">
-            <span className="text-white font-bold text-base">
-              {(driverInfo.name || "W")[0].toUpperCase()}
-            </span>
-          </div>
+          <DriverAvatar photoUrl={driverInfo.photoUrl} name={driverInfo.name} />
           <div className="flex-1 min-w-0">
             <p className="font-bold text-gray-900 dark:text-white">{driverInfo.name}</p>
             {driverInfo.vehicle && (
@@ -931,17 +947,18 @@ const LiveTracking = () => {
                 {driverInfo.vehicle.plate ? ` · ${driverInfo.vehicle.plate}` : ""}
               </p>
             )}
-          </div>
-          <div className="text-right shrink-0 space-y-1">
             {driverInfo.rating && (
-              <p className="text-sm font-semibold text-yellow-500">⭐ {driverInfo.rating.average} ({driverInfo.rating.count})</p>
-            )}
-            {showEta && (
-              <p className="text-sm font-bold text-townwize-primary dark:text-townwize-accent">
-                ETA {etaMinutes} min
-              </p>
+              <div className="mt-1">
+                <StarRating average={driverInfo.rating.average} size="text-xs" />
+              </div>
             )}
           </div>
+          {showEta && (
+            <div className="shrink-0 text-right">
+              <p className="text-xs text-gray-400">Arrives in</p>
+              <p className="text-xl font-extrabold text-townwize-primary dark:text-townwize-accent">{etaMinutes} min</p>
+            </div>
+          )}
         </div>
       )}
 
@@ -961,21 +978,6 @@ const LiveTracking = () => {
           className="w-full h-96 rounded-xl shadow border border-gray-300 dark:border-gray-700"
         />
       )}
-
-      <div className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow space-y-2">
-        <p className="text-sm">
-          <strong>Status:</strong> {ride.status}
-        </p>
-        <p className="text-sm">
-          <strong>Pickup:</strong> {ride.pickup.address}
-        </p>
-        <p className="text-sm">
-          <strong>Dropoff:</strong> {ride.dropoff.address}
-        </p>
-        <p className="text-sm">
-          <strong>Fare:</strong> {ride.fareEstimate} PKR
-        </p>
-      </div>
 
       {/* Back-button blocked during ARRIVED/ON_TRIP */}
       {tripBlocked && (
@@ -1026,7 +1028,7 @@ const LiveTracking = () => {
         ) : (
           <button
             onClick={() => setConfirmCancel(true)}
-            className="w-full py-3 rounded-xl font-semibold bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950 dark:hover:text-red-400 transition-colors"
+            className="w-full py-3 rounded-xl font-semibold border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950 transition-colors"
           >
             Cancel Ride
           </button>
