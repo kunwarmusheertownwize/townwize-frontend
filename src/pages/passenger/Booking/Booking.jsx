@@ -121,7 +121,7 @@ const Booking = () => {
   }, [activeRideId, driverSearchSec, driverTimedOut, pooling, dispatchingSolo]);
 
   const goToTracking = useCallback((rId) => {
-    navigate("/passenger/live-tracking", {
+    navigate(`/passenger/live-tracking/${rId}`, {
       replace: true,
       state: {
         rideId: rId,
