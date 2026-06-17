@@ -24,18 +24,21 @@ export function useRideSocket({
   onRideUpdated,
   onRideAccepted,
   onDriverLocation,
+  onPoolMatched,
 } = {}) {
   const rideRequestedRef = useRef(onRideRequested);
   const rideUpdatedRef = useRef(onRideUpdated);
   const rideAcceptedRef = useRef(onRideAccepted);
   const driverLocationRef = useRef(onDriverLocation);
+  const poolMatchedRef = useRef(onPoolMatched);
 
   useEffect(() => {
     rideRequestedRef.current = onRideRequested;
     rideUpdatedRef.current = onRideUpdated;
     rideAcceptedRef.current = onRideAccepted;
     driverLocationRef.current = onDriverLocation;
-  }, [onRideRequested, onRideUpdated, onRideAccepted, onDriverLocation]);
+    poolMatchedRef.current = onPoolMatched;
+  }, [onRideRequested, onRideUpdated, onRideAccepted, onDriverLocation, onPoolMatched]);
 
   useEffect(() => {
     const joinRooms = () => {
@@ -79,11 +82,16 @@ export function useRideSocket({
       driverLocationRef.current?.(payload);
     };
 
+    const onPoolMatchedSocket = (payload) => {
+      poolMatchedRef.current?.(payload);
+    };
+
     socket.on("connect", onConnect);
     socket.on("ride:requested", onRideRequestedSocket);
     socket.on("ride:updated", onRideUpdatedSocket);
     socket.on("ride:accepted", onRideAcceptedSocket);
     socket.on("driver:location", onDriverLocationSocket);
+    socket.on("ride:pool_matched", onPoolMatchedSocket);
     window.addEventListener("storage", joinRooms);
 
     return () => {
@@ -92,6 +100,7 @@ export function useRideSocket({
       socket.off("ride:updated", onRideUpdatedSocket);
       socket.off("ride:accepted", onRideAcceptedSocket);
       socket.off("driver:location", onDriverLocationSocket);
+      socket.off("ride:pool_matched", onPoolMatchedSocket);
       window.removeEventListener("storage", joinRooms);
     };
   }, [joinRideId]);
