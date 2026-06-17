@@ -14,12 +14,18 @@ const Booking = () => {
 
   const isRideTogether = state?.rideType === "RideTogether";
 
-  const [rideId, setRideId] = useState(null);
+  // TripSummary may pre-create the ride and pass rideId + pooling state directly
+  const preCreatedRideId = state?.rideId || null;
+  const preCreatedPooling = state?.pooling || false;
+  const preCreatedWindowMin = state?.matchWindowMinutes || 3;
+
+  const [rideId, setRideId] = useState(preCreatedRideId);
   const [primaryRideId, setPrimaryRideId] = useState(null); // set when pool_matched
-  const [pooling, setPooling] = useState(false);
+  const [pooling, setPooling] = useState(preCreatedPooling);
   const [poolMatched, setPoolMatched] = useState(false);
-  const [poolWindowSec, setPoolWindowSec] = useState(DEFAULT_POOL_WINDOW_SEC);
-  const [poolCountdown, setPoolCountdown] = useState(DEFAULT_POOL_WINDOW_SEC);
+  const initialWindowSec = preCreatedPooling ? preCreatedWindowMin * 60 : DEFAULT_POOL_WINDOW_SEC;
+  const [poolWindowSec, setPoolWindowSec] = useState(initialWindowSec);
+  const [poolCountdown, setPoolCountdown] = useState(initialWindowSec);
   const [poolTimedOut, setPoolTimedOut] = useState(false);
   const [dispatchingSolo, setDispatchingSolo] = useState(false);
   const [driverSearchSec, setDriverSearchSec] = useState(DRIVER_SEARCH_TIMEOUT_SEC);
@@ -28,8 +34,9 @@ const Booking = () => {
 
   const activeRideId = primaryRideId || rideId;
 
-  // ❌ Guard: redirect if route data missing
+  // ❌ Guard: redirect if route data missing (skip if pre-created ride passed in)
   useEffect(() => {
+    if (preCreatedRideId) return;
     if (
       !state?.pickupCoords ||
       !state?.dropoffCoords ||
@@ -39,7 +46,7 @@ const Booking = () => {
     ) {
       navigate("/", { replace: true });
     }
-  }, [state, navigate]);
+  }, [state, navigate, preCreatedRideId]);
 
   // Build payload once
   if (
@@ -60,8 +67,9 @@ const Booking = () => {
     };
   }
 
-  // POST /rides once
+  // POST /rides once — skip if TripSummary already created the ride
   useEffect(() => {
+    if (preCreatedRideId) { hasRequestedRef.current = true; return; }
     if (!payloadRef.current || rideId || hasRequestedRef.current) return;
     hasRequestedRef.current = true;
 

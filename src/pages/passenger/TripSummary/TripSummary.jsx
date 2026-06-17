@@ -389,18 +389,43 @@ const TripSummary = () => {
               if (!res.ok) {
                 throw new Error(getRideCreateErrorMessage(json, res.status));
               }
-              const rideId =
-                json?.data?.rideId ||
-                json?.rideId ||
-                json?._id;
+              const data = json?.data || {};
+              const rideId = data.rideId || json?.rideId || json?._id;
 
               if (!rideId) {
                 throw new Error("Ride creation failed: Missing ride id");
               }
-              // ✅ Persist active passenger ride
-              localStorage.setItem("activePassengerRideId", rideId);
 
-              // Navigate to live tracking (URL is source of truth)
+              // RideTogether: route through pooling UI
+              if (rideType === "RideTogether") {
+                if (data.matched && data.primaryRideId) {
+                  // Immediately matched — go straight to tracking on primary ride
+                  localStorage.setItem("activePassengerRideId", data.primaryRideId);
+                  navigate(`/passenger/live-tracking/${data.primaryRideId}`, { replace: true });
+                } else {
+                  // Sitting in POOLING — show countdown in Booking.jsx
+                  navigate("/passenger/booking", {
+                    replace: true,
+                    state: {
+                      rideId,
+                      pooling: true,
+                      matchWindowMinutes: data.matchWindowMinutes || 3,
+                      pickup: state.pickup,
+                      dropoff: state.dropoff,
+                      pickupCoords: state.pickupCoords,
+                      dropoffCoords: state.dropoffCoords,
+                      fare: quote.finalFare || fare,
+                      distanceKm: state.distanceKm,
+                      etaMinutes: state.etaMinutes,
+                      rideType,
+                    },
+                  });
+                }
+                return;
+              }
+
+              // Private ride — navigate to live tracking directly
+              localStorage.setItem("activePassengerRideId", rideId);
               navigate(`/passenger/live-tracking/${rideId}`, { replace: true });
 
             } catch (err) {
