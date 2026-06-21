@@ -97,6 +97,15 @@ const SelectRide = () => {
     }
   }, [user, showAuthModal]);
 
+  // Show booking error passed back from TripRequest (e.g. GuestTowner route restriction)
+  useEffect(() => {
+    const bookingError = sessionStorage.getItem("passengerBookingError");
+    if (bookingError) {
+      sessionStorage.removeItem("passengerBookingError");
+      toast.error(bookingError, { autoClose: 6000 });
+    }
+  }, []);
+
   // Redirect to home if no pickup/dropoff in state or sessionStorage
   // ✅ Auth gate runs AFTER map hooks mount
   useEffect(() => {

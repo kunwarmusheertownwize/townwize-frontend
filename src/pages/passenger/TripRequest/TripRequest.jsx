@@ -80,6 +80,11 @@ const TripRequest = () => {
 
       } catch (err) {
         console.error("Ride creation failed", err);
+        const apiMsg = err?.response?.data?.error?.message;
+        sessionStorage.setItem(
+          "passengerBookingError",
+          apiMsg || "Could not book your ride. Please try again."
+        );
         navigate("/passenger/select-ride", { replace: true });
       }
     };
