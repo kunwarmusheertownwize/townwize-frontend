@@ -1,5 +1,5 @@
 // File: src/pages/passenger/Profile/Profile.jsx
-import { useState, useContext } from "react";
+import { useState, useContext, useEffect, useCallback } from "react";
 import {
   FaUser,
   FaIdCard,
@@ -8,12 +8,18 @@ import {
   FaCog,
   FaSignOutAlt,
   FaChevronRight,
+  FaGift,
+  FaCopy,
+  FaShareAlt,
+  FaUsers,
+  FaTicketAlt,
 } from "react-icons/fa";
 import { toast } from "react-toastify";
 import { AuthContext } from "../../../contexts/AuthContextBase";
 import { ThemeContext } from "../../../contexts/ThemeContext";
 import { useNavigate } from "react-router-dom";
 import { isNative } from "../../../utils/platform";
+import api from "../../../services/api";
 
 export default function Profile() {
   const [activeTab, setActiveTab] = useState("personal");
@@ -28,10 +34,65 @@ export default function Profile() {
     ? `#TW-${user._id.slice(-5).toUpperCase()}`
     : "#TW-00000";
 
+  const [referralData, setReferralData] = useState(null);
+  const [coupons, setCoupons] = useState([]);
+  const [guestInvites, setGuestInvites] = useState([]);
+  const [generatingInvite, setGeneratingInvite] = useState(false);
+
+  const fetchReferral = useCallback(async () => {
+    try {
+      const [codeRes, couponsRes, invitesRes] = await Promise.all([
+        api.get("/referral/my-code"),
+        api.get("/coupons/my"),
+        api.get("/referral/guest-invites"),
+      ]);
+      if (codeRes.data?.success) setReferralData(codeRes.data.data);
+      if (couponsRes.data?.success) setCoupons(couponsRes.data.data.coupons || []);
+      if (invitesRes.data?.success) {
+        setGuestInvites(invitesRes.data.data.invites || []);
+      }
+    } catch {
+      // non-critical — silently ignore
+    }
+  }, []);
+
+  useEffect(() => { fetchReferral(); }, [fetchReferral]);
+
+  const handleCopyCode = () => {
+    if (!referralData?.code) return;
+    navigator.clipboard.writeText(referralData.inviteLink || referralData.code);
+    toast.success("Referral link copied!");
+  };
+
+  const handleShareCode = async () => {
+    if (!referralData?.inviteLink) return;
+    if (navigator.share) {
+      await navigator.share({ title: "Join Townwize", url: referralData.inviteLink, text: "Join me on Townwize!" });
+    } else {
+      handleCopyCode();
+    }
+  };
+
+  const handleGenerateInvite = async () => {
+    setGeneratingInvite(true);
+    try {
+      const res = await api.post("/referral/guest-invite");
+      if (res.data?.success) {
+        toast.success("GuestTowner invite code generated!");
+        fetchReferral();
+      }
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "Could not generate invite");
+    } finally {
+      setGeneratingInvite(false);
+    }
+  };
+
   const tabs = [
     { key: "personal", label: "Personal Info", icon: <FaUser /> },
     { key: "verification", label: "Verification Docs", icon: <FaIdCard /> },
     { key: "history", label: "Ride History", icon: <FaHistory /> },
+    { key: "referral", label: "Referral & Rewards", icon: <FaGift /> },
     { key: "wallet", label: "Wallet Balance", icon: <FaWallet /> },
     { key: "settings", label: "Settings", icon: <FaCog /> },
   ];
@@ -147,6 +208,85 @@ export default function Profile() {
                           </div>
                         </div>
                       ))}
+                    </div>
+                  )}
+
+                  {tab.key === "referral" && (
+                    <div className="space-y-4">
+                      {/* My referral code */}
+                      {referralData ? (
+                        <div className="p-3 rounded-xl bg-townwize-primary/10 dark:bg-townwize-primary/20 border border-townwize-primary/20 space-y-2">
+                          <p className="text-xs text-gray-500 dark:text-gray-400">Your referral code</p>
+                          <div className="flex items-center gap-2">
+                            <span className="text-lg font-bold tracking-widest text-townwize-primary dark:text-townwize-accent font-mono">
+                              {referralData.code}
+                            </span>
+                            <button onClick={handleCopyCode} className="p-1.5 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-300">
+                              <FaCopy size={12} />
+                            </button>
+                            <button onClick={handleShareCode} className="p-1.5 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-300">
+                              <FaShareAlt size={12} />
+                            </button>
+                          </div>
+                          <p className="text-[10px] text-gray-400">{referralData.rewardsEarned} reward{referralData.rewardsEarned !== 1 ? "s" : ""} earned · {referralData.pendingRewards} pending</p>
+                        </div>
+                      ) : (
+                        <p className="text-sm text-gray-400">Loading referral info…</p>
+                      )}
+
+                      {/* Active coupons */}
+                      {coupons.length > 0 && (
+                        <div className="space-y-2">
+                          <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Active Coupons</p>
+                          {coupons.map((c, i) => (
+                            <div key={i} className="flex items-center justify-between p-2.5 rounded-xl border border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-950">
+                              <div className="flex items-center gap-2">
+                                <FaTicketAlt className="text-green-600 dark:text-green-400" size={12} />
+                                <span className="text-xs font-semibold text-green-700 dark:text-green-300">
+                                  {c.discountPct}% off {c.type === "FARE_DISCOUNT" ? "fare" : "commission"}
+                                </span>
+                              </div>
+                              <span className="text-[10px] text-gray-400">
+                                Exp {new Date(c.expiresAt).toLocaleDateString()}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* GuestTowner invite slots */}
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">GuestTowner Invites ({guestInvites.length}/6)</p>
+                          {guestInvites.length < 6 && (
+                            <button
+                              onClick={handleGenerateInvite}
+                              disabled={generatingInvite}
+                              className="text-[10px] px-2 py-1 bg-townwize-primary text-white rounded-lg disabled:opacity-60"
+                            >
+                              {generatingInvite ? "…" : "+ Generate"}
+                            </button>
+                          )}
+                        </div>
+                        {guestInvites.map((inv, i) => (
+                          <div key={i} className="flex items-center justify-between p-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-xs">
+                            <span className="font-mono font-bold text-townwize-primary dark:text-townwize-accent">{inv.code}</span>
+                            {inv.isUsed ? (
+                              <span className="text-green-600 dark:text-green-400">Used by {inv.usedBy || "—"}</span>
+                            ) : (
+                              <button
+                                onClick={() => { navigator.clipboard.writeText(inv.inviteLink); toast.success("Invite link copied!"); }}
+                                className="flex items-center gap-1 text-gray-400"
+                              >
+                                <FaCopy size={10} /> Copy
+                              </button>
+                            )}
+                          </div>
+                        ))}
+                        {guestInvites.length === 0 && (
+                          <p className="text-xs text-gray-400">No invites generated yet.</p>
+                        )}
+                      </div>
                     </div>
                   )}
 
@@ -346,6 +486,102 @@ export default function Profile() {
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+        )}
+
+        {activeTab === "referral" && (
+          <div className="p-6 rounded-2xl bg-white dark:bg-townwize-primaryDark border border-gray-200 dark:border-gray-700 shadow-sm space-y-6">
+            <h3 className="text-lg font-semibold text-townwize-primary dark:text-white">Referral & Rewards</h3>
+
+            {/* General referral code card */}
+            <div className="p-5 rounded-2xl bg-gradient-to-br from-townwize-primary to-townwize-primaryDark text-white space-y-3">
+              <p className="text-sm text-white/70">Your referral code</p>
+              <div className="flex items-center gap-3">
+                <span className="text-3xl font-bold tracking-widest font-mono">
+                  {referralData?.code || "—"}
+                </span>
+                <button onClick={handleCopyCode} className="p-2 rounded-xl bg-white/10 hover:bg-white/20 transition" title="Copy link">
+                  <FaCopy />
+                </button>
+                <button onClick={handleShareCode} className="p-2 rounded-xl bg-white/10 hover:bg-white/20 transition" title="Share">
+                  <FaShareAlt />
+                </button>
+              </div>
+              {referralData?.inviteLink && (
+                <p className="text-xs text-white/50 break-all">{referralData.inviteLink}</p>
+              )}
+              <div className="flex gap-4 text-xs text-white/70 pt-1 border-t border-white/10">
+                <span>{referralData?.rewardsEarned ?? "—"} rewards earned</span>
+                <span>{referralData?.pendingRewards ?? "—"} pending</span>
+              </div>
+            </div>
+
+            {/* Active coupons */}
+            <div>
+              <h4 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">Active Coupons</h4>
+              {coupons.length === 0 ? (
+                <p className="text-sm text-gray-400">No active coupons. Refer someone to earn your first reward!</p>
+              ) : (
+                <div className="grid sm:grid-cols-2 gap-3">
+                  {coupons.map((c, i) => (
+                    <div key={i} className="flex items-center gap-3 p-4 rounded-2xl border border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-950">
+                      <FaTicketAlt className="text-green-600 dark:text-green-400 shrink-0" />
+                      <div>
+                        <p className="font-semibold text-green-700 dark:text-green-300">
+                          {c.discountPct}% off {c.type === "FARE_DISCOUNT" ? "your next fare" : "commission"} (max {c.maxDiscountPkr} PKR)
+                        </p>
+                        <p className="text-xs text-gray-400 mt-0.5">
+                          {c.origin === "referee_welcome" ? "Welcome reward" : "Referral reward"} · Expires {new Date(c.expiresAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* GuestTowner invite codes */}
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  GuestTowner Invites ({guestInvites.length}/6)
+                </h4>
+                {guestInvites.length < 6 && (
+                  <button
+                    onClick={handleGenerateInvite}
+                    disabled={generatingInvite}
+                    className="flex items-center gap-2 px-4 py-2 bg-townwize-primary text-white text-xs font-semibold rounded-xl hover:bg-townwize-primaryDark disabled:opacity-60 transition"
+                  >
+                    <FaUsers size={12} />
+                    {generatingInvite ? "Generating…" : "Generate Invite"}
+                  </button>
+                )}
+              </div>
+              {guestInvites.length === 0 ? (
+                <p className="text-sm text-gray-400">No GuestTowner invites generated yet. You can generate up to 6.</p>
+              ) : (
+                <div className="space-y-2">
+                  {guestInvites.map((inv, i) => (
+                    <div key={i} className="flex items-center justify-between p-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
+                      <div>
+                        <span className="font-mono font-bold text-townwize-primary dark:text-townwize-accent">{inv.code}</span>
+                        {inv.isUsed && (
+                          <span className="ml-3 text-xs text-green-600 dark:text-green-400">Used by {inv.usedBy}</span>
+                        )}
+                      </div>
+                      {!inv.isUsed && (
+                        <button
+                          onClick={() => { navigator.clipboard.writeText(inv.inviteLink); toast.success("Invite link copied!"); }}
+                          className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-townwize-primary dark:hover:text-townwize-accent transition"
+                        >
+                          <FaCopy size={11} /> Copy Link
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         )}

@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { FaStar } from "react-icons/fa";
+import { FaStar, FaGift, FaCopy, FaShareAlt, FaTicketAlt } from "react-icons/fa";
 import { toast } from "react-toastify";
 import api from "../../../services/api";
 import { useDriverMode } from "../../../contexts/useDriverMode";
@@ -30,6 +30,36 @@ const DriverProfile = () => {
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState(null);
   const [email, setEmail] = useState("-");
+  const [referralData, setReferralData] = useState(null);
+  const [coupons, setCoupons] = useState([]);
+
+  const fetchReferral = useCallback(async () => {
+    try {
+      const [codeRes, couponsRes] = await Promise.all([
+        api.get("/referral/my-code"),
+        api.get("/coupons/my"),
+      ]);
+      if (codeRes.data?.success) setReferralData(codeRes.data.data);
+      if (couponsRes.data?.success) setCoupons(couponsRes.data.data.coupons || []);
+    } catch { /* non-critical */ }
+  }, []);
+
+  useEffect(() => { fetchReferral(); }, [fetchReferral]);
+
+  const handleCopyCode = () => {
+    if (!referralData?.inviteLink) return;
+    navigator.clipboard.writeText(referralData.inviteLink);
+    toast.success("Referral link copied!");
+  };
+
+  const handleShareCode = async () => {
+    if (!referralData?.inviteLink) return;
+    if (navigator.share) {
+      await navigator.share({ title: "Join as a Wizer", url: referralData.inviteLink, text: "Join Townwize as a Wizer!" });
+    } else {
+      handleCopyCode();
+    }
+  };
 
   useEffect(() => {
     let mounted = true;
@@ -135,6 +165,55 @@ const DriverProfile = () => {
               <span className={d.ok ? "text-green-700" : "text-red-600"}>{d.ok ? "Submitted" : "Missing"}</span>
             </div>
           ))}
+        </div>
+      </div>
+
+      {/* Referral & Rewards card */}
+      <div className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-gray-200 space-y-5">
+        <div className="flex items-center gap-2">
+          <FaGift className="text-townwize-primary" />
+          <h2 className="text-lg font-semibold">Referral & Rewards</h2>
+        </div>
+
+        {/* Referral code */}
+        <div className="rounded-2xl bg-townwize-primary p-5 text-white space-y-2">
+          <p className="text-xs text-white/60">Your Wizer referral code</p>
+          <div className="flex items-center gap-3">
+            <span className="text-3xl font-bold font-mono tracking-widest">{referralData?.code || "—"}</span>
+            <button onClick={handleCopyCode} className="p-2 rounded-xl bg-white/10 hover:bg-white/20 transition"><FaCopy /></button>
+            <button onClick={handleShareCode} className="p-2 rounded-xl bg-white/10 hover:bg-white/20 transition"><FaShareAlt /></button>
+          </div>
+          {referralData?.inviteLink && (
+            <p className="text-xs text-white/40 break-all">{referralData.inviteLink}</p>
+          )}
+          <div className="flex gap-4 text-xs text-white/60 pt-1 border-t border-white/10">
+            <span>{referralData?.rewardsEarned ?? "—"} rewards earned</span>
+            <span>{referralData?.pendingRewards ?? "—"} pending</span>
+          </div>
+        </div>
+
+        {/* Active coupons */}
+        <div>
+          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Active Coupons</p>
+          {coupons.length === 0 ? (
+            <p className="text-sm text-gray-400">No active coupons. Refer a Wizer to earn commission discounts.</p>
+          ) : (
+            <div className="space-y-2">
+              {coupons.map((c, i) => (
+                <div key={i} className="flex items-center gap-3 p-3 rounded-xl border border-green-200 bg-green-50">
+                  <FaTicketAlt className="text-green-600 shrink-0" />
+                  <div>
+                    <p className="font-semibold text-green-700 text-sm">
+                      {c.discountPct}% commission discount (max {c.maxDiscountPkr} PKR)
+                    </p>
+                    <p className="text-xs text-gray-400">
+                      {c.origin === "referee_welcome" ? "Welcome reward" : "Referral reward"} · Expires {new Date(c.expiresAt).toLocaleDateString()}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 

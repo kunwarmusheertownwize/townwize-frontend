@@ -143,7 +143,16 @@ export default function Register() {
   const methods = role === "passenger" ? passengerMethods : driverMethods;
   const phone = methods.watch("phone");
 
-  const fakeVerifyReferral = async () => true;
+  const verifyReferralCode = async (code) => {
+    try {
+      const BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:4000/api/v1.2";
+      const res = await fetch(`${BASE_URL}/referral/validate/${encodeURIComponent(code)}`);
+      const data = await res.json();
+      return data?.success ? data.data : null;
+    } catch {
+      return null;
+    }
+  };
 
   const [showResidency, setShowResidency] = useState(true);
   const [showVehicle, setShowVehicle] = useState(false);
@@ -179,10 +188,14 @@ export default function Register() {
 
   useEffect(() => {
     if (showReferral && inviteCodeParam) {
-      fakeVerifyReferral(inviteCodeParam).then((isValid) => {
+      verifyReferralCode(inviteCodeParam).then((info) => {
+        const isValid = !!info;
         setReferralVerified(isValid);
         if (isValid) {
           passengerMethods.setValue("referralCode", inviteCodeParam, { shouldValidate: true });
+          if (info?.ownerName) {
+            passengerMethods.setValue("referrerName", info.ownerName, { shouldValidate: false });
+          }
         } else {
           passengerMethods.setError("referralCode", {
             type: "manual",

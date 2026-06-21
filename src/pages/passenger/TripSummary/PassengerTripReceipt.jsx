@@ -241,11 +241,13 @@ export default function PassengerTripReceipt() {
     const estimated = ride?.fareEstimate || ride?.fare || 0;
     const final = ride?.finalFare ?? ride?.fare ?? estimated;
     const adjustment = ride?.fareAdjustment?.adjustment ?? Number(final || 0) - Number(estimated || 0);
+    const couponDiscount = ride?.couponDiscount || 0;
 
     return {
       estimated,
       final,
       adjustment,
+      couponDiscount,
       baseFare: f.baseFare || 0,
       distanceFare: f.distanceFare || 0,
       timeFare: f.timeFare || 0,
@@ -349,6 +351,12 @@ export default function PassengerTripReceipt() {
                     <span>{toMoney(value)}</span>
                   </div>
                 ))}
+                {Number(fare.couponDiscount || 0) > 0 && (
+                  <div className="flex justify-between text-green-600 dark:text-green-400 font-medium">
+                    <span>Referral Coupon Applied</span>
+                    <span>- {toMoney(fare.couponDiscount)}</span>
+                  </div>
+                )}
                 <div className="border-t border-gray-200 dark:border-gray-700 pt-2 mt-1 space-y-1">
                   <div className="flex justify-between text-xs text-gray-400">
                     <span>Estimated at booking</span>
@@ -462,6 +470,11 @@ export default function PassengerTripReceipt() {
               <div className="flex justify-between"><span>Platform Fee</span><span>{toMoney(fare.platformFee)}</span></div>
               {Number(fare.taxAmount || 0) > 0 ? (
                 <div className="flex justify-between"><span>Sindh Sales Tax (SST)</span><span>{toMoney(fare.taxAmount)}</span></div>
+              ) : null}
+              {Number(fare.couponDiscount || 0) > 0 ? (
+                <div className="flex justify-between font-medium text-green-600">
+                  <span>Referral Coupon Applied</span><span>- {toMoney(fare.couponDiscount)}</span>
+                </div>
               ) : null}
               {waitMinutes > 0 ? (
                 <div className="flex justify-between text-gray-500">
