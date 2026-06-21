@@ -51,15 +51,23 @@ const defaultValues = {
   selfie: "",
 };
 
-const mapFilesForRole = (formData, values, role) => {
+const mapFilesForRole = (formData, values, role, isGuestTowner = false) => {
   if (role === "passenger") {
-    if (values.btkProofFile) formData.append("proofOfResidency", values.btkProofFile);
-    if (values.btkIdFront) formData.append("btkIdFront", values.btkIdFront);
-    if (values.btkIdBack) formData.append("btkIdBack", values.btkIdBack);
+    if (isGuestTowner) {
+      // GuestTowner: CNIC only — no BTK residency proof required
+      if (values.cnicFront) formData.append("cnicFront", values.cnicFront);
+      if (values.cnicBack)  formData.append("cnicBack",  values.cnicBack);
+    } else {
+      // Towner: full BTK proof + BTK ID
+      if (values.btkProofFile) formData.append("proofOfResidency", values.btkProofFile);
+      if (values.btkIdFront)   formData.append("btkIdFront", values.btkIdFront);
+      if (values.btkIdBack)    formData.append("btkIdBack",  values.btkIdBack);
+    }
     if (values.selfie && values.selfie.startsWith("data:")) formData.append("selfieData", values.selfie);
     return;
   }
 
+  // Driver path unchanged
   if (values.btkProofFile) formData.append("residencyProof", values.btkProofFile);
   if (values.btkIdFront) formData.append("btkIdFront", values.btkIdFront);
   if (values.btkIdBack) formData.append("btkIdBack", values.btkIdBack);
@@ -119,6 +127,8 @@ export default function Register() {
   const [registrationSuccess, setRegistrationSuccess] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [referralVerified, setReferralVerified] = useState(false);
+  const [referralCodeType, setReferralCodeType] = useState(null); // "GENERAL" | "GUEST_INVITE" | null
+  const [referralOwnerName, setReferralOwnerName] = useState("");
   const [phoneVerificationToken, setPhoneVerificationToken] = useState("");
   const [otpLoadingSend, setOtpLoadingSend] = useState(false);
   const [otpLoadingVerify, setOtpLoadingVerify] = useState(false);
@@ -138,8 +148,12 @@ export default function Register() {
   const location = useLocation();
   const { code: inviteCodeParam } = useParams();
   const mode = useMemo(() => (inviteCodeParam ? "referral" : "normal"), [inviteCodeParam]);
+  const isGuestTowner = referralCodeType === "GUEST_INVITE";
   const showReferral = mode === "referral" && role === "passenger";
-  const showBTK = role === "driver" || (role === "passenger" && mode !== "referral");
+  // Towners (including GENERAL referrals) need BTK residency docs; GuestTowners do not
+  const showBTK = role === "driver" || (role === "passenger" && (mode !== "referral" || referralCodeType === "GENERAL"));
+  // GuestTowners provide CNIC instead of BTK residency proof
+  const showCnic = role === "passenger" && isGuestTowner;
   const methods = role === "passenger" ? passengerMethods : driverMethods;
   const phone = methods.watch("phone");
 
@@ -193,10 +207,14 @@ export default function Register() {
         setReferralVerified(isValid);
         if (isValid) {
           passengerMethods.setValue("referralCode", inviteCodeParam, { shouldValidate: true });
+          setReferralCodeType(info.codeType || null);
+          setReferralOwnerName(info.ownerName || "");
           if (info?.ownerName) {
             passengerMethods.setValue("referrerName", info.ownerName, { shouldValidate: false });
           }
         } else {
+          setReferralCodeType(null);
+          setReferralOwnerName("");
           passengerMethods.setError("referralCode", {
             type: "manual",
             message: "Invalid or expired referral code",
@@ -268,6 +286,7 @@ export default function Register() {
       formData.append("btkAddress", values.btkAddress || "");
       formData.append("residencyType", values.residencyType || "");
       formData.append("phoneVerificationToken", phoneVerificationToken);
+      if (values.referralCode) formData.append("referralCode", values.referralCode);
       if (activeRole === "driver") {
         formData.append("vehicleType", values.vehicleType || "Car");
         formData.append("carType", values.carType || "economy");
@@ -280,7 +299,7 @@ export default function Register() {
         formData.append("cnicNumber", values.cnicNumber || "");
       }
 
-      mapFilesForRole(formData, values, activeRole);
+      mapFilesForRole(formData, values, activeRole, activeRole === "passenger" && isGuestTowner);
 
       await api.post(`/auth/register?role=${activeRole}`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
@@ -321,6 +340,33 @@ export default function Register() {
                   {showReferral && (
                     <ReferralSection register={passengerMethods.register} errors={passengerMethods.formState.errors} watch={passengerMethods.watch} />
                   )}
+
+                  {/* Tier banner — shown once referral code type is known */}
+                  {referralCodeType === "GUEST_INVITE" && (
+                    <div className="rounded-xl border border-amber-300 bg-amber-50 dark:bg-amber-900/20 p-4 space-y-2">
+                      <p className="text-sm font-semibold text-amber-800 dark:text-amber-300">You're registering as a GuestTowner</p>
+                      <p className="text-xs text-amber-700 dark:text-amber-400 leading-relaxed">
+                        Invited by <span className="font-semibold">{referralOwnerName || "a Townwize member"}</span>.
+                        GuestTowners can book rides between <span className="font-semibold">Karachi ↔ Bahria Town Karachi</span> only.
+                        Your sponsor Towner is accountable for your account.
+                      </p>
+                      <ul className="text-xs text-amber-700 dark:text-amber-400 list-disc list-inside space-y-0.5">
+                        <li>Required: Name, email, phone number, CNIC (front &amp; back)</li>
+                        <li>Not required: BTK residency proof or BTK ID</li>
+                      </ul>
+                    </div>
+                  )}
+                  {referralCodeType === "GENERAL" && (
+                    <div className="rounded-xl border border-green-300 bg-green-50 dark:bg-green-900/20 p-4 space-y-1">
+                      <p className="text-sm font-semibold text-green-800 dark:text-green-300">Welcome — referred by {referralOwnerName || "a Townwize member"}</p>
+                      <p className="text-xs text-green-700 dark:text-green-400 leading-relaxed">
+                        You're registering as a full <span className="font-semibold">Towner</span>. A welcome coupon will be credited to your account
+                        once you complete registration and your referrer will earn their reward after your first completed ride.
+                        Full BTK residency verification is required.
+                      </p>
+                    </div>
+                  )}
+
                   {showBTK && (
                     <ResidencySection
                       showResidency={showResidency}
@@ -328,6 +374,14 @@ export default function Register() {
                       setBtkProofProgress={setBtkProofProgress}
                       setBtkFrontProgress={setBtkFrontProgress}
                       setBtkBackProgress={setBtkBackProgress}
+                    />
+                  )}
+                  {showCnic && (
+                    <IdentitySection
+                      showIdentity={showIdentity}
+                      setShowIdentity={setShowIdentity}
+                      setCnicFrontProgress={setCnicFrontProgress}
+                      setCnicBackProgress={setCnicBackProgress}
                     />
                   )}
                   <SubmitButton
