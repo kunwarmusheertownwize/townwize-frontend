@@ -73,7 +73,7 @@ const PassengerDocs = ({ profile }) => {
   );
 };
 
-const DriverDocs = ({ profile }) => {
+const DriverDocs = ({ profile, referrer }) => {
   const v    = profile?.vehicle          || {};
   const id   = profile?.identity         || {};
   const face = profile?.faceVerification || {};
@@ -81,6 +81,21 @@ const DriverDocs = ({ profile }) => {
 
   return (
     <>
+      {referrer && (
+        <div className="rounded-xl border border-green-200 bg-green-50 p-3">
+          <p className="text-xs font-semibold text-green-800 mb-1">Referred by Wizer</p>
+          <div className="text-xs text-green-700 space-y-0.5">
+            {referrer.name  && <div>Name: <span className="font-medium">{referrer.name}</span></div>}
+            {referrer.email && <div>Email: <span className="font-medium">{referrer.email}</span></div>}
+            {referrer.vehicleNumber && <div>Vehicle: <span className="font-medium">{referrer.vehicleNumber}</span></div>}
+            <div>Code: <span className="font-mono">{referrer.referralCode}</span></div>
+          </div>
+          <p className="mt-1.5 text-xs text-green-600">
+            BTK residency below must be verified — the referring Wizer has vouched for this candidate.
+          </p>
+        </div>
+      )}
+
       <DocSection title="Identity &amp; Selfie">
         <DocLink url={id.cnicFrontUrl} label="CNIC Front" />
         <DocLink url={id.cnicBackUrl}  label="CNIC Back"  />
@@ -189,7 +204,7 @@ export default function CaseDetailPanel({ item, onUpdated }) {
 
       {/* Documents */}
       {item.entityType === "passenger" && <PassengerDocs profile={item.profile} />}
-      {item.entityType === "driver"    && <DriverDocs    profile={item.profile} />}
+      {item.entityType === "driver"    && <DriverDocs    profile={item.profile} referrer={item.referrer} />}
 
       {/* Case action */}
       <div className="rounded-xl border border-gray-200 p-3">
