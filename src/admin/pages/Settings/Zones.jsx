@@ -17,6 +17,7 @@ const emptyForm = {
   code: "",
   name: "",
   type: "polygon",
+  category: "GENERAL",
   radiusKm: 2,
   priority: 100,
   active: true,
@@ -101,6 +102,7 @@ function buildZonePayload(form, geometry) {
     code: String(form.code || "").trim().toUpperCase(),
     name: String(form.name || "").trim(),
     type: form.type,
+    category: form.category || "GENERAL",
     priority: toNum(form.priority, 100),
     active: Boolean(form.active),
     geometry: payloadGeometry,
@@ -650,6 +652,7 @@ export default function Zones() {
         code: fullZone.code || "",
         name: fullZone.name || "",
         type: normalizedType,
+        category: fullZone.category || "GENERAL",
         radiusKm: Number(geometry?.radiusKm || 2),
         priority: Number(fullZone.priority ?? 100),
         active: Boolean(fullZone.active),
@@ -935,6 +938,23 @@ export default function Zones() {
               value={form.name}
               onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
             />
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">Zone Category</label>
+              <select
+                className="w-full border rounded-md px-3 py-2 text-sm"
+                value={form.category}
+                onChange={(e) => setForm((p) => ({ ...p, category: e.target.value }))}
+              >
+                <option value="GENERAL">General</option>
+                <option value="BTK">BTK (Bahria Town Karachi)</option>
+                <option value="KARACHI">Karachi (Origin City)</option>
+              </select>
+              <p className="text-[11px] text-gray-400 mt-1">
+                {form.category === "BTK" && "GuestTowners can drop off or pick up here."}
+                {form.category === "KARACHI" && "GuestTowners can originate rides from here."}
+                {form.category === "GENERAL" && "No tier restriction applies."}
+              </p>
+            </div>
             <div className="grid grid-cols-2 gap-2">
               <select className="border rounded-md px-3 py-2 text-sm" value={form.type} onChange={(e) => setForm((p) => ({ ...p, type: e.target.value }))}>
                 <option value="polygon">Polygon</option>
@@ -1034,6 +1054,7 @@ export default function Zones() {
             <tr>
               <th className="px-4 py-3 text-left">Code</th>
               <th className="px-4 py-3 text-left">Name</th>
+              <th className="px-4 py-3 text-left">Category</th>
               <th className="px-4 py-3 text-left">Shape</th>
               <th className="px-4 py-3 text-left">Priority</th>
               <th className="px-4 py-3 text-left">Status</th>
@@ -1043,14 +1064,23 @@ export default function Zones() {
           </thead>
           <tbody>
             {loading ? (
-              <tr><td className="px-4 py-10 text-center text-gray-500" colSpan={7}>Loading zones...</td></tr>
+              <tr><td className="px-4 py-10 text-center text-gray-500" colSpan={8}>Loading zones...</td></tr>
             ) : items.length === 0 ? (
-              <tr><td className="px-4 py-8 text-center text-gray-500" colSpan={7}>No zones found.</td></tr>
+              <tr><td className="px-4 py-8 text-center text-gray-500" colSpan={8}>No zones found.</td></tr>
             ) : (
               items.map((z) => (
                 <tr key={z._id} className="border-t border-gray-100">
                   <td className="px-4 py-3">{z.code || "-"}</td>
                   <td className="px-4 py-3">{z.name || "-"}</td>
+                  <td className="px-4 py-3">
+                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold ${
+                      z.category === "BTK"     ? "bg-green-100 text-green-800" :
+                      z.category === "KARACHI" ? "bg-blue-100 text-blue-800"  :
+                                                 "bg-gray-100 text-gray-600"
+                    }`}>
+                      {z.category || "GENERAL"}
+                    </span>
+                  </td>
                   <td className="px-4 py-3">{z.type || "-"}</td>
                   <td className="px-4 py-3">
                     <input type="number" className="w-20 border rounded px-2 py-1" defaultValue={z.priority ?? 100} onBlur={(e) => onPriority(z, e.target.value)} />
