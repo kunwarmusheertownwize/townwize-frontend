@@ -25,12 +25,28 @@ export function useRideSocket({
   onRideAccepted,
   onDriverLocation,
   onPoolMatched,
+  onPoolArrivedPrimary,
+  onPoolCollectingSecondary,
+  onPoolPrimaryBoarded,
+  onPoolEnRouteSecondary,
+  onPoolArrivedSecondary,
+  onPoolAllAboard,
+  onPoolExited,
+  onPoolRequeued,
 } = {}) {
   const rideRequestedRef = useRef(onRideRequested);
   const rideUpdatedRef = useRef(onRideUpdated);
   const rideAcceptedRef = useRef(onRideAccepted);
   const driverLocationRef = useRef(onDriverLocation);
   const poolMatchedRef = useRef(onPoolMatched);
+  const poolArrivedPrimaryRef = useRef(onPoolArrivedPrimary);
+  const poolCollectingSecondaryRef = useRef(onPoolCollectingSecondary);
+  const poolPrimaryBoardedRef = useRef(onPoolPrimaryBoarded);
+  const poolEnRouteSecondaryRef = useRef(onPoolEnRouteSecondary);
+  const poolArrivedSecondaryRef = useRef(onPoolArrivedSecondary);
+  const poolAllAboardRef = useRef(onPoolAllAboard);
+  const poolExitedRef = useRef(onPoolExited);
+  const poolRequeuedRef = useRef(onPoolRequeued);
 
   useEffect(() => {
     rideRequestedRef.current = onRideRequested;
@@ -38,7 +54,20 @@ export function useRideSocket({
     rideAcceptedRef.current = onRideAccepted;
     driverLocationRef.current = onDriverLocation;
     poolMatchedRef.current = onPoolMatched;
-  }, [onRideRequested, onRideUpdated, onRideAccepted, onDriverLocation, onPoolMatched]);
+    poolArrivedPrimaryRef.current = onPoolArrivedPrimary;
+    poolCollectingSecondaryRef.current = onPoolCollectingSecondary;
+    poolPrimaryBoardedRef.current = onPoolPrimaryBoarded;
+    poolEnRouteSecondaryRef.current = onPoolEnRouteSecondary;
+    poolArrivedSecondaryRef.current = onPoolArrivedSecondary;
+    poolAllAboardRef.current = onPoolAllAboard;
+    poolExitedRef.current = onPoolExited;
+    poolRequeuedRef.current = onPoolRequeued;
+  }, [
+    onRideRequested, onRideUpdated, onRideAccepted, onDriverLocation,
+    onPoolMatched, onPoolArrivedPrimary, onPoolCollectingSecondary,
+    onPoolPrimaryBoarded, onPoolEnRouteSecondary, onPoolArrivedSecondary,
+    onPoolAllAboard, onPoolExited, onPoolRequeued,
+  ]);
 
   useEffect(() => {
     const joinRooms = () => {
@@ -62,45 +91,32 @@ export function useRideSocket({
     if (!socket.connected) socket.connect();
     joinRooms();
 
-    const onConnect = () => {
-      joinRooms();
+    const onConnect = () => { joinRooms(); };
+
+    const wrap = (ref) => (payload) => ref.current?.(payload);
+
+    const handlers = {
+      "connect":                    onConnect,
+      "ride:requested":             wrap(rideRequestedRef),
+      "ride:updated":               wrap(rideUpdatedRef),
+      "ride:accepted":              wrap(rideAcceptedRef),
+      "driver:location":            wrap(driverLocationRef),
+      "ride:pool_matched":          wrap(poolMatchedRef),
+      "ride:pool_arrived_primary":  wrap(poolArrivedPrimaryRef),
+      "ride:pool_collecting_secondary": wrap(poolCollectingSecondaryRef),
+      "ride:pool_primary_boarded":  wrap(poolPrimaryBoardedRef),
+      "ride:pool_en_route_secondary": wrap(poolEnRouteSecondaryRef),
+      "ride:pool_arrived_secondary": wrap(poolArrivedSecondaryRef),
+      "ride:pool_all_aboard":       wrap(poolAllAboardRef),
+      "ride:pool_exited":           wrap(poolExitedRef),
+      "ride:pool_requeued":         wrap(poolRequeuedRef),
     };
 
-    const onRideRequestedSocket = (payload) => {
-      rideRequestedRef.current?.(payload);
-    };
-
-    const onRideUpdatedSocket = (payload) => {
-      rideUpdatedRef.current?.(payload);
-    };
-
-    const onRideAcceptedSocket = (payload) => {
-      rideAcceptedRef.current?.(payload);
-    };
-
-    const onDriverLocationSocket = (payload) => {
-      driverLocationRef.current?.(payload);
-    };
-
-    const onPoolMatchedSocket = (payload) => {
-      poolMatchedRef.current?.(payload);
-    };
-
-    socket.on("connect", onConnect);
-    socket.on("ride:requested", onRideRequestedSocket);
-    socket.on("ride:updated", onRideUpdatedSocket);
-    socket.on("ride:accepted", onRideAcceptedSocket);
-    socket.on("driver:location", onDriverLocationSocket);
-    socket.on("ride:pool_matched", onPoolMatchedSocket);
+    Object.entries(handlers).forEach(([event, handler]) => socket.on(event, handler));
     window.addEventListener("storage", joinRooms);
 
     return () => {
-      socket.off("connect", onConnect);
-      socket.off("ride:requested", onRideRequestedSocket);
-      socket.off("ride:updated", onRideUpdatedSocket);
-      socket.off("ride:accepted", onRideAcceptedSocket);
-      socket.off("driver:location", onDriverLocationSocket);
-      socket.off("ride:pool_matched", onPoolMatchedSocket);
+      Object.entries(handlers).forEach(([event, handler]) => socket.off(event, handler));
       window.removeEventListener("storage", joinRooms);
     };
   }, [joinRideId]);

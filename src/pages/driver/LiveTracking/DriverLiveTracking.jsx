@@ -19,6 +19,8 @@ const DriverLiveTracking = () => {
   const rideId = request?.rideId || request?._id;
 
   const [rideStatus, setRideStatus] = useState(request?.status);
+  const [poolPickupStage, setPoolPickupStage] = useState(request?.poolPickupStage ?? null);
+  const [sharedPassengers, setSharedPassengers] = useState(request?.sharedPassengers || []);
   const [lastKnownPosition, setLastKnownPosition] = useState(null);
   const [driverPosition, setDriverPosition] = useState(null);
   const [mapReady, setMapReady] = useState(false);
@@ -30,15 +32,20 @@ const DriverLiveTracking = () => {
   const [cancelling, setCancelling] = useState(false);
   const [arrivedElapsedSec, setArrivedElapsedSec] = useState(0);
   const [showNoShowConfirm, setShowNoShowConfirm] = useState(false);
+  const [poolStageLoading, setPoolStageLoading] = useState(false);
+  const [showReportConfirm, setShowReportConfirm] = useState(false);
+  const [reportSubmitting, setReportSubmitting] = useState(false);
+  const [allAboard, setAllAboard] = useState(false);
 
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
   const driverMarkerRef = useRef(null);
   const destinationMarkerRef = useRef(null);
   const routeRendererRef = useRef(null);
-  const lastRouteStatusRef = useRef(null);
+  const lastRouteKeyRef = useRef(null);
   const lastRouteOriginRef = useRef(null);
   const rideStatusRef = useRef(rideStatus);
+  const poolStageRef = useRef(poolPickupStage);
   const tripDistanceKmRef = useRef(0);
   const lastTripPositionRef = useRef(null);
   const lastHeadingRef = useRef(null);
@@ -98,6 +105,8 @@ const DriverLiveTracking = () => {
   const dropoffAddress = request?.dropoff;
   const rideType = request?.rideType;
   const fare = request?.fare;
+  const isPooled = rideType === "RIDETOGETHER" && sharedPassengers.length > 0;
+  const sp = sharedPassengers[0];
 
   useEffect(() => {
     rideStatusRef.current = rideStatus;
@@ -109,13 +118,16 @@ const DriverLiveTracking = () => {
   }, [rideStatus]);
 
   useEffect(() => {
+    poolStageRef.current = poolPickupStage;
+  }, [poolPickupStage]);
+
+  useEffect(() => {
     if (!request) return;
     setDriverMode(DRIVER_MODES.ACTIVE_TRIP);
   }, [request, setDriverMode]);
 
   useEffect(() => {
     if (request) return;
-
     let mounted = true;
     api
       .get("/driver/active-ride")
@@ -129,7 +141,6 @@ const DriverLiveTracking = () => {
           navigate("/driver/trip-requests", { replace: true });
           return;
         }
-
         const recovered = {
           rideId: activeRide.rideId,
           status: activeRide.status,
@@ -139,31 +150,44 @@ const DriverLiveTracking = () => {
           fare: activeRide.fare,
           distanceKm: activeRide.distanceKm,
           etaMinutes: activeRide.etaMinutes,
+          sharedPassengers: activeRide.sharedPassengers || [],
+          poolPickupStage: activeRide.poolPickupStage ?? null,
         };
-
         persistActiveTrip(recovered);
         setRideStatus(recovered.status);
+        setSharedPassengers(recovered.sharedPassengers);
+        setPoolPickupStage(recovered.poolPickupStage);
         setDriverMode(DRIVER_MODES.ACTIVE_TRIP);
       })
       .catch(() => {});
-
-    return () => {
-      mounted = false;
-    };
+    return () => { mounted = false; };
   }, [navigate, request, setDriverMode]);
 
+  // Fetch full ride on load to get sharedPassengers + poolPickupStage
   useEffect(() => {
-    if (!navigator.geolocation) {
-      toast.error("Location services not supported");
-      return;
-    }
+    if (!rideId) return;
+    api
+      .get(`/rides/${rideId}`)
+      .then((res) => {
+        const data = res?.data?.data;
+        if (!data?.status) return;
+        setRideStatus(data.status);
+        const spArr = data.sharedPassengers || [];
+        const stage = data.poolPickupStage ?? null;
+        setSharedPassengers(spArr);
+        setPoolPickupStage(stage);
+        persistActiveTrip({ ...request, status: data.status, sharedPassengers: spArr, poolPickupStage: stage });
+      })
+      .catch(() => {});
+  }, [rideId]);
 
+  useEffect(() => {
+    if (!navigator.geolocation) { toast.error("Location services not supported"); return; }
     const watchId = navigator.geolocation.watchPosition(
       (pos) => {
         const coords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
         setDriverPosition(coords);
         setLastKnownPosition(coords);
-
         if (rideStatusRef.current === "ON_TRIP") {
           if (lastTripPositionRef.current) {
             const distM = haversineM(lastTripPositionRef.current, coords);
@@ -171,7 +195,6 @@ const DriverLiveTracking = () => {
           }
           lastTripPositionRef.current = coords;
         }
-
         if (rideId) {
           api.post("/driver/location", { rideId, lat: coords.lat, lng: coords.lng }).catch(() => {});
         }
@@ -179,26 +202,11 @@ const DriverLiveTracking = () => {
       () => toast.error("Enable location permissions"),
       { enableHighAccuracy: true, maximumAge: 5000, timeout: 10000 }
     );
-
     return () => navigator.geolocation.clearWatch(watchId);
   }, [rideId]);
 
   useEffect(() => {
     if (!rideId) return;
-    api
-      .get(`/rides/${rideId}`)
-      .then((res) => {
-        if (!res?.data?.data?.status) return;
-        const status = res.data.data.status;
-        setRideStatus(status);
-        persistActiveTrip({ ...request, status });
-      })
-      .catch(() => {});
-  }, [rideId]);
-
-  useEffect(() => {
-    if (!rideId) return;
-
     const socket = getSocket();
     if (!socket.connected) socket.connect();
     socket.emit("join", `ride:${rideId}`);
@@ -207,7 +215,6 @@ const DriverLiveTracking = () => {
       if (String(payload?.rideId) !== String(rideId) || !payload?.status) return;
       const status = payload.status;
       setRideStatus(status);
-
       if (String(status).toUpperCase() === "CANCELLED") {
         sessionStorage.removeItem("activeDriverTrip");
         setDriverMode(DRIVER_MODES.ONLINE_IDLE);
@@ -215,27 +222,41 @@ const DriverLiveTracking = () => {
         navigate("/driver/home", { replace: true });
         return;
       }
-
       if (String(status).toUpperCase() === "COMPLETED") {
         sessionStorage.removeItem("activeDriverTrip");
         setDriverMode(DRIVER_MODES.ONLINE_IDLE);
         return;
       }
-
       persistActiveTrip({ ...request, status });
     };
 
+    const onPoolExited = (payload) => {
+      if (String(payload?.rideId) !== String(rideId)) return;
+      setSharedPassengers([]);
+      setPoolPickupStage(null);
+      toast.info(`${payload.exitedPassengerName || "Co-passenger"} exited the shared ride. Continuing solo.`);
+    };
+
+    const onPoolAllAboard = (payload) => {
+      if (String(payload?.rideId) !== String(rideId)) return;
+      setAllAboard(true);
+      setPoolPickupStage(null);
+      toast.success("All passengers aboard. You may start the trip.");
+    };
+
     socket.on("ride:updated", onRideUpdated);
+    socket.on("ride:pool_exited", onPoolExited);
+    socket.on("ride:pool_all_aboard", onPoolAllAboard);
     return () => {
       socket.off("ride:updated", onRideUpdated);
+      socket.off("ride:pool_exited", onPoolExited);
+      socket.off("ride:pool_all_aboard", onPoolAllAboard);
     };
   }, [rideId, request, setDriverMode]);
 
-  // One-time map + marker initialization — runs when first GPS fix arrives
   useEffect(() => {
     const position = driverPosition || lastKnownPosition;
-    if (!position || mapInstanceRef.current) return; // skip if already initialized
-
+    if (!position || mapInstanceRef.current) return;
     let cancelled = false;
     loadGoogleMaps()
       .then(async () => {
@@ -243,63 +264,38 @@ const DriverLiveTracking = () => {
         await google.maps.importLibrary("maps");
         await google.maps.importLibrary("marker");
         if (cancelled || mapInstanceRef.current) return;
-
         mapInstanceRef.current = new google.maps.Map(mapRef.current, {
-          center: position,
-          zoom: 15,
+          center: position, zoom: 15,
           mapId: import.meta.env.VITE_GOOGLE_MAP_ID,
-          gestureHandling: "greedy",
-          streetViewControl: false,
-          mapTypeControl: false,
+          gestureHandling: "greedy", streetViewControl: false, mapTypeControl: false,
         });
         setMapReady(true);
-
         const markerEl = document.createElement("div");
-        markerEl.style.width = "16px";
-        markerEl.style.height = "16px";
-        markerEl.style.borderRadius = "50%";
-        markerEl.style.background = "#103139";
-        markerEl.style.border = "2px solid #fff";
-
+        markerEl.style.cssText = "width:16px;height:16px;border-radius:50%;background:#103139;border:2px solid #fff;";
         driverMarkerRef.current = new google.maps.marker.AdvancedMarkerElement({
-          map: mapInstanceRef.current,
-          position,
-          content: markerEl,
+          map: mapInstanceRef.current, position, content: markerEl,
         });
       })
       .catch(() => toast.error("Failed to load Google Maps"));
-
     return () => { cancelled = true; };
   }, [driverPosition, lastKnownPosition]);
 
-  // Marker + camera update — navigation mode during ON_TRIP, standard follow otherwise
   useEffect(() => {
     if (!driverMarkerRef.current || !driverPosition) return;
     driverMarkerRef.current.position = driverPosition;
-
     if (!mapInstanceRef.current) return;
-
     const isOnTrip = rideStatusRef.current === "ON_TRIP";
-
-    // Update heading whenever driver moves at least 5m (filters GPS jitter)
-    if (
-      prevDriverPositionRef.current &&
-      haversineM(prevDriverPositionRef.current, driverPosition) > 5
-    ) {
+    if (prevDriverPositionRef.current && haversineM(prevDriverPositionRef.current, driverPosition) > 5) {
       lastHeadingRef.current = bearingDeg(prevDriverPositionRef.current, driverPosition);
     }
     prevDriverPositionRef.current = driverPosition;
-
     const heading = lastHeadingRef.current;
-
     if (isOnTrip && heading !== null) {
-      // Navigation mode: rotate to heading, tilt 45°, zoom 18, driver at bottom-third
       mapInstanceRef.current.setHeading(heading);
       mapInstanceRef.current.setTilt(45);
       mapInstanceRef.current.setZoom(18);
       mapInstanceRef.current.panTo(lookAhead(driverPosition, heading, 50));
     } else {
-      // Standard follow mode: north-up, no tilt, zoom 15
       mapInstanceRef.current.setHeading(0);
       mapInstanceRef.current.setTilt(0);
       mapInstanceRef.current.setZoom(15);
@@ -307,76 +303,61 @@ const DriverLiveTracking = () => {
     }
   }, [driverPosition]);
 
-  // Route polyline — redraws on status change or when driver moves >150 m
+  // Route polyline — adapts to pool stage for secondary pickup navigation
   useEffect(() => {
-    if (!mapReady || !mapInstanceRef.current || !window.google?.maps) return;
-    if (!driverPosition) return;
+    if (!mapReady || !mapInstanceRef.current || !window.google?.maps || !driverPosition) return;
 
-    const statusChanged = lastRouteStatusRef.current !== rideStatus;
+    const stage = poolStageRef.current;
+    let destination = null;
+    if (rideStatus === "DRIVER_ASSIGNED") {
+      destination = pickupAddress;
+    } else if (rideStatus === "ARRIVED" && isPooled && (stage === 2 || stage === 3) && sp?.pickupAddress) {
+      destination = sp.pickupAddress;
+    } else if (rideStatus === "ON_TRIP") {
+      destination = dropoffAddress;
+    }
 
-    // Skip reroute if status unchanged and driver hasn't moved >150 m
+    const routeKey = `${rideStatus}-${stage}`;
+    const statusChanged = lastRouteKeyRef.current !== routeKey;
+
     if (!statusChanged && routeRendererRef.current) {
       if (lastRouteOriginRef.current && haversineM(driverPosition, lastRouteOriginRef.current) < 40) return;
     }
 
-    lastRouteStatusRef.current = rideStatus;
+    lastRouteKeyRef.current = routeKey;
     lastRouteOriginRef.current = driverPosition;
 
-    // Clear previous route
-    if (routeRendererRef.current) {
-      routeRendererRef.current.setMap(null);
-      routeRendererRef.current = null;
-    }
-
-    const destination =
-      rideStatus === "DRIVER_ASSIGNED" ? pickupAddress :
-      rideStatus === "ON_TRIP" ? dropoffAddress : null;
-
+    if (routeRendererRef.current) { routeRendererRef.current.setMap(null); routeRendererRef.current = null; }
     if (!destination) return;
-
-    // Clear previous destination marker
-    if (destinationMarkerRef.current) {
-      destinationMarkerRef.current.map = null;
-      destinationMarkerRef.current = null;
-    }
+    if (destinationMarkerRef.current) { destinationMarkerRef.current.map = null; destinationMarkerRef.current = null; }
 
     const renderer = new google.maps.DirectionsRenderer({
-      suppressMarkers: true,
-      preserveViewport: true,
+      suppressMarkers: true, preserveViewport: true,
       polylineOptions: {
         strokeColor: rideStatus === "ON_TRIP" ? "#03311C" : "#17BEBB",
-        strokeWeight: 5,
-        strokeOpacity: 0.85,
+        strokeWeight: 5, strokeOpacity: 0.85,
       },
     });
     renderer.setMap(mapInstanceRef.current);
     routeRendererRef.current = renderer;
 
     new google.maps.DirectionsService().route(
-      {
-        origin: driverPosition,
-        destination,
-        travelMode: google.maps.TravelMode.DRIVING,
-      },
+      { origin: driverPosition, destination, travelMode: google.maps.TravelMode.DRIVING },
       (result, status) => {
         if (status !== "OK" || !routeRendererRef.current) return;
         routeRendererRef.current.setDirections(result);
-
-        // Place a destination pin at the last leg's end location
         const legs = result.routes[0]?.legs;
         const endLatLng = legs?.[legs.length - 1]?.end_location;
         if (endLatLng && mapInstanceRef.current) {
           const pinEl = document.createElement("div");
           pinEl.style.cssText = "width:14px;height:14px;border-radius:50%;background:#EF4444;border:2px solid #fff;box-shadow:0 0 0 3px rgba(239,68,68,0.3)";
           destinationMarkerRef.current = new google.maps.marker.AdvancedMarkerElement({
-            map: mapInstanceRef.current,
-            position: endLatLng,
-            content: pinEl,
+            map: mapInstanceRef.current, position: endLatLng, content: pinEl,
           });
         }
       }
     );
-  }, [rideStatus, driverPosition, mapReady, pickupAddress, dropoffAddress]);
+  }, [rideStatus, poolPickupStage, driverPosition, mapReady, pickupAddress, dropoffAddress, isPooled, sp]);
 
   useEffect(() => {
     if (!incomingRide?.status) return;
@@ -384,16 +365,15 @@ const DriverLiveTracking = () => {
     setRideStatus(incomingRide.status);
   }, [incomingRide?.rideId, incomingRide?.status, rideId]);
 
-  // Track time since arrival for no-show button (appears after 6 min)
   useEffect(() => {
     if (rideStatus !== "ARRIVED") { setArrivedElapsedSec(0); return; }
     const t = setInterval(() => setArrivedElapsedSec((s) => s + 1), 1000);
     return () => clearInterval(t);
   }, [rideStatus]);
 
-  const openNavigation = () => {
-    if (!pickupAddress) return;
-    window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(pickupAddress)}`, "_blank");
+  const openNavigation = (address) => {
+    if (!address) return;
+    window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(address)}`, "_blank");
   };
 
   const handleArrivedAtPickup = async () => {
@@ -402,19 +382,41 @@ const DriverLiveTracking = () => {
     try {
       await api.post(`/rides/${rideId}/status`, { status: "ARRIVED" });
       setRideStatus("ARRIVED");
-      persistActiveTrip({ ...request, status: "ARRIVED" });
+      const stage = isPooled ? 1 : null;
+      setPoolPickupStage(stage);
+      persistActiveTrip({ ...request, status: "ARRIVED", poolPickupStage: stage });
     } catch {
       setArriving(false);
     }
   };
 
+  const handlePoolStage = async (action) => {
+    if (poolStageLoading) return;
+    setPoolStageLoading(true);
+    try {
+      const res = await api.post(`/rides/${rideId}/pool-stage`, { action });
+      const newStage = res?.data?.data?.stage ?? null;
+      setPoolPickupStage(newStage);
+      if (action === "board_secondary") setAllAboard(true);
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "Could not advance stage. Try again.");
+    } finally {
+      setPoolStageLoading(false);
+    }
+  };
+
   const handleStartTrip = async () => {
     if (!rideId || rideStatus !== "ARRIVED" || startingTrip) return;
+    if (isPooled && !allAboard) {
+      toast.info("Complete the sequential pickup before starting the trip.");
+      return;
+    }
     setStartingTrip(true);
     try {
       await api.post(`/rides/${rideId}/status`, { status: "ON_TRIP" });
       setRideStatus("ON_TRIP");
-      persistActiveTrip({ ...request, status: "ON_TRIP" });
+      setPoolPickupStage(null);
+      persistActiveTrip({ ...request, status: "ON_TRIP", poolPickupStage: null });
     } catch {
       setStartingTrip(false);
     }
@@ -429,11 +431,9 @@ const DriverLiveTracking = () => {
         actualDistanceKm: parseFloat(tripDistanceKmRef.current.toFixed(3)),
       });
       toast.success("Trip completed successfully");
-
       const tripSummaryPayload = { pickup: pickupAddress, dropoff: dropoffAddress, rideType, fare, rideId };
       sessionStorage.removeItem("activeDriverTrip");
       setDriverMode(DRIVER_MODES.ONLINE_IDLE);
-
       setTimeout(() => {
         navigate("/driver/trip-summary", { replace: true, state: { trip: tripSummaryPayload } });
       }, 800);
@@ -464,8 +464,7 @@ const DriverLiveTracking = () => {
       await api.post(`/rides/${rideId}/no-show`);
       toast.info("No-show recorded. Ride cancelled.");
     } catch (err) {
-      const msg = err?.response?.data?.message || "Could not record no-show.";
-      toast.error(msg);
+      toast.error(err?.response?.data?.message || "Could not record no-show.");
       setShowNoShowConfirm(false);
       return;
     }
@@ -474,20 +473,176 @@ const DriverLiveTracking = () => {
     navigate("/driver/home", { replace: true });
   };
 
+  const handleReportExtra = async () => {
+    if (reportSubmitting) return;
+    setReportSubmitting(true);
+    try {
+      await api.post(`/rides/${rideId}/report-extra`, { details: "Extra unbooked passenger observed" });
+      toast.success("Report submitted. Thank you for keeping Townwize safe.");
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "Could not submit report.");
+    } finally {
+      setReportSubmitting(false);
+      setShowReportConfirm(false);
+    }
+  };
+
   if (!hasRequest) return null;
+
+  // ── Status label ──────────────────────────────────────────────────────
+  const poolStatusLabel = () => {
+    if (!isPooled || rideStatus !== "ARRIVED") return null;
+    if (poolPickupStage === 1) return `At primary pickup — awaiting boarding`;
+    if (poolPickupStage === 2) return `En route to ${sp?.name || "co-passenger"}'s pickup`;
+    if (poolPickupStage === 3) return `At ${sp?.name || "co-passenger"}'s pickup`;
+    return null;
+  };
 
   const statusLabel =
     (rideStatus === "DRIVER_ASSIGNED" && "En route to pickup") ||
-    (rideStatus === "ARRIVED" && "Arrived at pickup") ||
+    (rideStatus === "ARRIVED" && (poolStatusLabel() || "Arrived at pickup")) ||
     (rideStatus === "ON_TRIP" && "On trip") ||
     "";
 
+  // ── Passenger manifest (shown during ARRIVED / ON_TRIP for pooled rides) ──
+  const passengerManifest = isPooled && ["ARRIVED", "ON_TRIP"].includes(rideStatus) ? (
+    <div className="rounded-xl border border-blue-100 dark:border-blue-900 bg-blue-50 dark:bg-blue-950 p-3 space-y-2">
+      <p className="text-xs font-semibold text-blue-700 dark:text-blue-300 uppercase tracking-wide">Passenger Manifest</p>
+      <div className="flex items-center gap-2 text-sm">
+        <span className="h-2 w-2 rounded-full bg-green-500 shrink-0" />
+        <span className="font-medium text-gray-800 dark:text-gray-100">Primary Towner</span>
+        <span className="text-xs text-gray-400 ml-auto">Seat 1</span>
+      </div>
+      {sp && (
+        <div className="flex items-center gap-2 text-sm">
+          <span className={`h-2 w-2 rounded-full shrink-0 ${sp.boarded ? "bg-green-500" : "bg-yellow-400"}`} />
+          <span className="font-medium text-gray-800 dark:text-gray-100">{sp.name}</span>
+          <span className="text-xs text-gray-400 ml-auto">Seat 2</span>
+        </div>
+      )}
+    </div>
+  ) : null;
+
+  // ── Report extra passenger ─────────────────────────────────────────────
+  const reportExtraSection = ["ARRIVED", "ON_TRIP"].includes(rideStatus) ? (
+    showReportConfirm ? (
+      <div className="rounded-xl border border-orange-200 dark:border-orange-800 bg-orange-50 dark:bg-orange-950 p-3 space-y-2">
+        <p className="text-xs font-semibold text-orange-800 dark:text-orange-300">Report unbooked extra passenger?</p>
+        <p className="text-xs text-orange-700 dark:text-orange-400">
+          Only report if you see a passenger not in the manifest. 3 cumulative reports auto-flag the account.
+        </p>
+        <div className="flex gap-2">
+          <button onClick={() => setShowReportConfirm(false)} className="flex-1 py-2 rounded-xl text-xs font-semibold bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200">
+            Back
+          </button>
+          <button onClick={handleReportExtra} disabled={reportSubmitting} className="flex-1 py-2 rounded-xl text-xs font-semibold bg-orange-600 text-white disabled:opacity-60">
+            {reportSubmitting ? "Reporting…" : "Confirm Report"}
+          </button>
+        </div>
+      </div>
+    ) : (
+      <button
+        onClick={() => setShowReportConfirm(true)}
+        className="w-full py-2 rounded-xl text-xs font-medium text-orange-500 dark:text-orange-400 border border-orange-200 dark:border-orange-800"
+      >
+        Report Extra Passenger
+      </button>
+    )
+  ) : null;
+
+  // ── Sequential pickup buttons (during ARRIVED for pooled rides) ────────
+  const poolPickupButtons = isPooled && rideStatus === "ARRIVED" ? (
+    <div className="space-y-2">
+      {poolPickupStage === 1 && (
+        <>
+          <div className="rounded-lg bg-townwize-primary/10 dark:bg-townwize-primary/20 px-3 py-2 text-xs text-townwize-primary dark:text-townwize-accent">
+            At primary pickup — confirm when passenger 1 boards.
+          </div>
+          <button
+            onClick={() => handlePoolStage("board_primary")}
+            disabled={poolStageLoading}
+            className={`w-full rounded-xl py-3 font-semibold ${poolStageLoading ? "bg-gray-400 cursor-not-allowed" : "bg-green-600 text-white"}`}
+          >
+            {poolStageLoading ? "Processing…" : "Confirm Passenger 1 Boarded"}
+          </button>
+        </>
+      )}
+      {poolPickupStage === 2 && sp && (
+        <>
+          <div className="rounded-lg bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 px-3 py-2 text-xs text-blue-700 dark:text-blue-300">
+            Navigate to {sp.name}&apos;s pickup: {sp.pickupAddress || "co-passenger pickup"}
+          </div>
+          <button
+            onClick={() => openNavigation(sp.pickupAddress)}
+            className="w-full rounded-xl py-3 font-semibold bg-townwize-primary text-white"
+          >
+            Navigate to {sp.name}
+          </button>
+          <button
+            onClick={() => handlePoolStage("arrived_secondary")}
+            disabled={poolStageLoading}
+            className={`w-full rounded-xl py-3 font-semibold ${poolStageLoading ? "bg-gray-400 cursor-not-allowed" : "bg-green-600 text-white"}`}
+          >
+            {poolStageLoading ? "Processing…" : `Arrived at ${sp.name}'s Pickup`}
+          </button>
+        </>
+      )}
+      {poolPickupStage === 3 && sp && (
+        <>
+          <div className="rounded-lg bg-townwize-primary/10 dark:bg-townwize-primary/20 px-3 py-2 text-xs text-townwize-primary dark:text-townwize-accent">
+            At {sp.name}&apos;s pickup — confirm when {sp.name} boards.
+          </div>
+          <button
+            onClick={() => handlePoolStage("board_secondary")}
+            disabled={poolStageLoading}
+            className={`w-full rounded-xl py-3 font-semibold ${poolStageLoading ? "bg-gray-400 cursor-not-allowed" : "bg-green-600 text-white"}`}
+          >
+            {poolStageLoading ? "Processing…" : `Confirm ${sp.name} Boarded`}
+          </button>
+        </>
+      )}
+      {poolPickupStage === null && allAboard && (
+        <div className="rounded-lg bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 px-3 py-2 text-xs text-green-700 dark:text-green-300">
+          All passengers aboard — ready to start.
+        </div>
+      )}
+    </div>
+  ) : null;
+
+  // ── Dual dropoff info during ON_TRIP ──────────────────────────────────
+  const dualDropoffInfo = isPooled && rideStatus === "ON_TRIP" && sp ? (
+    <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-3 space-y-2 text-sm">
+      <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Drop-off Stops</p>
+      <div className="flex items-start gap-2">
+        <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-red-500" />
+        <div>
+          <p className="text-xs text-gray-400">Stop 1 — Primary Towner</p>
+          <p className="font-medium leading-snug text-gray-800 dark:text-gray-100">{dropoffAddress}</p>
+        </div>
+      </div>
+      <div className="flex items-start gap-2">
+        <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-orange-400" />
+        <div>
+          <p className="text-xs text-gray-400">Stop 2 — {sp.name}</p>
+          <p className="font-medium leading-snug text-gray-800 dark:text-gray-100">{sp.dropoffAddress || "Co-passenger dropoff"}</p>
+        </div>
+      </div>
+      <button
+        onClick={() => openNavigation(sp.dropoffAddress || dropoffAddress)}
+        className="w-full py-2 rounded-xl text-xs font-semibold bg-townwize-primary text-white"
+      >
+        Navigate to Next Stop
+      </button>
+    </div>
+  ) : null;
+
+  // ── Standard action buttons ────────────────────────────────────────────
   const actionButtons = (
     <div className="flex flex-wrap gap-3">
       {rideStatus === "DRIVER_ASSIGNED" && (
         <>
           <button
-            onClick={openNavigation}
+            onClick={() => openNavigation(pickupAddress)}
             className="min-w-[180px] flex-1 rounded-xl bg-townwize-primary py-3 font-semibold text-white"
           >
             Navigate to Pickup
@@ -495,32 +650,31 @@ const DriverLiveTracking = () => {
           <button
             onClick={handleArrivedAtPickup}
             disabled={arriving}
-            className={`flex-1 rounded-xl py-3 font-semibold ${
-              arriving ? "cursor-not-allowed bg-gray-400" : "bg-green-600 text-white"
-            }`}
+            className={`flex-1 rounded-xl py-3 font-semibold ${arriving ? "cursor-not-allowed bg-gray-400" : "bg-green-600 text-white"}`}
           >
             Arrived
           </button>
         </>
       )}
       {rideStatus === "ARRIVED" && (
-        <button
-          onClick={handleStartTrip}
-          disabled={startingTrip}
-          className={`flex-1 rounded-xl py-3 font-semibold ${
-            startingTrip ? "cursor-not-allowed bg-gray-400" : "bg-townwize-primary text-white"
-          }`}
-        >
-          Start Trip
-        </button>
+        <>
+          {poolPickupButtons}
+          {(!isPooled || allAboard) && (
+            <button
+              onClick={handleStartTrip}
+              disabled={startingTrip}
+              className={`w-full rounded-xl py-3 font-semibold ${startingTrip ? "cursor-not-allowed bg-gray-400" : "bg-townwize-primary text-white"}`}
+            >
+              Start Trip
+            </button>
+          )}
+        </>
       )}
       {rideStatus === "ON_TRIP" && (
         <button
           onClick={handleCompleteTrip}
           disabled={endingTrip}
-          className={`flex-1 rounded-xl py-3 font-semibold ${
-            endingTrip ? "cursor-not-allowed bg-gray-400" : "bg-red-600 text-white"
-          }`}
+          className={`flex-1 rounded-xl py-3 font-semibold ${endingTrip ? "cursor-not-allowed bg-gray-400" : "bg-red-600 text-white"}`}
         >
           End Trip
         </button>
@@ -539,7 +693,6 @@ const DriverLiveTracking = () => {
 
   const cancelSection = (
     <div className="space-y-2">
-      {/* No-show button — only after 6 min at ARRIVED */}
       {rideStatus === "ARRIVED" && (
         noShowEligible ? (
           showNoShowConfirm ? (
@@ -547,12 +700,8 @@ const DriverLiveTracking = () => {
               <p className="text-xs font-semibold text-orange-800 dark:text-orange-300">Report passenger no-show?</p>
               <p className="text-xs text-orange-700 dark:text-orange-400">A 120 PKR no-show fee will be recorded. The ride will be cancelled.</p>
               <div className="flex gap-2">
-                <button onClick={() => setShowNoShowConfirm(false)} className="flex-1 py-2 rounded-xl text-xs font-semibold bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200">
-                  Back
-                </button>
-                <button onClick={handleNoShow} className="flex-1 py-2 rounded-xl text-xs font-semibold bg-orange-600 text-white">
-                  Confirm No-Show
-                </button>
+                <button onClick={() => setShowNoShowConfirm(false)} className="flex-1 py-2 rounded-xl text-xs font-semibold bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200">Back</button>
+                <button onClick={handleNoShow} className="flex-1 py-2 rounded-xl text-xs font-semibold bg-orange-600 text-white">Confirm No-Show</button>
               </div>
             </div>
           ) : (
@@ -567,7 +716,6 @@ const DriverLiveTracking = () => {
         )
       )}
 
-      {/* Cancel ride */}
       {!showNoShowConfirm && (
         showCancelModal ? (
           <div className="rounded-xl border border-red-200 dark:border-red-800 bg-white dark:bg-gray-800 p-3 space-y-2">
@@ -592,9 +740,7 @@ const DriverLiveTracking = () => {
               <option>Other</option>
             </select>
             <div className="flex gap-2">
-              <button onClick={() => { setShowCancelModal(false); setDriverCancelReason(""); }} disabled={cancelling} className="flex-1 py-2 rounded-xl text-xs font-semibold bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 disabled:opacity-60">
-                Back
-              </button>
+              <button onClick={() => { setShowCancelModal(false); setDriverCancelReason(""); }} disabled={cancelling} className="flex-1 py-2 rounded-xl text-xs font-semibold bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 disabled:opacity-60">Back</button>
               <button onClick={handleCancelRide} disabled={cancelling || !driverCancelReason} className="flex-1 py-2 rounded-xl text-xs font-semibold bg-red-600 text-white disabled:opacity-50">
                 {cancelling ? "Cancelling…" : "Cancel Ride"}
               </button>
@@ -609,48 +755,51 @@ const DriverLiveTracking = () => {
     </div>
   );
 
-  // ─── Mobile (Capacitor) — full-screen map + floating bottom card ──────────
+  // ─── Mobile (Capacitor) ───────────────────────────────────────────────────
   if (isNative()) {
     return (
       <div className="fixed inset-0 bg-gray-900">
-        {/* Status header — respects safe-area notch */}
         <div
           className="absolute top-0 left-0 right-0 z-10 border-b border-gray-200 bg-white shadow-sm dark:bg-townwize-primaryDark px-4 pb-3"
           style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 12px)" }}
         >
-          <h1 className="text-lg font-bold">Active Trip</h1>
-          {statusLabel && (
-            <span className="text-sm text-gray-500">{statusLabel}</span>
-          )}
+          <div className="flex items-center gap-2">
+            <h1 className="text-lg font-bold">Active Trip</h1>
+            {isPooled && <span className="text-xs font-semibold bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded-full">RideTogether</span>}
+          </div>
+          {statusLabel && <span className="text-sm text-gray-500">{statusLabel}</span>}
         </div>
 
-        {/* Map fills screen below header */}
         <div ref={mapRef} className="absolute inset-0 top-[76px] z-0" />
 
-        {/* Bottom action card */}
         <div
           className="absolute bottom-0 left-0 right-0 z-50 rounded-t-2xl border-t border-gray-200 bg-white shadow-2xl dark:bg-townwize-primaryDark px-4 pt-4"
           style={{ paddingBottom: "env(safe-area-inset-bottom, 16px)" }}
         >
           <div className="w-10 h-1 bg-gray-300 dark:bg-gray-700 rounded-full mx-auto mb-3" />
-          <div className="space-y-1 text-sm mb-4">
-            <div className="flex items-start gap-3">
-              <span className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full bg-townwize-accent" />
-              <p className="font-medium leading-snug">{pickupAddress}</p>
+          <div className="space-y-3 max-h-[60vh] overflow-y-auto pb-2">
+            <div className="space-y-1 text-sm">
+              <div className="flex items-start gap-3">
+                <span className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full bg-townwize-accent" />
+                <p className="font-medium leading-snug">{pickupAddress}</p>
+              </div>
+              <div className="flex items-start gap-3">
+                <span className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full bg-red-500" />
+                <p className="text-gray-500 leading-snug">{dropoffAddress}</p>
+              </div>
+              <div className="flex gap-4 mt-2 text-xs text-gray-400">
+                <span>{rideType}</span>
+                <span className="font-semibold text-townwize-primary dark:text-white">{fare} PKR</span>
+              </div>
             </div>
-            <div className="flex items-start gap-3">
-              <span className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full bg-red-500" />
-              <p className="text-gray-500 leading-snug">{dropoffAddress}</p>
-            </div>
-            <div className="flex gap-4 mt-2 text-xs text-gray-400">
-              <span>{rideType}</span>
-              <span className="font-semibold text-townwize-primary dark:text-white">
-                {fare} PKR
-              </span>
+            {passengerManifest}
+            {dualDropoffInfo}
+            {actionButtons}
+            <div className="space-y-2">
+              {reportExtraSection}
+              {cancelSection}
             </div>
           </div>
-          {actionButtons}
-          <div className="mt-1">{cancelSection}</div>
         </div>
       </div>
     );
@@ -659,22 +808,32 @@ const DriverLiveTracking = () => {
   // ─── Web ──────────────────────────────────────────────────────────────────
   return (
     <div className="relative h-[calc(100vh-120px)] bg-gray-50">
-      <div className="z-10 border-b border-gray-200 bg-white p-4 shadow-sm dark:bg-townwize-primaryDark">
-        <h1 className="text-lg font-bold">Active Trip</h1>
-        {statusLabel && <span className="text-sm text-gray-500">{statusLabel}</span>}
+      <div className="z-10 border-b border-gray-200 bg-white p-4 shadow-sm dark:bg-townwize-primaryDark flex items-center gap-3">
+        <div>
+          <h1 className="text-lg font-bold">Active Trip</h1>
+          {statusLabel && <span className="text-sm text-gray-500">{statusLabel}</span>}
+        </div>
+        {isPooled && <span className="text-xs font-semibold bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded-full">RideTogether</span>}
       </div>
 
       <div ref={mapRef} className="absolute inset-0 top-[72px] z-0" />
 
-      <div className="pointer-events-auto absolute bottom-0 z-50 w-full space-y-2 rounded-t-2xl border-t border-gray-200 bg-white p-4 shadow-2xl dark:bg-townwize-primaryDark">
+      <div className="pointer-events-auto absolute bottom-0 z-50 w-full rounded-t-2xl border-t border-gray-200 bg-white p-4 shadow-2xl dark:bg-townwize-primaryDark max-h-[65vh] overflow-y-auto">
         <div className="grid gap-2 text-sm md:grid-cols-2">
           <p><strong>Pickup:</strong> {pickupAddress}</p>
           <p><strong>Dropoff:</strong> {dropoffAddress}</p>
           <p><strong>Ride Type:</strong> {rideType}</p>
           <p><strong>Fare:</strong> {fare} PKR</p>
         </div>
-        <div className="mt-4">{actionButtons}</div>
-        <div className="mt-1">{cancelSection}</div>
+        <div className="mt-3 space-y-3">
+          {passengerManifest}
+          {dualDropoffInfo}
+          {actionButtons}
+          <div className="space-y-2">
+            {reportExtraSection}
+            {cancelSection}
+          </div>
+        </div>
       </div>
     </div>
   );

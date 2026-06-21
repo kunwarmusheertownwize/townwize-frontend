@@ -6,6 +6,7 @@ import { loadGoogleMaps } from "../../../utils/googleMapsLoader";
 import api, { updateRideStatus } from "../../../services/api";
 import { useRideSocket } from "../../../hooks/useRideSocket";
 import { useParams, useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 import { isNative } from "../../../utils/platform";
 import { App } from "@capacitor/app";
 
@@ -117,6 +118,27 @@ const getPassengerRideStage = (status) => {
       tone: "arrived",
     };
   }
+  if (normalized === "POOL_COLLECTING_SECONDARY") {
+    return {
+      title: "Wizer collecting co-passenger",
+      description: "Your Wizer is picking up the other passenger. You will be next.",
+      tone: "matched",
+    };
+  }
+  if (normalized === "POOL_EN_ROUTE_SECONDARY") {
+    return {
+      title: "Wizer on the way",
+      description: "Co-passenger boarded. Your Wizer is heading to your pickup.",
+      tone: "matched",
+    };
+  }
+  if (normalized === "POOL_ARRIVED_SECONDARY") {
+    return {
+      title: "Wizer arrived at your pickup",
+      description: "Your Wizer is here. Please board now.",
+      tone: "arrived",
+    };
+  }
   if (normalized === "ON_TRIP") {
     return {
       title: "Trip in progress",
@@ -168,11 +190,21 @@ const LiveTracking = () => {
   const [tripBlocked, setTripBlocked] = useState(false);
   const [cancelReason, setCancelReason] = useState("");
 
+  // Pool-specific state
+  const [poolStage, setPoolStage] = useState(null); // mirrors ride.poolPickupStage
+  const [poolBoardingBanner, setPoolBoardingBanner] = useState(null); // "primary" | "secondary" | null
+  const [poolStatusOverride, setPoolStatusOverride] = useState(null); // custom text for pool events
+  const [exitingPool, setExitingPool] = useState(false);
+  const [confirmExitPool, setConfirmExitPool] = useState(false);
+  const authRaw = typeof window !== "undefined" ? localStorage.getItem("auth") : null;
+  const currentUserId = authRaw ? (() => { try { return JSON.parse(authRaw)?.user?.id; } catch { return null; } })() : null;
+
   // ─────────────────────────────────────────────
   // Keep rideRef in sync with ride state
   // ─────────────────────────────────────────────
   useEffect(() => {
     rideRef.current = ride;
+    if (ride?.poolPickupStage != null) setPoolStage(ride.poolPickupStage);
   }, [ride]);
 
   // ETA countdown — ticks every second between directions refreshes
@@ -292,12 +324,7 @@ const LiveTracking = () => {
       setRide((prev) => {
         if (!prev) return prev;
         if (String(payload?.rideId) !== String(rideId)) return prev;
-
-        return {
-          ...prev,
-          status: payload.status ?? prev.status,
-          driverId: payload.driverId ?? prev.driverId,
-        };
+        return { ...prev, status: payload.status ?? prev.status, driverId: payload.driverId ?? prev.driverId };
       });
     },
 
@@ -305,30 +332,58 @@ const LiveTracking = () => {
       setRide((prev) => {
         if (!prev) return prev;
         if (String(payload?.rideId) !== String(rideId)) return prev;
-
-        return {
-          ...prev,
-          status: payload.status ?? "DRIVER_ASSIGNED",
-          driverId: payload.driverId ?? prev.driverId,
-        };
+        return { ...prev, status: payload.status ?? "DRIVER_ASSIGNED", driverId: payload.driverId ?? prev.driverId };
       });
     },
 
     onDriverLocation: ({ lat, lng, rideId: locationRideId }) => {
       if (locationRideId && String(locationRideId) !== String(rideId)) return;
-
       setRide((prev) => {
         if (!prev) return prev;
-
-        return {
-          ...prev,
-          driver: {
-            ...(prev.driver || {}),
-            lat,
-            lng,
-          },
-        };
+        return { ...prev, driver: { ...(prev.driver || {}), lat, lng } };
       });
+    },
+
+    // Primary passenger (A) — driver arrived at their pickup
+    onPoolArrivedPrimary: (payload) => {
+      if (String(payload?.rideId) !== String(rideId)) return;
+      setPoolBoardingBanner("primary");
+      setPoolStatusOverride("Your Wizer has arrived — please board");
+    },
+
+    // Secondary passenger (B) — driver still picking up A
+    onPoolCollectingSecondary: (payload) => {
+      if (String(payload?.rideId) !== String(rideId)) return;
+      setPoolStatusOverride("Wizer is collecting your co-passenger…");
+    },
+
+    // B — driver has confirmed A boarded, now coming to B
+    onPoolEnRouteSecondary: (payload) => {
+      if (String(payload?.rideId) !== String(rideId)) return;
+      setPoolStatusOverride(`Wizer is on the way to your pickup${payload.pickupAddress ? `: ${payload.pickupAddress}` : ""}`);
+    },
+
+    // B — driver arrived at B's pickup
+    onPoolArrivedSecondary: (payload) => {
+      if (String(payload?.rideId) !== String(rideId)) return;
+      setPoolBoardingBanner("secondary");
+      setPoolStatusOverride("Your Wizer has arrived — please board");
+    },
+
+    // Both — all passengers boarded
+    onPoolAllAboard: (payload) => {
+      if (String(payload?.rideId) !== String(rideId)) return;
+      setPoolBoardingBanner(null);
+      setPoolStatusOverride("All aboard — trip starting");
+    },
+
+    // Both — co-passenger exited pool
+    onPoolExited: (payload) => {
+      if (String(payload?.rideId) !== String(rideId)) return;
+      if (payload.newFare) {
+        setRide((prev) => prev ? { ...prev, fareEstimate: payload.newFare } : prev);
+      }
+      setPoolStatusOverride("Co-passenger left the shared ride. Your fare is restored.");
     },
   });
 
@@ -676,6 +731,32 @@ const LiveTracking = () => {
   const CANCELLABLE = ["REQUESTED", "DRIVER_ASSIGNED", "EN_ROUTE"];
   const canCancel = CANCELLABLE.includes(String(ride?.status || "").toUpperCase());
 
+  // Determine if this user is the secondary (B) passenger on this pooled ride
+  const isSecondaryPassenger = ride?.rideType === "RIDETOGETHER" &&
+    Array.isArray(ride?.sharedPassengers) &&
+    ride.sharedPassengers.some((sp) => String(sp.userId) === String(currentUserId));
+
+  const canExitPool = isSecondaryPassenger &&
+    ["DRIVER_ASSIGNED", "EN_ROUTE", "ARRIVED"].includes(String(ride?.status || "").toUpperCase()) &&
+    !ride?.sharedPassengers?.find((sp) => String(sp.userId) === String(currentUserId))?.boarded;
+
+  const handleExitPool = async () => {
+    if (exitingPool || !rideId) return;
+    setExitingPool(true);
+    try {
+      await api.post(`/rides/${rideId}/exit-pool`);
+      navigate("/passenger/home", { replace: true });
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "Could not exit shared ride.");
+    } finally {
+      setExitingPool(false);
+      setConfirmExitPool(false);
+    }
+  };
+
+  // Pool-specific effective status text
+  const effectivePoolStatus = poolStatusOverride || null;
+
   const handleKeepRide = () => {
     setConfirmCancel(false);
     setCancelReason("");
@@ -725,6 +806,7 @@ const LiveTracking = () => {
 
   const stage = getPassengerRideStage(ride.status);
   const isSearching = String(ride.status || "").toUpperCase() === "REQUESTED";
+  const isPrimaryPooled = ride?.rideType === "RIDETOGETHER" && Array.isArray(ride?.sharedPassengers) && ride.sharedPassengers.length > 0 && !isSecondaryPassenger;
   const driverInfo = ride?.driverInfo || null;
   const showDriverInfo = driverInfo && !isSearching;
   const etaMinutes = etaSeconds != null ? Math.max(1, Math.ceil(etaSeconds / 60)) : null;
@@ -768,7 +850,7 @@ const LiveTracking = () => {
                 <span className="h-2.5 w-2.5 rounded-full bg-green-500" />
               )}
               <span className="font-bold text-townwize-primary dark:text-white text-sm">
-                {stage.title}
+                {effectivePoolStatus ? effectivePoolStatus.split(" — ")[0] : stage.title}
               </span>
             </div>
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 ml-4">
@@ -845,6 +927,44 @@ const LiveTracking = () => {
               )}
             </div>
 
+            {/* Pool status override banner */}
+            {effectivePoolStatus && (
+              <div className="rounded-lg bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 px-3 py-2 text-xs text-blue-700 dark:text-blue-300">
+                {effectivePoolStatus}
+              </div>
+            )}
+
+            {/* Boarding prompt */}
+            {poolBoardingBanner && (
+              <div className="rounded-xl bg-green-50 dark:bg-green-950 border border-green-300 dark:border-green-700 p-3 space-y-1">
+                <p className="text-sm font-semibold text-green-800 dark:text-green-300">Your Wizer is here!</p>
+                <p className="text-xs text-green-700 dark:text-green-400">Please board now and confirm with your Wizer.</p>
+              </div>
+            )}
+
+            {/* Exit pool button (secondary passenger only) */}
+            {canExitPool && (
+              confirmExitPool ? (
+                <div className="rounded-xl border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950 p-3 space-y-2">
+                  <p className="text-xs font-semibold text-red-800 dark:text-red-300">Leave the shared ride?</p>
+                  <p className="text-xs text-red-700 dark:text-red-400">You will be navigated back to the home screen.</p>
+                  <div className="flex gap-2">
+                    <button onClick={() => setConfirmExitPool(false)} className="flex-1 py-2 rounded-xl text-xs font-semibold bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200">Keep Ride</button>
+                    <button onClick={handleExitPool} disabled={exitingPool} className="flex-1 py-2 rounded-xl text-xs font-semibold bg-red-600 text-white disabled:opacity-60">
+                      {exitingPool ? "Leaving…" : "Leave Ride"}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setConfirmExitPool(true)}
+                  className="w-full py-2 rounded-xl text-xs font-medium text-red-500 dark:text-red-400 border border-red-200 dark:border-red-800"
+                >
+                  Leave Shared Ride
+                </button>
+              )
+            )}
+
             {/* Trip-in-progress block (ARRIVED / ON_TRIP back-button guard) */}
             {tripBlocked && (
               <div className="space-y-2">
@@ -900,7 +1020,7 @@ const LiveTracking = () => {
                 <span className="h-3 w-3 rounded-full bg-green-500" />
               )}
               <h2 className="text-xl font-bold text-townwize-primary dark:text-townwize-accent">
-                {stage.title}
+                {effectivePoolStatus ? effectivePoolStatus.split(" — ")[0] : stage.title}
               </h2>
             </div>
             <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">
@@ -1042,6 +1162,44 @@ const LiveTracking = () => {
           <span className="text-base font-bold text-townwize-primary dark:text-white">{ride.fareEstimate} PKR</span>
         </div>
       </div>
+
+      {/* Pool status banner (web) */}
+      {effectivePoolStatus && (
+        <div className="rounded-2xl bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 px-4 py-3 text-sm text-blue-700 dark:text-blue-300">
+          {effectivePoolStatus}
+        </div>
+      )}
+
+      {/* Boarding prompt (web) */}
+      {poolBoardingBanner && (
+        <div className="rounded-2xl bg-green-50 dark:bg-green-950 border border-green-300 dark:border-green-700 px-4 py-3">
+          <p className="font-semibold text-green-800 dark:text-green-300">Your Wizer is here!</p>
+          <p className="text-sm text-green-700 dark:text-green-400 mt-1">Please board now and confirm with your Wizer.</p>
+        </div>
+      )}
+
+      {/* Exit pool (web — secondary passenger only) */}
+      {canExitPool && (
+        confirmExitPool ? (
+          <div className="rounded-2xl border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950 p-4 space-y-3">
+            <p className="font-semibold text-red-800 dark:text-red-300">Leave the shared ride?</p>
+            <p className="text-sm text-red-700 dark:text-red-400">The other passenger will continue. You will be taken back to home.</p>
+            <div className="flex gap-3">
+              <button onClick={() => setConfirmExitPool(false)} className="flex-1 py-2.5 rounded-xl text-sm font-semibold bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200">Keep Ride</button>
+              <button onClick={handleExitPool} disabled={exitingPool} className="flex-1 py-2.5 rounded-xl text-sm font-semibold bg-red-600 text-white disabled:opacity-60">
+                {exitingPool ? "Leaving…" : "Leave Ride"}
+              </button>
+            </div>
+          </div>
+        ) : (
+          <button
+            onClick={() => setConfirmExitPool(true)}
+            className="w-full py-3 rounded-2xl font-semibold border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950 transition-colors"
+          >
+            Leave Shared Ride
+          </button>
+        )
+      )}
 
       {/* Back-button blocked during ARRIVED/ON_TRIP */}
       {tripBlocked && (
