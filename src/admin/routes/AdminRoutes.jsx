@@ -20,6 +20,7 @@ import FeatureFlags from "../pages/Settings/FeatureFlags";
 import Zones from "../pages/Settings/Zones";
 import PricingSettings from "../pages/Settings/PricingSettings";
 import CancellationPolicy from "../pages/Settings/CancellationPolicy";
+import ReferralDashboard from "../pages/Referral/ReferralDashboard";
 
 export default function AdminRoutes() {
     return (
@@ -42,6 +43,8 @@ export default function AdminRoutes() {
             <Route path="settings/zones" element={<Zones />} />
             <Route path="settings/pricing" element={<PricingSettings />} />
             <Route path="settings/cancellation" element={<CancellationPolicy />} />
+
+            <Route path="referral" element={<ReferralDashboard />} />
 
             <Route path="audit" element={<AuditLogs />} />
         </Route>

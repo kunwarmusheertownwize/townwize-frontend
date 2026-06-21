@@ -284,6 +284,23 @@ export default function PricingSettings() {
         </div>
 
         <div className="rounded-lg border p-3 bg-gray-50 space-y-3">
+          <div>
+            <p className="text-sm font-semibold text-gray-700">Referral & Coupon Settings</p>
+            <p className="text-xs text-gray-500">
+              Controls the % discount coupons issued when a referral completes their first ride.
+              Fare discounts apply to passengers; commission discounts apply to Wizerrs.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {numberField("Passenger Fare Discount", "referralFareDiscountPct", "%")}
+            {numberField("Fare Discount Cap", "referralFareDiscountMaxPkr", "PKR max")}
+            {numberField("Wizer Commission Discount", "referralCommissionDiscountPct", "%")}
+            {numberField("Commission Discount Cap", "referralCommissionDiscountMaxPkr", "PKR max")}
+            {numberField("Coupon Expiry", "referralCouponExpiryDays", "days")}
+          </div>
+        </div>
+
+        <div className="rounded-lg border p-3 bg-gray-50 space-y-3">
           <div className="flex items-center justify-between">
             <p className="text-sm font-semibold text-gray-700">Dispatch Simulator</p>
             <button
