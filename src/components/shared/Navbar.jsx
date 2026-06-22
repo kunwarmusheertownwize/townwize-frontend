@@ -332,6 +332,7 @@ const Navbar = () => {
                             { label: t("dashboard"), path: "/passenger/dashboard" },
                             { label: t("rideHistory"), path: "/passenger/trips" },
                             { label: t("wallet"), path: "/passenger/wallet" },
+                            { label: "Profile & Referral", path: "/passenger/profile" },
                             { label: t("account"), path: "/passenger/account" },
                             { label: t("settings"), path: "/passenger/settings" },
                             { label: "Support", path: "/passenger/support" },
@@ -576,6 +577,7 @@ const Navbar = () => {
                         {[
                           //{ label: t("dashboard"), path: "/passenger/dashboard" },
                           { label: t("rideHistory"), path: "/passenger/trips" },
+                          { label: "Profile & Referral", path: "/passenger/profile" },
                           { label: t("account"), path: "/passenger/account" },
                           { label: t("settings"), path: "/passenger/settings" },
                           { label: "Support", path: "/passenger/support" },
