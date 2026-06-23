@@ -263,6 +263,9 @@ export default function PassengerTripReceipt() {
 
   const receiptDate = ride?.completedAt || ride?.updatedAt || ride?.createdAt;
   const rideLabel = `${ride?.rideType || "PRIVATE"}${ride?.carType ? ` - ${String(ride.carType).toUpperCase()}` : ""}`;
+  const isPooled = ride?.rideType === "RIDETOGETHER";
+  const coRiderCount = ride?.sharedPassengers?.length ?? 0;
+  const farePerSeat = ride?.farePerSeat ?? null;
   const hasAdjustment = Math.abs(Number(fare.adjustment || 0)) >= 1;
   const waitMinutes = Number(fare.pickupWaitMinutes || 0) + Number(fare.stopWaitMinutes || 0);
   const actualTripLabel =
@@ -292,8 +295,11 @@ export default function PassengerTripReceipt() {
           <p className="text-xs text-white/40 mt-0.5">ID: {ride?._id || rideId}</p>
           {!loading && !error && (
             <div className="mt-5">
-              <p className="text-xs text-white/70 uppercase tracking-wider">Total Paid</p>
-              <p className="text-5xl font-extrabold mt-1">{toMoney(fare.final)}</p>
+              <p className="text-xs text-white/70 uppercase tracking-wider">{isPooled ? "Your Share (Split Fare)" : "Total Paid"}</p>
+              <p className="text-5xl font-extrabold mt-1">{toMoney(isPooled && farePerSeat ? farePerSeat : fare.final)}</p>
+              {isPooled && coRiderCount > 0 && (
+                <p className="text-xs text-yellow-300 font-semibold mt-1">RideTogether · shared with {coRiderCount} co-rider{coRiderCount > 1 ? "s" : ""}</p>
+              )}
               <p className="text-xs text-white/60 mt-2 leading-relaxed">{adjustmentMessage}</p>
             </div>
           )}
@@ -451,8 +457,17 @@ export default function PassengerTripReceipt() {
 
             <div className="trip-receipt-highlight rounded-xl bg-townwize-primary text-white p-5 flex flex-col justify-between">
               <div>
-                <p className="text-xs uppercase tracking-wide text-white/70">Final Fare</p>
-                <p className="mt-2 text-4xl font-extrabold">{toMoney(fare.final)}</p>
+                <p className="text-xs uppercase tracking-wide text-white/70">
+                  {isPooled ? "Your Share (Split Fare)" : "Final Fare"}
+                </p>
+                <p className="mt-2 text-4xl font-extrabold">
+                  {toMoney(isPooled && farePerSeat ? farePerSeat : fare.final)}
+                </p>
+                {isPooled && coRiderCount > 0 && (
+                  <p className="mt-1 text-xs text-yellow-300 font-semibold">
+                    RideTogether · shared with {coRiderCount} co-rider{coRiderCount > 1 ? "s" : ""}
+                  </p>
+                )}
               </div>
               <p className="mt-4 text-sm text-white/80">{adjustmentMessage}</p>
             </div>

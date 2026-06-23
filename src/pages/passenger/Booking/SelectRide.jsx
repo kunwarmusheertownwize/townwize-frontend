@@ -925,6 +925,13 @@ navigate("/passenger/trip-summary", {
                   "—"
                 )}
               </div>
+
+              {/* Share & save badge */}
+              {effectiveDistanceKm > 0 && (
+                <div className="mt-1.5 inline-flex items-center gap-1 text-[10px] font-semibold text-yellow-300 bg-white/10 px-2 py-0.5 rounded-full">
+                  <FaUsers size={9} /> Split fare · pay less
+                </div>
+              )}
             </RideTypeCard>
 
           </div>

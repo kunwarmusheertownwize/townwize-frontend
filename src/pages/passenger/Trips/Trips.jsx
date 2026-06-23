@@ -1,16 +1,17 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { FaCarSide, FaChevronLeft, FaChevronRight, FaStar } from "react-icons/fa";
+import { FaCarSide, FaChevronLeft, FaChevronRight, FaStar, FaUsers } from "react-icons/fa";
 import api from "../../../services/api";
 
 const STATUS_META = {
-  COMPLETED:       { label: "Completed",   cls: "bg-green-100 text-green-700" },
-  CANCELLED:       { label: "Cancelled",   cls: "bg-red-100 text-red-600" },
-  REQUESTED:       { label: "Requested",   cls: "bg-blue-100 text-blue-600" },
-  DRIVER_ASSIGNED: { label: "Assigned",    cls: "bg-blue-100 text-blue-600" },
-  EN_ROUTE:        { label: "En Route",    cls: "bg-blue-100 text-blue-600" },
-  ARRIVED:         { label: "Arrived",     cls: "bg-blue-100 text-blue-600" },
-  ON_TRIP:         { label: "On Trip",     cls: "bg-townwize-accent/10 text-townwize-accent" },
+  COMPLETED:       { label: "Completed",      cls: "bg-green-100 text-green-700" },
+  CANCELLED:       { label: "Cancelled",      cls: "bg-red-100 text-red-600" },
+  POOLING_MERGED:  { label: "Joined group",   cls: "bg-purple-100 text-purple-700" },
+  REQUESTED:       { label: "Requested",      cls: "bg-blue-100 text-blue-600" },
+  DRIVER_ASSIGNED: { label: "Assigned",       cls: "bg-blue-100 text-blue-600" },
+  EN_ROUTE:        { label: "En Route",       cls: "bg-blue-100 text-blue-600" },
+  ARRIVED:         { label: "Arrived",        cls: "bg-blue-100 text-blue-600" },
+  ON_TRIP:         { label: "On Trip",        cls: "bg-townwize-accent/10 text-townwize-accent" },
 };
 
 const formatDate = (iso) => {
@@ -155,8 +156,13 @@ export default function PassengerTrips() {
                         Rate
                       </span>
                     )}
+                    {ride.rideType === "RIDETOGETHER" && (
+                      <span className="flex items-center gap-1 text-[10px] font-semibold text-purple-700 bg-purple-50 dark:bg-purple-900/30 dark:text-purple-300 px-2 py-0.5 rounded-full">
+                        <FaUsers size={9} /> RideTogether
+                      </span>
+                    )}
                     <span className="ml-auto text-xs text-gray-400 capitalize">
-                      {ride.rideType?.toLowerCase().replace("_", " ")} · {ride.carType}
+                      {ride.carType}
                     </span>
                   </div>
                 </div>
