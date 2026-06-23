@@ -6,8 +6,8 @@ import {
     FaApple,
     FaGooglePlay,
     FaUserCheck,
-    FaQuestionCircle,
     FaLeaf,
+    FaChevronDown,
 } from "react-icons/fa";
 import Navbar from "../components/shared/Navbar";
 import { motion as Motion, AnimatePresence } from "framer-motion";
@@ -375,67 +375,67 @@ const Landing = () => {
             </section>
 
             {/* ─── FAQ ──────────────────────────────────────────────────────── */}
-            <section className="relative py-24 bg-gradient-to-b from-gray-50 to-white dark:from-townwize-primaryDark dark:to-[#0B242A] transition-colors duration-500 overflow-hidden">
-                <div className="max-w-4xl mx-auto px-6 sm:px-10 relative z-10">
-                    <div className="flex items-center justify-center gap-3 mb-10">
-                        <FaQuestionCircle className="text-4xl text-townwize-accent" />
-                        <h2 className="text-3xl sm:text-4xl font-extrabold text-townwize-primary dark:text-townwize-accent">
-                            Frequently Asked Questions
-                        </h2>
-                    </div>
+            <section className="py-24 bg-white dark:bg-townwize-bgDark">
+                <div className="max-w-6xl mx-auto px-6 lg:px-12">
+                    <div className="grid grid-cols-1 lg:grid-cols-[1fr_2fr] gap-16 items-start">
 
-                    <div className="space-y-4">
-                        {FAQS.map((item, index) => (
-                            <Motion.div
-                                key={index}
-                                initial={{ opacity: 0, y: 15 }}
-                                whileInView={{ opacity: 1, y: 0 }}
-                                viewport={{ once: true }}
-                                transition={{ duration: 0.35, delay: index * 0.05 }}
-                                className="rounded-2xl bg-white/70 dark:bg-gray-800/70 backdrop-blur-md border border-gray-200 dark:border-gray-700 shadow-lg overflow-hidden"
+                        {/* Left — sticky label column */}
+                        <div className="lg:sticky lg:top-24">
+                            <p className="text-xs font-bold uppercase tracking-widest text-townwize-accent mb-3">FAQs</p>
+                            <h2 className="text-3xl sm:text-4xl font-extrabold text-townwize-primary dark:text-white leading-tight mb-4">
+                                Got questions?
+                            </h2>
+                            <p className="text-gray-500 dark:text-gray-400 text-sm leading-relaxed mb-8">
+                                Clear answers about how Townwize works, who can join, and what makes us different.
+                            </p>
+                            <a
+                                href="mailto:support@townwize.com"
+                                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl border border-townwize-primary dark:border-white/20 text-townwize-primary dark:text-white text-sm font-semibold hover:bg-townwize-primary hover:text-white dark:hover:bg-white/10 transition-all"
                             >
-                                <button
-                                    onClick={() => toggleFaq(index)}
-                                    className="w-full flex justify-between items-center text-left px-6 py-5 focus:outline-none"
-                                >
-                                    <span className="text-lg font-semibold text-townwize-primary dark:text-townwize-accent">
-                                        {item.q}
-                                    </span>
-                                    <Motion.span
-                                        animate={{ rotate: openFaq === index ? 45 : 0 }}
-                                        className="text-townwize-accent text-2xl font-bold select-none"
-                                        aria-hidden
+                                Contact Support
+                            </a>
+                        </div>
+
+                        {/* Right — accordion */}
+                        <div className="divide-y divide-gray-100 dark:divide-gray-800">
+                            {FAQS.map((item, index) => (
+                                <div key={index}>
+                                    <button
+                                        onClick={() => toggleFaq(index)}
+                                        className="w-full flex justify-between items-center text-left py-5 gap-6 focus:outline-none group"
                                     >
-                                        +
-                                    </Motion.span>
-                                </button>
-                                <AnimatePresence initial={false}>
-                                    {openFaq === index && (
-                                        <Motion.div
-                                            key="faq-content"
-                                            initial={{ height: 0, opacity: 0, scale: 0.98 }}
-                                            animate={{
-                                                height: "auto", opacity: 1, scale: 1,
-                                                transition: {
-                                                    height:  { duration: 0.35, ease: [0.25, 0.8, 0.25, 1] },
-                                                    opacity: { duration: 0.3 },
-                                                    scale:   { duration: 0.25 },
-                                                },
-                                            }}
-                                            exit={{ height: 0, opacity: 0, scale: 0.98, transition: { duration: 0.3 } }}
-                                            className="overflow-hidden border-t border-gray-200 dark:border-gray-700"
+                                        <span className="text-sm font-semibold text-townwize-primary dark:text-white group-hover:text-townwize-accent dark:group-hover:text-townwize-accent transition-colors">
+                                            {item.q}
+                                        </span>
+                                        <Motion.span
+                                            animate={{ rotate: openFaq === index ? 180 : 0 }}
+                                            transition={{ duration: 0.2 }}
+                                            className="shrink-0 text-gray-400 dark:text-gray-500 group-hover:text-townwize-accent transition-colors"
+                                            aria-hidden
                                         >
-                                            <div className="px-6 pb-5 text-gray-600 dark:text-gray-300 leading-relaxed">
-                                                {item.a}
-                                            </div>
-                                        </Motion.div>
-                                    )}
-                                </AnimatePresence>
-                            </Motion.div>
-                        ))}
+                                            <FaChevronDown className="text-xs" />
+                                        </Motion.span>
+                                    </button>
+                                    <AnimatePresence initial={false}>
+                                        {openFaq === index && (
+                                            <Motion.div
+                                                key="answer"
+                                                initial={{ height: 0, opacity: 0 }}
+                                                animate={{ height: "auto", opacity: 1, transition: { height: { duration: 0.28, ease: [0.25, 0.8, 0.25, 1] }, opacity: { duration: 0.22 } } }}
+                                                exit={{ height: 0, opacity: 0, transition: { duration: 0.22 } }}
+                                                className="overflow-hidden"
+                                            >
+                                                <p className="pb-5 text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
+                                                    {item.a}
+                                                </p>
+                                            </Motion.div>
+                                        )}
+                                    </AnimatePresence>
+                                </div>
+                            ))}
+                        </div>
                     </div>
                 </div>
-                <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-townwize-accent/20 rounded-full blur-3xl opacity-50 dark:opacity-30" />
             </section>
 
             {/* ─── CTA + APP STORE TEASER ───────────────────────────────────── */}
