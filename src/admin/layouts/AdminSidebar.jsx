@@ -15,6 +15,7 @@ const navItems = [
   { to: "/admin/finance", label: "Finance" },
   { to: "/admin/finance/transactions", label: "Transactions" },
   { to: "/admin/finance/payouts", label: "Payouts" },
+  { to: "/admin/finance/driver-payouts", label: "Driver Withdrawals" },
 
   { to: "/admin/settings/users", label: "Admin Users" },
   { to: "/admin/settings/features", label: "Feature Flags" },

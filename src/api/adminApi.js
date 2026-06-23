@@ -68,6 +68,13 @@ export const generateFinancePayoutBatch = () =>
 export const updateFinancePayoutStatus = (batchId, body) =>
     call(`/admin/finance/payouts/${batchId}/status`, { method: "PATCH", body: JSON.stringify(body || {}) });
 
+export const fetchDriverPayoutRequests = (params) => {
+    const q = new URLSearchParams(params || {}).toString();
+    return call(`/admin/finance/driver-payout-requests${q ? `?${q}` : ""}`);
+};
+export const reviewDriverPayoutRequest = (id, body) =>
+    call(`/admin/finance/driver-payout-requests/${id}`, { method: "PATCH", body: JSON.stringify(body) });
+
 export const fetchFeatureFlags = () => call("/admin/feature-flags");
 export const updateFeatureFlag = (key, body) =>
     call(`/admin/feature-flags/${key}`, { method: "PATCH", body: JSON.stringify(body || {}) });

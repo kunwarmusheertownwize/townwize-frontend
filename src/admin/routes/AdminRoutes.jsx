@@ -16,6 +16,7 @@ import AuditLogs from "../pages/Audit/AuditLogs";
 
 import TransactionsTable from "../pages/Finance/TransactionsTable";
 import PayoutBatches from "../pages/Finance/PayoutBatches";
+import DriverPayoutRequests from "../pages/Finance/DriverPayoutRequests";
 import FeatureFlags from "../pages/Settings/FeatureFlags";
 import Zones from "../pages/Settings/Zones";
 import PricingSettings from "../pages/Settings/PricingSettings";
@@ -37,6 +38,7 @@ export default function AdminRoutes() {
             <Route path="finance" element={<FinanceDashboard />} />
             <Route path="finance/transactions" element={<TransactionsTable />} />
             <Route path="finance/payouts" element={<PayoutBatches />} />
+            <Route path="finance/driver-payouts" element={<DriverPayoutRequests />} />
 
             <Route path="settings/users" element={<AdminUsers />} />
             <Route path="settings/features" element={<FeatureFlags />} />
