@@ -212,81 +212,129 @@ export default function Profile() {
                   )}
 
                   {tab.key === "referral" && (
-                    <div className="space-y-4">
-                      {/* My referral code */}
-                      {referralData ? (
-                        <div className="p-3 rounded-xl bg-townwize-primary/10 dark:bg-townwize-primary/20 border border-townwize-primary/20 space-y-2">
-                          <p className="text-xs text-gray-500 dark:text-gray-400">Your referral code</p>
-                          <div className="flex items-center gap-2">
-                            <span className="text-lg font-bold tracking-widest text-townwize-primary dark:text-townwize-accent font-mono">
-                              {referralData.code}
-                            </span>
-                            <button onClick={handleCopyCode} className="p-1.5 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-300">
-                              <FaCopy size={12} />
-                            </button>
-                            <button onClick={handleShareCode} className="p-1.5 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-300">
-                              <FaShareAlt size={12} />
-                            </button>
-                          </div>
-                          <p className="text-[10px] text-gray-400">{referralData.rewardsEarned} reward{referralData.rewardsEarned !== 1 ? "s" : ""} earned · {referralData.pendingRewards} pending</p>
-                        </div>
-                      ) : (
-                        <p className="text-sm text-gray-400">Loading referral info…</p>
-                      )}
+                    <div className="space-y-5">
 
-                      {/* Active coupons */}
-                      {coupons.length > 0 && (
-                        <div className="space-y-2">
-                          <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Active Coupons</p>
-                          {coupons.map((c, i) => (
+                      {/* ── Section 1: Refer a Towner ───────────────────────── */}
+                      <div className="space-y-2">
+                        <div>
+                          <p className="text-sm font-semibold text-gray-800 dark:text-gray-100">Refer a Towner</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                            Share with a <span className="font-medium">BTK resident</span> who wants to join Townwize.
+                            Both of you earn a discount coupon after their first ride.
+                          </p>
+                        </div>
+                        {referralData ? (
+                          <div className="p-3 rounded-xl bg-townwize-primary text-white space-y-2">
+                            <p className="text-[10px] text-white/60 uppercase tracking-wider">Your referral code</p>
+                            <div className="flex items-center gap-2">
+                              <span className="text-xl font-bold tracking-widest font-mono">
+                                {referralData.code}
+                              </span>
+                              <button onClick={handleCopyCode} title="Copy code" className="p-1.5 rounded-lg bg-white/15 hover:bg-white/25">
+                                <FaCopy size={12} />
+                              </button>
+                              <button onClick={handleShareCode} title="Share" className="p-1.5 rounded-lg bg-white/15 hover:bg-white/25">
+                                <FaShareAlt size={12} />
+                              </button>
+                            </div>
+                            <div className="flex items-center gap-3 text-[10px] text-white/60 border-t border-white/20 pt-2">
+                              <span>{referralData.totalUses} referred</span>
+                              <span>·</span>
+                              <span>{referralData.rewardsEarned} reward{referralData.rewardsEarned !== 1 ? "s" : ""} earned</span>
+                              {referralData.pendingRewards > 0 && (
+                                <><span>·</span><span className="text-yellow-300">{referralData.pendingRewards} pending (awaiting first ride)</span></>
+                              )}
+                            </div>
+                          </div>
+                        ) : (
+                          <p className="text-xs text-gray-400">Loading…</p>
+                        )}
+                      </div>
+
+                      {/* ── Section 2: Your Discount Coupons ────────────────── */}
+                      <div className="space-y-2">
+                        <div>
+                          <p className="text-sm font-semibold text-gray-800 dark:text-gray-100">Your Discount Coupons</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                            Earned when someone you referred completes their first ride.
+                          </p>
+                        </div>
+                        {coupons.length > 0 ? (
+                          coupons.map((c, i) => (
                             <div key={i} className="flex items-center justify-between p-2.5 rounded-xl border border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-950">
                               <div className="flex items-center gap-2">
                                 <FaTicketAlt className="text-green-600 dark:text-green-400" size={12} />
                                 <span className="text-xs font-semibold text-green-700 dark:text-green-300">
-                                  {c.discountPct}% off {c.type === "FARE_DISCOUNT" ? "fare" : "commission"}
+                                  {c.discountPct}% off {c.type === "FARE_DISCOUNT" ? "your next fare" : "commission"}
                                 </span>
                               </div>
                               <span className="text-[10px] text-gray-400">
-                                Exp {new Date(c.expiresAt).toLocaleDateString()}
+                                Expires {new Date(c.expiresAt).toLocaleDateString()}
                               </span>
                             </div>
-                          ))}
-                        </div>
-                      )}
-
-                      {/* GuestTowner invite slots */}
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">GuestTowner Invites ({guestInvites.length}/6)</p>
-                          {guestInvites.length < 6 && (
-                            <button
-                              onClick={handleGenerateInvite}
-                              disabled={generatingInvite}
-                              className="text-[10px] px-2 py-1 bg-townwize-primary text-white rounded-lg disabled:opacity-60"
-                            >
-                              {generatingInvite ? "…" : "+ Generate"}
-                            </button>
-                          )}
-                        </div>
-                        {guestInvites.map((inv, i) => (
-                          <div key={i} className="flex items-center justify-between p-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-xs">
-                            <span className="font-mono font-bold text-townwize-primary dark:text-townwize-accent">{inv.code}</span>
-                            {inv.isUsed ? (
-                              <span className="text-green-600 dark:text-green-400">Used by {inv.usedBy || "—"}</span>
-                            ) : (
-                              <button
-                                onClick={() => { navigator.clipboard.writeText(inv.inviteLink); toast.success("Invite link copied!"); }}
-                                className="flex items-center gap-1 text-gray-400"
-                              >
-                                <FaCopy size={10} /> Copy
-                              </button>
-                            )}
-                          </div>
-                        ))}
-                        {guestInvites.length === 0 && (
-                          <p className="text-xs text-gray-400">No invites generated yet.</p>
+                          ))
+                        ) : (
+                          <p className="text-xs text-gray-400 italic">No coupons yet — refer a Towner to earn one.</p>
                         )}
                       </div>
+
+                      {/* ── Section 3: Invite a GuestTowner ─────────────────── */}
+                      <div className="space-y-2">
+                        <div>
+                          <p className="text-sm font-semibold text-gray-800 dark:text-gray-100">
+                            Invite a Guest
+                            <span className="ml-2 text-[10px] font-normal text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/30 px-1.5 py-0.5 rounded-full">
+                              {guestInvites.length}/6 used
+                            </span>
+                          </p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                            For a <span className="font-medium">Karachi-based friend or family member</span> who isn't a BTK resident.
+                            They can book Karachi ↔ BTK routes only. You are vouching for them — choose carefully.
+                          </p>
+                        </div>
+                        {guestInvites.length < 6 && (
+                          <button
+                            onClick={handleGenerateInvite}
+                            disabled={generatingInvite}
+                            className="flex items-center gap-1.5 text-xs px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg disabled:opacity-60 transition-colors"
+                          >
+                            <FaUsers size={10} />
+                            {generatingInvite ? "Generating…" : "Generate Invite Link"}
+                          </button>
+                        )}
+                        {guestInvites.length > 0 ? (
+                          <div className="space-y-1.5">
+                            {guestInvites.map((inv, i) => (
+                              <div key={i} className="flex items-center justify-between p-2.5 rounded-lg border border-amber-100 dark:border-amber-900/40 bg-amber-50/50 dark:bg-amber-900/10 text-xs">
+                                <div>
+                                  <span className="font-mono font-bold text-amber-700 dark:text-amber-400">{inv.code}</span>
+                                  {inv.isUsed && (
+                                    <span className="ml-2 text-green-600 dark:text-green-400">
+                                      ✓ Accepted by {inv.usedBy || "your guest"}
+                                    </span>
+                                  )}
+                                </div>
+                                {inv.isUsed ? (
+                                  <span className="text-[10px] text-gray-400">{inv.usedAt ? new Date(inv.usedAt).toLocaleDateString() : ""}</span>
+                                ) : (
+                                  <button
+                                    onClick={() => { navigator.clipboard.writeText(inv.inviteLink); toast.success("Invite link copied!"); }}
+                                    className="flex items-center gap-1 text-amber-600 dark:text-amber-400 hover:text-amber-800"
+                                  >
+                                    <FaCopy size={10} /> Copy link
+                                  </button>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-xs text-gray-400 italic">No guest invites generated yet. You can generate up to 6 lifetime.</p>
+                        )}
+                        {guestInvites.length >= 6 && (
+                          <p className="text-xs text-gray-400 italic">You have used all 6 guest invite slots.</p>
+                        )}
+                      </div>
+
                     </div>
                   )}
 
