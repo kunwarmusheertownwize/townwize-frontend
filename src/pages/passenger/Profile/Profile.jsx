@@ -37,6 +37,7 @@ export default function Profile() {
   const [referralData, setReferralData] = useState(null);
   const [coupons, setCoupons] = useState([]);
   const [guestInvites, setGuestInvites] = useState([]);
+  const [guestSlotsRemaining, setGuestSlotsRemaining] = useState(6);
   const [generatingInvite, setGeneratingInvite] = useState(false);
 
   const fetchReferral = useCallback(async () => {
@@ -49,7 +50,9 @@ export default function Profile() {
       if (codeRes.data?.success) setReferralData(codeRes.data.data);
       if (couponsRes.data?.success) setCoupons(couponsRes.data.data.coupons || []);
       if (invitesRes.data?.success) {
-        setGuestInvites(invitesRes.data.data.invites || []);
+        const d = invitesRes.data.data;
+        setGuestInvites(d.invites || []);
+        setGuestSlotsRemaining(d.slotsRemaining ?? 6);
       }
     } catch {
       // non-critical — silently ignore
@@ -284,7 +287,7 @@ export default function Profile() {
                           <p className="text-sm font-semibold text-gray-800 dark:text-gray-100">
                             Invite a Guest
                             <span className="ml-2 text-[10px] font-normal text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/30 px-1.5 py-0.5 rounded-full">
-                              {guestInvites.length}/6 used
+                              {6 - guestSlotsRemaining}/6 used
                             </span>
                           </p>
                           <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
@@ -292,7 +295,7 @@ export default function Profile() {
                             They can book Karachi ↔ BTK routes only. You are vouching for them — choose carefully.
                           </p>
                         </div>
-                        {guestInvites.length < 6 && (
+                        {guestSlotsRemaining > 0 && (
                           <button
                             onClick={handleGenerateInvite}
                             disabled={generatingInvite}
@@ -330,7 +333,7 @@ export default function Profile() {
                         ) : (
                           <p className="text-xs text-gray-400 italic">No guest invites generated yet. You can generate up to 6 lifetime.</p>
                         )}
-                        {guestInvites.length >= 6 && (
+                        {guestSlotsRemaining <= 0 && (
                           <p className="text-xs text-gray-400 italic">You have used all 6 guest invite slots.</p>
                         )}
                       </div>
@@ -613,7 +616,7 @@ export default function Profile() {
                   <h3 className="text-base font-semibold text-gray-800 dark:text-white flex items-center gap-2">
                     Invite a Guest
                     <span className="text-xs font-normal text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/30 px-2 py-0.5 rounded-full">
-                      {guestInvites.length}/6 used
+                      {6 - guestSlotsRemaining}/6 used
                     </span>
                   </h3>
                   <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
@@ -621,7 +624,7 @@ export default function Profile() {
                     They can only book Karachi ↔ BTK routes. You are vouching for them — choose carefully.
                   </p>
                 </div>
-                {guestInvites.length < 6 && (
+                {guestSlotsRemaining > 0 && (
                   <button
                     onClick={handleGenerateInvite}
                     disabled={generatingInvite}
@@ -658,7 +661,7 @@ export default function Profile() {
                   ))}
                 </div>
               )}
-              {guestInvites.length >= 6 && (
+              {guestSlotsRemaining <= 0 && (
                 <p className="text-sm text-gray-400 italic">You have used all 6 guest invite slots.</p>
               )}
             </div>
