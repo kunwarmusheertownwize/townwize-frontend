@@ -10,13 +10,12 @@ const api = axios.create({
     withCredentials: true,
 });
 
-// Native (Capacitor) clients: SameSite=Lax blocks cross-origin cookies, so
-// we store the access token in localStorage and send it as a Bearer header.
+// Always send Bearer token from localStorage.
+// Native: cookies blocked by SameSite; Web (staging): cross-origin subdomains
+// block third-party cookies in incognito/modern browsers. Bearer works for both.
 api.interceptors.request.use((config) => {
-    if (isNative()) {
-        const token = localStorage.getItem("_tw_at");
-        if (token) config.headers.Authorization = `Bearer ${token}`;
-    }
+    const token = localStorage.getItem("_tw_at");
+    if (token) config.headers.Authorization = `Bearer ${token}`;
     return config;
 });
 
@@ -59,23 +58,15 @@ api.interceptors.response.use(
         isRefreshing = true;
 
         try {
-            // Web: refreshToken cookie sent automatically via withCredentials.
-            // Native: cookie blocked by SameSite, so send the token in the body.
-            const body = isNative()
-                ? { refreshToken: localStorage.getItem("_tw_rt") }
-                : {};
-
+            // Always send refreshToken in body — cookies are unreliable cross-origin.
             const refreshRes = await axios.post(
                 `${BASE_URL}/auth/refresh`,
-                body,
+                { refreshToken: localStorage.getItem("_tw_rt") },
                 { withCredentials: true }
             );
 
-            // Native: update stored access token from response body
-            if (isNative()) {
-                const newToken = refreshRes.data?.data?.accessToken;
-                if (newToken) localStorage.setItem("_tw_at", newToken);
-            }
+            const newToken = refreshRes.data?.data?.accessToken;
+            if (newToken) localStorage.setItem("_tw_at", newToken);
 
             processQueue(null);
             return api(original);

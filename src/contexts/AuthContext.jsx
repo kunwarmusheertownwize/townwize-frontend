@@ -29,9 +29,14 @@ export function AuthProvider({ children }) {
   }, []);
 
   const login = (payload) => {
-    // Store only user identity — tokens live in httpOnly cookies set by the server
     const session = { user: payload?.user ?? payload };
     localStorage.setItem("auth", JSON.stringify(session));
+    // Also store tokens in localStorage so Bearer auth works cross-origin
+    // (staging: frontend + backend on different onrender.com subdomains blocks
+    // cross-site httpOnly cookies in incognito/modern browsers).
+    // In production on townwize.com subdomains, cookies will also work as backup.
+    if (payload?.accessToken)  localStorage.setItem("_tw_at", payload.accessToken);
+    if (payload?.refreshToken) localStorage.setItem("_tw_rt", payload.refreshToken);
     setAuth(session);
   };
 
