@@ -36,6 +36,9 @@ const DriverLiveTracking = () => {
   const [showReportConfirm, setShowReportConfirm] = useState(false);
   const [reportSubmitting, setReportSubmitting] = useState(false);
   const [allAboard, setAllAboard] = useState(false);
+  const [dropoffStage, setDropoffStage] = useState(1);
+  const [showCoRiderReportConfirm, setShowCoRiderReportConfirm] = useState(false);
+  const [coRiderReportSubmitting, setCoRiderReportSubmitting] = useState(false);
 
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
@@ -487,6 +490,33 @@ const DriverLiveTracking = () => {
     }
   };
 
+  const handleReportCoRider = async () => {
+    if (coRiderReportSubmitting || !sp) return;
+    setCoRiderReportSubmitting(true);
+    try {
+      await api.post(`/rides/${rideId}/report-extra`, {
+        details: "Co-rider behaviour report",
+        reportedUserId: sp.userId,
+      });
+      toast.success("Co-rider report submitted.");
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "Could not submit report.");
+    } finally {
+      setCoRiderReportSubmitting(false);
+      setShowCoRiderReportConfirm(false);
+    }
+  };
+
+  const getInitials = (name) => {
+    const parts = String(name || "?").trim().split(" ");
+    return parts.length >= 2
+      ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+      : (parts[0][0] || "?").toUpperCase();
+  };
+
+  const AVATAR_COLORS = ["bg-violet-500", "bg-blue-500", "bg-teal-500", "bg-emerald-500", "bg-orange-500"];
+  const getAvatarColor = (name) => AVATAR_COLORS[(name?.charCodeAt(0) || 0) % AVATAR_COLORS.length];
+
   if (!hasRequest) return null;
 
   // ── Status label ──────────────────────────────────────────────────────
@@ -506,19 +536,67 @@ const DriverLiveTracking = () => {
 
   // ── Passenger manifest (shown during ARRIVED / ON_TRIP for pooled rides) ──
   const passengerManifest = isPooled && ["ARRIVED", "ON_TRIP"].includes(rideStatus) ? (
-    <div className="rounded-xl border border-blue-100 dark:border-blue-900 bg-blue-50 dark:bg-blue-950 p-3 space-y-2">
+    <div className="rounded-xl border border-blue-100 dark:border-blue-900 bg-blue-50 dark:bg-blue-950 p-3 space-y-3">
       <p className="text-xs font-semibold text-blue-700 dark:text-blue-300 uppercase tracking-wide">Passenger Manifest</p>
-      <div className="flex items-center gap-2 text-sm">
-        <span className="h-2 w-2 rounded-full bg-green-500 shrink-0" />
-        <span className="font-medium text-gray-800 dark:text-gray-100">Primary Towner</span>
-        <span className="text-xs text-gray-400 ml-auto">Seat 1</span>
-      </div>
-      {sp && (
-        <div className="flex items-center gap-2 text-sm">
-          <span className={`h-2 w-2 rounded-full shrink-0 ${sp.boarded ? "bg-green-500" : "bg-yellow-400"}`} />
-          <span className="font-medium text-gray-800 dark:text-gray-100">{sp.name}</span>
-          <span className="text-xs text-gray-400 ml-auto">Seat 2</span>
+
+      {/* Primary passenger */}
+      <div className="flex items-center gap-3">
+        <div className="h-9 w-9 shrink-0 rounded-full bg-townwize-primary flex items-center justify-center text-xs font-bold text-white">
+          P1
         </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-semibold text-gray-900 dark:text-white leading-tight">Primary Towner</p>
+          <p className="text-xs text-green-500 font-medium">Seat 1 · Boarded ✓</p>
+        </div>
+      </div>
+
+      {/* Co-rider */}
+      {sp && (
+        <>
+          <div className="h-px bg-blue-100 dark:bg-blue-800" />
+          <div className="flex items-center gap-3">
+            <div className={`h-9 w-9 shrink-0 rounded-full flex items-center justify-center text-xs font-bold text-white ${getAvatarColor(sp.name)}`}>
+              {getInitials(sp.name)}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-gray-900 dark:text-white leading-tight">{sp.name}</p>
+              <p className={`text-xs font-medium ${sp.boarded ? "text-green-500" : "text-yellow-500"}`}>
+                Seat 2 · {sp.boarded ? "Boarded ✓" : "Not yet boarded"}
+              </p>
+            </div>
+            <button
+              onClick={() => setShowCoRiderReportConfirm(true)}
+              className="shrink-0 px-2.5 py-1 rounded-lg text-[10px] font-semibold text-red-500 border border-red-200 dark:border-red-800 hover:bg-red-50 dark:hover:bg-red-900/20 transition"
+            >
+              Report
+            </button>
+          </div>
+
+          {/* Co-rider report confirmation */}
+          {showCoRiderReportConfirm && (
+            <div className="rounded-xl border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950 p-3 space-y-2">
+              <p className="text-xs font-semibold text-red-800 dark:text-red-300">Report {sp.name}?</p>
+              <p className="text-xs text-red-700 dark:text-red-400">
+                Use this only for genuine misconduct or safety concerns. Repeated false reports may affect your account.
+              </p>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setShowCoRiderReportConfirm(false)}
+                  className="flex-1 py-2 rounded-xl text-xs font-semibold bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleReportCoRider}
+                  disabled={coRiderReportSubmitting}
+                  className="flex-1 py-2 rounded-xl text-xs font-semibold bg-red-600 text-white disabled:opacity-60"
+                >
+                  {coRiderReportSubmitting ? "Reporting…" : "Confirm Report"}
+                </button>
+              </div>
+            </div>
+          )}
+        </>
       )}
     </div>
   ) : null;
@@ -609,30 +687,54 @@ const DriverLiveTracking = () => {
     </div>
   ) : null;
 
-  // ── Dual dropoff info during ON_TRIP ──────────────────────────────────
+  // ── Dual dropoff info during ON_TRIP (sequential stages) ────────────────
   const dualDropoffInfo = isPooled && rideStatus === "ON_TRIP" && sp ? (
-    <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-3 space-y-2 text-sm">
+    <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-3 space-y-3 text-sm">
       <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Drop-off Stops</p>
-      <div className="flex items-start gap-2">
-        <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-red-500" />
-        <div>
-          <p className="text-xs text-gray-400">Stop 1 — Primary Towner</p>
+
+      {/* Stop 1 */}
+      <div className={`flex items-start gap-2 rounded-lg p-2 ${dropoffStage === 1 ? "bg-red-50 dark:bg-red-900/20 ring-1 ring-red-200 dark:ring-red-800" : "opacity-50"}`}>
+        <span className={`mt-1 h-2 w-2 shrink-0 rounded-full ${dropoffStage === 1 ? "bg-red-500" : "bg-green-500"}`} />
+        <div className="flex-1 min-w-0">
+          <p className="text-xs text-gray-400">Stop 1 — Primary Towner {dropoffStage === 2 ? "✓" : ""}</p>
           <p className="font-medium leading-snug text-gray-800 dark:text-gray-100">{dropoffAddress}</p>
         </div>
       </div>
-      <div className="flex items-start gap-2">
-        <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-orange-400" />
-        <div>
+
+      {/* Stop 2 */}
+      <div className={`flex items-start gap-2 rounded-lg p-2 ${dropoffStage === 2 ? "bg-orange-50 dark:bg-orange-900/20 ring-1 ring-orange-200 dark:ring-orange-800" : "opacity-50"}`}>
+        <span className={`mt-1 h-2 w-2 shrink-0 rounded-full ${dropoffStage === 2 ? "bg-orange-500" : "bg-gray-300"}`} />
+        <div className="flex-1 min-w-0">
           <p className="text-xs text-gray-400">Stop 2 — {sp.name}</p>
           <p className="font-medium leading-snug text-gray-800 dark:text-gray-100">{sp.dropoffAddress || "Co-passenger dropoff"}</p>
         </div>
       </div>
-      <button
-        onClick={() => openNavigation(sp.dropoffAddress || dropoffAddress)}
-        className="w-full py-2 rounded-xl text-xs font-semibold bg-townwize-primary text-white"
-      >
-        Navigate to Next Stop
-      </button>
+
+      {dropoffStage === 1 && (
+        <div className="flex gap-2">
+          <button
+            onClick={() => openNavigation(dropoffAddress)}
+            className="flex-1 py-2 rounded-xl text-xs font-semibold bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200"
+          >
+            Navigate Stop 1
+          </button>
+          <button
+            onClick={() => { setDropoffStage(2); openNavigation(sp.dropoffAddress || dropoffAddress); }}
+            className="flex-1 py-2 rounded-xl text-xs font-semibold bg-townwize-primary text-white"
+          >
+            Stop 1 Done →
+          </button>
+        </div>
+      )}
+
+      {dropoffStage === 2 && (
+        <button
+          onClick={() => openNavigation(sp.dropoffAddress || dropoffAddress)}
+          className="w-full py-2 rounded-xl text-xs font-semibold bg-townwize-primary text-white"
+        >
+          Navigate to Stop 2
+        </button>
+      )}
     </div>
   ) : null;
 
@@ -670,7 +772,7 @@ const DriverLiveTracking = () => {
           )}
         </>
       )}
-      {rideStatus === "ON_TRIP" && (
+      {rideStatus === "ON_TRIP" && (!isPooled || dropoffStage === 2) && (
         <button
           onClick={handleCompleteTrip}
           disabled={endingTrip}
