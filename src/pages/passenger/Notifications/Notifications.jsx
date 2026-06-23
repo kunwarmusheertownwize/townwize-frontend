@@ -76,15 +76,24 @@ const Notifications = () => {
               <p className="text-xs text-gray-400 mt-0.5">{unreadCount} unread</p>
             )}
           </div>
-          {unreadCount > 0 && (
+          <div className="flex items-center gap-3">
+            {unreadCount > 0 && (
+              <button
+                onClick={markAll}
+                disabled={marking}
+                className="flex items-center gap-1.5 text-xs font-medium text-townwize-accent hover:underline disabled:opacity-50"
+              >
+                <FaCheckDouble /> Mark all read
+              </button>
+            )}
             <button
-              onClick={markAll}
-              disabled={marking}
-              className="flex items-center gap-1.5 text-xs font-medium text-townwize-accent hover:underline disabled:opacity-50"
+              onClick={fetchNotifications}
+              disabled={loading}
+              className="rounded-xl border border-gray-200 dark:border-gray-700 px-3 py-1.5 text-xs font-medium text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-40 transition"
             >
-              <FaCheckDouble /> Mark all read
+              {loading ? "Loading…" : "Refresh"}
             </button>
-          )}
+          </div>
         </div>
 
         {loading ? (

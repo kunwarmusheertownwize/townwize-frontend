@@ -1,5 +1,5 @@
 import { useRef, useEffect, useState } from "react";
-import { FaTimes, FaCrosshairs, FaMapMarkerAlt } from "react-icons/fa";
+import { FaTimes, FaCrosshairs, FaMapMarkerAlt, FaHistory } from "react-icons/fa";
 
 const LocationField = ({
   label,
@@ -12,6 +12,7 @@ const LocationField = ({
   setSuggestions,
   onSelect,
   fetchSuggestions,
+  onFocus: onFocusProp,
   icon,
 }) => {
   const debounceTimeout = useRef(null);
@@ -44,6 +45,7 @@ const LocationField = ({
     } else {
       setSuggestions([{ type: "map", text: "Set location on map" }]);
     }
+    onFocusProp?.();
   };
 
   const handleKeyDown = (e) => {
@@ -131,6 +133,9 @@ const LocationField = ({
             } else if (s.type === "map") {
               displayIcon = <FaMapMarkerAlt className="text-townwize-primary text-lg" />;
               subtitle = "Pick location directly from map";
+            } else if (s.isRecent) {
+              displayIcon = <FaHistory className="text-gray-400 text-base" />;
+              subtitle = "Recent pickup";
             }
 
             return (

@@ -121,6 +121,10 @@ const SelectRide = () => {
 
 
 
+  const getRecentPickups = () => {
+    try { return JSON.parse(localStorage.getItem("tw_recent_pickups") || "[]"); } catch { return []; }
+  };
+
   // restore from sessionStorage on refresh
   const persisted = JSON.parse(sessionStorage.getItem("selectRideState") || "{}");
   const [pickup, setPickup] = useState(state?.pickup || persisted.pickup || "");
@@ -526,10 +530,15 @@ const SelectRide = () => {
   useEffect(() => {
     setEta(effectiveEtaText || "");
   }, [effectiveEtaText]);
-  // Fetch place suggestions
-  const fetchSuggestions = useCallback(async (input, setter) => {
+  // Fetch place suggestions (with recent-pickup fallback for empty input)
+  const fetchSuggestions = useCallback(async (input, setter, { showRecents = false } = {}) => {
     if (!coreMapsReadyRef.current || !input) {
-      setter([]);
+      if (showRecents && !input) {
+        const recents = getRecentPickups();
+        setter(recents.map((addr) => ({ description: addr, placeId: null, text: addr, isRecent: true })));
+      } else {
+        setter([]);
+      }
       return;
     }
     try {
@@ -580,6 +589,15 @@ const SelectRide = () => {
       }
     );
   }, [reverseGeocode, updateMapMarker, coreMapInstanceRef, coreMapsReadyRef]);
+  const saveRecentPickup = (address) => {
+    if (!address?.trim()) return;
+    try {
+      const stored = JSON.parse(localStorage.getItem("tw_recent_pickups") || "[]");
+      const updated = [address, ...stored.filter((a) => a !== address)].slice(0, 5);
+      localStorage.setItem("tw_recent_pickups", JSON.stringify(updated));
+    } catch {}
+  };
+
   // Continue to trip summary
   const handleContinue = () => {
     if (!pickup.trim() || !dropoff.trim()) {
@@ -623,6 +641,7 @@ const dropoffCoords = dropoffMarkerRef.current
   ? getLatLng(dropoffMarkerRef.current.position)
   : effectiveState?.dropoffCoords || null;
 
+saveRecentPickup(pickup);
 navigate("/passenger/trip-summary", {
   replace: true,
   state: {
@@ -660,6 +679,19 @@ navigate("/passenger/trip-summary", {
     suggestions: pickupSuggestions,
     setSuggestions: setPickupSuggestions,
     onSelect: (p) => {
+      if (p.isRecent) {
+        setPickup(p.description);
+        reverseGeocode ? null : null; // no-op — geocode will run when user proceeds
+        getGeocoder().then((geocoder) => {
+          geocoder.geocode({ address: p.description }, (results, status) => {
+            if (status === "OK" && results?.[0]?.geometry?.location) {
+              updateMapMarker(results[0].geometry.location, "pickup");
+            }
+          });
+        });
+        setPickupSuggestions([]);
+        return;
+      }
       const placesService = new google.maps.places.PlacesService(coreMapInstanceRef.current);
       placesService.getDetails(
         { placeId: p.placeId, fields: ["formatted_address", "geometry"] },
@@ -675,6 +707,17 @@ navigate("/passenger/trip-summary", {
         }
       );
       setPickupSuggestions([]);
+    },
+    onFocus: () => {
+      if (!pickup) {
+        const recents = getRecentPickups();
+        if (recents.length) {
+          setPickupSuggestions((prev) => [
+            ...prev,
+            ...recents.map((addr) => ({ description: addr, placeId: null, text: addr, isRecent: true })),
+          ]);
+        }
+      }
     },
     icon: <FaMapMarkerAlt className="text-townwize-primary dark:text-townwize-textContent text-lg mr-3" />,
   }), [pickup, pickupSuggestions, handleGPS, updateMapMarker, coreMapInstanceRef, coreMapsReadyRef]);

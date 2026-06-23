@@ -45,6 +45,7 @@ export default function PassengerTrips() {
   const [page, setPage]       = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState("");
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
     let mounted = true;
@@ -65,7 +66,7 @@ export default function PassengerTrips() {
       })
       .finally(() => { if (mounted) setLoading(false); });
     return () => { mounted = false; };
-  }, [page]);
+  }, [page, refreshKey]);
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-6 space-y-4">
@@ -76,6 +77,13 @@ export default function PassengerTrips() {
             <p className="text-xs text-gray-400 mt-0.5">{total} trip{total !== 1 ? "s" : ""} total</p>
           )}
         </div>
+        <button
+          onClick={() => { setPage(1); setRefreshKey((k) => k + 1); }}
+          disabled={loading}
+          className="rounded-xl border border-gray-200 dark:border-gray-700 px-3 py-1.5 text-xs font-medium text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-40 transition"
+        >
+          {loading ? "Loading…" : "Refresh"}
+        </button>
       </div>
 
       {error && (
@@ -103,12 +111,17 @@ export default function PassengerTrips() {
               const meta = STATUS_META[ride.status] || { label: ride.status, cls: "bg-gray-100 text-gray-600" };
               const dist = distanceOf(ride);
               const isCompleted = ride.status === "COMPLETED";
+              const isMerged = ride.status === "CANCELLED" && ride.linkedRideId;
               const rated = ride.passengerRating?.stars;
+              const handleClick = () => {
+                if (isCompleted) navigate(`/passenger/trip-receipt/${ride._id}`);
+                else if (isMerged) navigate(`/passenger/trip-receipt/${ride.linkedRideId}`);
+              };
               return (
                 <div
                   key={ride._id}
-                  onClick={() => isCompleted && navigate(`/passenger/trip-receipt/${ride._id}`)}
-                  className={`rounded-2xl border border-gray-100 bg-white dark:bg-townwize-primaryDark dark:border-gray-700 p-4 shadow-sm ${isCompleted ? "cursor-pointer hover:border-townwize-primary/40 hover:shadow-md transition-shadow" : ""}`}
+                  onClick={handleClick}
+                  className={`rounded-2xl border border-gray-100 bg-white dark:bg-townwize-primaryDark dark:border-gray-700 p-4 shadow-sm ${isCompleted || isMerged ? "cursor-pointer hover:border-townwize-primary/40 hover:shadow-md transition-shadow" : ""}`}
                 >
                   <div className="flex items-start justify-between gap-3">
                     {/* Route */}
@@ -159,6 +172,11 @@ export default function PassengerTrips() {
                     {ride.rideType === "RIDETOGETHER" && (
                       <span className="flex items-center gap-1 text-[10px] font-semibold text-purple-700 bg-purple-50 dark:bg-purple-900/30 dark:text-purple-300 px-2 py-0.5 rounded-full">
                         <FaUsers size={9} /> RideTogether
+                      </span>
+                    )}
+                    {isMerged && (
+                      <span className="text-[10px] font-semibold text-townwize-primary dark:text-townwize-accent underline underline-offset-2">
+                        View shared receipt →
                       </span>
                     )}
                     <span className="ml-auto text-xs text-gray-400 capitalize">

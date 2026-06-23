@@ -162,6 +162,7 @@ const LiveTracking = () => {
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
   const driverMarkerRef = useRef(null);
+  const prevDriverPosRef = useRef(null);
   const pickupMarkerRef = useRef(null);
   const routeRendererRef = useRef(null);
 
@@ -634,14 +635,24 @@ const LiveTracking = () => {
     const map = mapInstanceRef.current;
     const pos = { lat: driverLat, lng: driverLng };
 
+    // Calculate bearing from previous position for arrow rotation
+    let bearing = 0;
+    if (prevDriverPosRef.current) {
+      const { lat: lat1, lng: lng1 } = prevDriverPosRef.current;
+      const toRad = (d) => (d * Math.PI) / 180;
+      const dLng = toRad(pos.lng - lng1);
+      const lat1R = toRad(lat1);
+      const lat2R = toRad(pos.lat);
+      const y = Math.sin(dLng) * Math.cos(lat2R);
+      const x = Math.cos(lat1R) * Math.sin(lat2R) - Math.sin(lat1R) * Math.cos(lat2R) * Math.cos(dLng);
+      bearing = ((Math.atan2(y, x) * 180) / Math.PI + 360) % 360;
+    }
+    prevDriverPosRef.current = pos;
+
     if (!driverMarkerRef.current) {
       const driverEl = document.createElement("div");
-      driverEl.style.cssText = [
-        "width:20px", "height:20px", "border-radius:50%",
-        "background:#17BEBB",          // townwize-accent teal
-        "border:3px solid #fff",
-        "box-shadow:0 0 0 3px #17BEBB,0 2px 6px rgba(0,0,0,0.4)",
-      ].join(";");
+      driverEl.style.cssText = "width:36px;height:36px;display:flex;align-items:center;justify-content:center;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.35))";
+      driverEl.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 36 36" style="transform:rotate(${bearing}deg);transition:transform 0.4s ease"><circle cx="18" cy="18" r="16" fill="#17BEBB" stroke="white" stroke-width="2.5"/><polygon points="18,6 24,26 18,22 12,26" fill="white"/></svg>`;
       driverMarkerRef.current = new google.maps.marker.AdvancedMarkerElement({
         map,
         position: pos,
@@ -649,6 +660,8 @@ const LiveTracking = () => {
       });
     } else {
       driverMarkerRef.current.position = pos;
+      const svg = driverMarkerRef.current.content?.querySelector("svg");
+      if (svg && prevDriverPosRef.current) svg.style.transform = `rotate(${bearing}deg)`;
     }
 
     const currentStatus = rideRef.current?.status;
@@ -901,12 +914,25 @@ const LiveTracking = () => {
                     </div>
                   )}
                 </div>
-                {showEta && (
-                  <div className="shrink-0 text-right">
-                    <p className="text-[10px] text-gray-400">Arrives in</p>
-                    <p className="text-lg font-extrabold text-townwize-primary dark:text-townwize-accent leading-tight">{etaMinutes} min</p>
-                  </div>
-                )}
+                <div className="flex items-center gap-2 ml-auto shrink-0">
+                  {showEta && (
+                    <div className="text-right">
+                      <p className="text-[10px] text-gray-400">Arrives in</p>
+                      <p className="text-lg font-extrabold text-townwize-primary dark:text-townwize-accent leading-tight">{etaMinutes} min</p>
+                    </div>
+                  )}
+                  {driverInfo.phone && (
+                    <a
+                      href={`tel:${driverInfo.phone}`}
+                      className="flex flex-col items-center justify-center h-11 w-11 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 shrink-0"
+                      title="Call Wizer"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M6.62 10.79a15.053 15.053 0 006.59 6.59l2.2-2.2a1 1 0 011.01-.24 11.36 11.36 0 003.56.57 1 1 0 011 1V20a1 1 0 01-1 1A17 17 0 013 4a1 1 0 011-1h3.5a1 1 0 011 1 11.36 11.36 0 00.57 3.57 1 1 0 01-.25 1.01l-2.2 2.21z"/>
+                      </svg>
+                    </a>
+                  )}
+                </div>
               </div>
             )}
 
