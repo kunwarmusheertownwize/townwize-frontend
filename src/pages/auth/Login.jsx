@@ -8,6 +8,7 @@ import api from "../../services/api";
 import { isNative } from "../../utils/platform";
 
 import AuthHeader from "../../components/auth/AuthHeader";
+import GoogleSignInButton from "../../components/auth/GoogleSignInButton";
 import { useAuth } from "../../hooks/useAuth";
 
 function Login() {
@@ -104,6 +105,31 @@ function Login() {
 };
 
 
+  const handleGoogleSignIn = async (credential) => {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+    try {
+      const res = await api.post("/auth/google", { credential });
+      login(res.data.data);
+      if (isNative()) {
+        const { accessToken, refreshToken } = res.data.data;
+        if (accessToken) localStorage.setItem("_tw_at", accessToken);
+        if (refreshToken) localStorage.setItem("_tw_rt", refreshToken);
+      }
+      const role = res.data.data.user.role;
+      toast.success("Logged in successfully");
+      setTimeout(() => {
+        if (role === "admin") navigate("/admin", { replace: true });
+        else if (role === "driver") navigate("/driver/home", { replace: true });
+        else navigate("/passenger/home", { replace: true });
+        setIsSubmitting(false);
+      }, 0);
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Google sign-in failed");
+      setIsSubmitting(false);
+    }
+  };
+
   const isReturningUser = Boolean(email?.length);
 
 
@@ -176,6 +202,18 @@ function Login() {
               >
                 {isSubmitting ? "Signing in…" : "Sign in"}
               </button>
+
+              {/* Google Sign-In — hidden on Wizer (driver) builds */}
+              {import.meta.env.VITE_APP_ROLE !== "driver" && (
+                <div className="space-y-3">
+                  <div className="relative flex items-center gap-3">
+                    <div className="flex-1 h-px bg-gray-200 dark:bg-gray-700" />
+                    <span className="text-xs text-gray-400 shrink-0">or</span>
+                    <div className="flex-1 h-px bg-gray-200 dark:bg-gray-700" />
+                  </div>
+                  <GoogleSignInButton onSuccess={handleGoogleSignIn} />
+                </div>
+              )}
 
               {/* Footer Links */}
               <div className="flex justify-between text-sm text-gray-500 dark:text-gray-400">

@@ -1,6 +1,6 @@
 import { useFormContext } from "react-hook-form";
 
-export default function AccountInfo({ register, errors }) {
+export default function AccountInfo({ register, errors, showPhone = true }) {
   const { watch, setValue } = useFormContext();
   const phoneField = register("phone");
   const phoneValue = watch("phone") || "";
@@ -73,27 +73,29 @@ export default function AccountInfo({ register, errors }) {
         )}
       </div>
 
-      {/* Phone */}
-      <div>
-        <label className="text-sm text-gray-600 dark:text-gray-300">
-          Phone
-        </label>
-        <input
-          type="tel"
-          name={phoneField.name}
-          ref={phoneField.ref}
-          onBlur={phoneField.onBlur}
-          onChange={handlePhoneChange}
-          value={phoneValue}
-          className="mt-1 w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg p-3 outline-none"
-          placeholder="0300-1234567"
-          inputMode="tel"
-          maxLength={16}
-        />
-        {errors.phone && (
-          <p className="text-xs !text-townwize-error  mt-1">{errors.phone.message}</p>
-        )}
-      </div>
+      {/* Phone — hidden in wizard (collected in OTP step) */}
+      {showPhone && (
+        <div>
+          <label className="text-sm text-gray-600 dark:text-gray-300">
+            Phone
+          </label>
+          <input
+            type="tel"
+            name={phoneField.name}
+            ref={phoneField.ref}
+            onBlur={phoneField.onBlur}
+            onChange={handlePhoneChange}
+            value={phoneValue}
+            className="mt-1 w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg p-3 outline-none"
+            placeholder="0300-1234567"
+            inputMode="tel"
+            maxLength={16}
+          />
+          {errors.phone && (
+            <p className="text-xs !text-townwize-error  mt-1">{errors.phone.message}</p>
+          )}
+        </div>
+      )}
 
       {/* Password */}
       <div>
