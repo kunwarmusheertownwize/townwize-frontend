@@ -219,11 +219,18 @@ export default function Profile() {
 
                       {/* Hero: Code Card */}
                       <div className="bg-gradient-to-br from-townwize-primary to-townwize-primaryDark p-4">
-                        <p className="text-[9px] font-bold text-white/50 uppercase tracking-[0.15em] mb-2">Refer a Towner</p>
-                        <p className="text-[11px] text-white/65 mb-4 leading-relaxed">
+                        <div className="flex items-center gap-2 mb-2">
+                          <p className="text-[9px] font-bold text-white/50 uppercase tracking-[0.15em]">Refer a Towner</p>
+                          <span className="text-[8px] font-bold px-1.5 py-0.5 rounded-full bg-white/15 text-white/80 uppercase tracking-wide">For BTK residents</span>
+                        </div>
+                        <p className="text-[11px] text-white/65 mb-1.5 leading-relaxed">
                           Share with a <span className="text-white font-semibold">BTK resident</span> joining Townwize.
-                          Both of you earn a ride discount.
                         </p>
+                        <div className="flex items-center gap-2 text-[10px] mb-4">
+                          <span className="text-green-300 font-semibold">↑ You earn a discount</span>
+                          <span className="text-white/30">·</span>
+                          <span className="text-green-300 font-semibold">↑ They earn a discount</span>
+                        </div>
                         <div className="bg-white/10 rounded-xl p-3 mb-3">
                           <p className="text-[9px] text-white/50 uppercase tracking-widest mb-1.5">Your Referral Code</p>
                           <div className="flex items-center justify-between gap-2">
@@ -298,9 +305,10 @@ export default function Profile() {
                       {/* Guest Invites */}
                       <div className="px-4 py-3.5">
                         <div className="flex items-center justify-between gap-3 mb-1">
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 flex-wrap">
                             <p className="text-xs font-bold text-gray-900 dark:text-white">Guest Invites</p>
-                            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400">
+                            <span className="text-[8px] font-bold px-1.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400 uppercase tracking-wide">For Karachi friends</span>
+                            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400">
                               {6 - guestSlotsRemaining}/6
                             </span>
                           </div>
@@ -316,7 +324,7 @@ export default function Profile() {
                           )}
                         </div>
                         <p className="text-[11px] text-gray-500 dark:text-gray-400 mb-2.5 leading-relaxed">
-                          For a <span className="font-semibold text-gray-700 dark:text-gray-200">Karachi-based</span> friend — Karachi ↔ BTK only. You vouch for them.
+                          Non-BTK residents — <span className="font-semibold text-gray-700 dark:text-gray-200">Karachi ↔ BTK only</span>. No rewards — you vouch for them.
                         </p>
                         {guestInvites.length === 0 ? (
                           <div className="p-3 rounded-xl bg-amber-50/60 dark:bg-amber-900/10 border border-dashed border-amber-200 dark:border-amber-800/40">
@@ -562,11 +570,22 @@ export default function Profile() {
 
             {/* ── Hero: Referral Code Card ─────────────────────────────────── */}
             <div className="bg-gradient-to-br from-townwize-primary to-townwize-primaryDark p-6">
-              <p className="text-[10px] font-bold text-white/50 uppercase tracking-[0.15em] mb-3">Refer a Towner</p>
-              <p className="text-sm text-white/70 mb-5">
+              <div className="flex items-center gap-2 mb-3">
+                <p className="text-[10px] font-bold text-white/50 uppercase tracking-[0.15em]">Refer a Towner</p>
+                <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-white/15 text-white/80 uppercase tracking-wide">For BTK residents</span>
+              </div>
+              <p className="text-sm text-white/70 mb-2">
                 Share with a <span className="text-white font-semibold">BTK resident</span> joining Townwize.
-                Both of you earn a ride discount after their first trip.
               </p>
+              <div className="flex items-center gap-3 text-xs mb-5">
+                <span className="flex items-center gap-1 text-green-300 font-semibold">
+                  <span className="text-base leading-none">↑</span> You earn a discount
+                </span>
+                <span className="text-white/30">·</span>
+                <span className="flex items-center gap-1 text-green-300 font-semibold">
+                  <span className="text-base leading-none">↑</span> They earn a discount
+                </span>
+              </div>
               <div className="bg-white/10 rounded-2xl p-4 mb-4">
                 <p className="text-[10px] text-white/50 uppercase tracking-widest mb-2">Your Referral Code</p>
                 <div className="flex items-center justify-between gap-3">
@@ -648,14 +667,15 @@ export default function Profile() {
             <div className="px-6 py-5">
               <div className="flex items-start justify-between gap-4 mb-1">
                 <div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 mb-0.5">
                     <h3 className="text-sm font-bold text-gray-900 dark:text-white">Guest Invites</h3>
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400">
+                    <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400 uppercase tracking-wide">For Karachi friends</span>
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400">
                       {6 - guestSlotsRemaining} / 6
                     </span>
                   </div>
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                    For a <span className="font-semibold text-gray-700 dark:text-gray-200">Karachi-based</span> friend or family member — Karachi ↔ BTK only. You vouch for them.
+                    Non-BTK residents — <span className="font-semibold text-gray-700 dark:text-gray-200">Karachi ↔ BTK routes only</span>. No rewards — you vouch for them.
                   </p>
                 </div>
                 {guestSlotsRemaining > 0 && (

@@ -567,6 +567,9 @@
   .-mb-px {
     margin-bottom: -1px;
   }
+  .mb-0\.5 {
+    margin-bottom: calc(var(--spacing) * 0.5);
+  }
   .mb-1 {
     margin-bottom: calc(var(--spacing) * 1);
   }
@@ -2113,6 +2116,9 @@
     font-size: var(--text-xs);
     line-height: var(--tw-leading, var(--text-xs--line-height));
   }
+  .text-\[8px\] {
+    font-size: 8px;
+  }
   .text-\[9px\] {
     font-size: 9px;
   }
@@ -2292,6 +2298,9 @@
   }
   .text-green-200 {
     color: var(--color-green-200);
+  }
+  .text-green-300 {
+    color: var(--color-green-300);
   }
   .text-green-500 {
     color: var(--color-green-500);
