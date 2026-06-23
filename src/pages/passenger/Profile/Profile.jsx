@@ -611,24 +611,22 @@ export default function Profile() {
 
             {/* ── Section 3: Invite a Guest (GuestTowner) ─────────────────── */}
             <div className="space-y-3">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <h3 className="text-base font-semibold text-gray-800 dark:text-white flex items-center gap-2">
-                    Invite a Guest
-                    <span className="text-xs font-normal text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/30 px-2 py-0.5 rounded-full">
-                      {6 - guestSlotsRemaining}/6 used
-                    </span>
-                  </h3>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-                    For a <span className="font-medium text-gray-700 dark:text-gray-200">Karachi-based friend or family member</span> who isn't a BTK resident.
-                    They can only book Karachi ↔ BTK routes. You are vouching for them — choose carefully.
-                  </p>
+              <div>
+                <div className="flex items-center gap-2 mb-0.5">
+                  <h3 className="text-base font-semibold text-gray-800 dark:text-white">Invite a Guest</h3>
+                  <span className="text-xs font-normal text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/30 px-2 py-0.5 rounded-full">
+                    {6 - guestSlotsRemaining}/6 used
+                  </span>
                 </div>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  For a <span className="font-medium text-gray-700 dark:text-gray-200">Karachi-based friend or family member</span> who isn't a BTK resident.
+                  They can only book Karachi ↔ BTK routes. You are vouching for them — choose carefully.
+                </p>
                 {guestSlotsRemaining > 0 && (
                   <button
                     onClick={handleGenerateInvite}
                     disabled={generatingInvite}
-                    className="shrink-0 flex items-center gap-2 px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold rounded-xl disabled:opacity-60 transition"
+                    className="mt-3 flex items-center gap-2 px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold rounded-xl disabled:opacity-60 transition"
                   >
                     <FaUsers size={12} />
                     {generatingInvite ? "Generating…" : "Generate Invite Link"}
