@@ -23,24 +23,6 @@ const TRUST_STATS = [
     { icon: FaUsers,      title: "RideTogether",       sub: "Shared rides, split fares" },
 ];
 
-const FEATURES = [
-    {
-        img:   "/images/private-ride.png",
-        title: "Private Rides",
-        body:  "Comfortable, direct travel with vetted BTK drivers — perfect for daily commutes or errands.",
-    },
-    {
-        img:   "/images/pool-ride.png",
-        title: "RideTogether",
-        body:  "Share rides with neighbours, split fares, and cut traffic — eco-friendly travel made simple.",
-    },
-    {
-        img:   "/images/safety.png",
-        title: "Safety First",
-        body:  "Every driver is a verified BTK resident with secure ID checks — community safety at its core.",
-    },
-];
-
 const FAQS = [
     {
         q: "Who can join Townwize?",
@@ -194,95 +176,147 @@ const Landing = () => {
             </section>
 
             {/* ─── HOW TOWNWIZE WORKS ───────────────────────────────────────── */}
-            <section className="relative max-w-7xl mx-auto px-6 lg:px-12 py-20">
-                <h2 className="text-3xl md:text-4xl font-extrabold text-center mb-4 text-townwize-primary dark:text-townwize-accent">
-                    How Townwize Works
-                </h2>
-                <p className="text-center text-townwize-textSecondary dark:text-gray-300 mb-12 max-w-2xl mx-auto">
-                    Whether you're a resident or a guest, getting started is quick and secure.
-                </p>
+            <section className="py-24 bg-gray-50 dark:bg-townwize-bgDark">
+                <div className="max-w-6xl mx-auto px-6 lg:px-12">
+                    <h2 className="text-3xl md:text-4xl font-extrabold text-center mb-3 text-townwize-primary dark:text-white">
+                        How Townwize Works
+                    </h2>
+                    <p className="text-center text-townwize-textSecondary dark:text-gray-400 mb-16 max-w-xl mx-auto text-sm">
+                        Whether you're a resident or a guest, getting started is simple and secure.
+                    </p>
 
-                <div className="grid md:grid-cols-6 md:grid-rows-2 gap-6 relative z-10">
-                    <div className="md:col-span-2 md:row-span-2 bg-townwize-bgLight dark:bg-townwize-primaryDark rounded-2xl p-8 shadow-md hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between border border-transparent dark:border-gray-700">
-                        <div>
-                            <h3 className="text-xl font-bold mb-3 text-townwize-primary dark:text-townwize-accent">
-                                1. Join Townwize
-                            </h3>
-                            <p className="text-sm text-townwize-textSecondary dark:text-gray-300">
-                                BTK residents register as Wizers or Towners. Guests can join securely via a referral from a verified resident.
+                    {/* 3-step flow */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-gray-200 dark:bg-gray-700 rounded-2xl overflow-hidden shadow-sm">
+                        {[
+                            {
+                                num: "01",
+                                icon: FaUserCheck,
+                                title: "Verify & Join",
+                                body: "BTK residents register as a Towner or Wizer and complete identity verification. Guests join via a one-time resident referral.",
+                            },
+                            {
+                                num: "02",
+                                icon: FaCar,
+                                title: "Book Your Ride",
+                                body: "Set your pickup and drop-off anywhere in Karachi. Choose Private for a solo trip, or RideTogether to share and save.",
+                            },
+                            {
+                                num: "03",
+                                icon: FaShieldAlt,
+                                title: "Ride with Confidence",
+                                body: "Your driver is a verified BTK resident. Track live, rate your trip, and enjoy community-trusted travel every time.",
+                            },
+                        ].map(({ num, icon: Icon, title, body }, i) => (
+                            <Motion.div
+                                key={num}
+                                initial={{ opacity: 0, y: 16 }}
+                                whileInView={{ opacity: 1, y: 0 }}
+                                viewport={{ once: true }}
+                                transition={{ duration: 0.4, delay: i * 0.1 }}
+                                className="bg-white dark:bg-townwize-primaryDark p-10 flex flex-col gap-5"
+                            >
+                                <div className="flex items-center gap-4">
+                                    <span className="text-4xl font-black text-gray-100 dark:text-gray-700 leading-none select-none">
+                                        {num}
+                                    </span>
+                                    <div className="w-10 h-10 rounded-xl bg-townwize-primary/8 dark:bg-white/5 flex items-center justify-center shrink-0">
+                                        <Icon className="text-townwize-primary dark:text-white text-lg" />
+                                    </div>
+                                </div>
+                                <div>
+                                    <h3 className="text-base font-bold mb-2 text-townwize-primary dark:text-white">{title}</h3>
+                                    <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">{body}</p>
+                                </div>
+                            </Motion.div>
+                        ))}
+                    </div>
+
+                    {/* Referral callout */}
+                    <div className="mt-6 bg-white dark:bg-townwize-primaryDark rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 px-8 py-6 flex flex-col sm:flex-row items-start sm:items-center gap-5">
+                        <div className="w-10 h-10 rounded-xl bg-townwize-primary/8 dark:bg-white/5 flex items-center justify-center shrink-0">
+                            <FaUserCheck className="text-townwize-primary dark:text-white text-lg" />
+                        </div>
+                        <div className="flex-1">
+                            <p className="font-bold text-townwize-primary dark:text-white text-sm mb-1">Secure Referral System</p>
+                            <p className="text-sm text-gray-500 dark:text-gray-400">
+                                Guests & visitors can only join with a one-time code issued by a verified BTK resident — keeping the community closed and trusted.
                             </p>
                         </div>
-                        <div className="mt-6">
-                            <img src="/images/how-it-works-light.png" alt="Join Townwize" className="max-w-[220px] dark:hidden mx-auto md:mx-0" />
-                            <img src="/images/how-it-works-dark.png"  alt="Join Townwize" className="max-w-[220px] hidden dark:block mx-auto md:mx-0" />
-                        </div>
-                    </div>
-
-                    <div className="md:col-span-2 bg-white dark:bg-gray-800 rounded-2xl p-8 shadow-md hover:shadow-lg hover:-translate-y-1 transition-all duration-300 flex flex-col border border-gray-100 dark:border-gray-700">
-                        <h3 className="text-lg font-bold mb-3 text-townwize-primary dark:text-townwize-accent">
-                            2. Book Your Ride
-                        </h3>
-                        <p className="text-sm text-townwize-textSecondary dark:text-gray-300 flex-grow">
-                            Set pickup & drop-off anywhere in Karachi. Choose between Private or RideTogether.
-                        </p>
-                        <FaCar className="text-5xl ml-auto text-townwize-accent mt-4 opacity-60" />
-                    </div>
-
-                    <div className="md:col-span-2 bg-white dark:bg-gray-800 rounded-2xl p-8 shadow-md hover:shadow-lg hover:-translate-y-1 transition-all duration-300 flex flex-col border border-gray-100 dark:border-gray-700">
-                        <h3 className="text-lg font-bold mb-3 text-townwize-primary dark:text-townwize-accent">
-                            3. Ride Securely
-                        </h3>
-                        <p className="text-sm text-townwize-textSecondary dark:text-gray-300 flex-grow">
-                            Verified BTK drivers ensure every ride is safe, reliable, and community-trusted.
-                        </p>
-                        <FaShieldAlt className="text-5xl ml-auto text-townwize-accent mt-4 opacity-60" />
-                    </div>
-
-                    <div className="md:col-span-4 bg-townwize-accent/10 dark:bg-townwize-accent/20 rounded-2xl p-8 shadow-md hover:shadow-lg hover:-translate-y-1 transition-all duration-300 flex items-center gap-6 border border-townwize-accent/20 dark:border-gray-700">
-                        <div className="w-12 h-12 shrink-0 rounded-full bg-townwize-accent/20 flex items-center justify-center">
-                            <FaUserCheck className="text-townwize-accent text-xl" />
-                        </div>
-                        <div>
-                            <h3 className="text-lg font-bold mb-1 text-townwize-primary dark:text-townwize-accent">Secure Referral System</h3>
-                            <p className="text-sm text-townwize-textSecondary dark:text-gray-300">
-                                Guests & visitors can only join with a one-time referral code issued by a verified Bahria Town resident — keeping the community closed and trusted.
-                            </p>
-                        </div>
+                        <button
+                            onClick={() => navigate("/register")}
+                            className="shrink-0 px-5 py-2.5 rounded-xl border border-townwize-primary dark:border-white/20 text-townwize-primary dark:text-white text-sm font-semibold hover:bg-townwize-primary hover:text-white dark:hover:bg-white/10 transition-all"
+                        >
+                            Get Started
+                        </button>
                     </div>
                 </div>
             </section>
 
-            {/* ─── FEATURES ─────────────────────────────────────────────────── */}
-            <section className="py-20 bg-white dark:bg-townwize-primaryDark transition-colors duration-300">
-                <div className="max-w-7xl mx-auto px-6 sm:px-10">
-                    <h2 className="text-3xl sm:text-4xl font-bold text-center text-townwize-primary dark:text-townwize-accent mb-4">
+            {/* ─── WHY CHOOSE TOWNWIZE ──────────────────────────────────────── */}
+            <section className="py-24 bg-white dark:bg-townwize-primaryDark">
+                <div className="max-w-6xl mx-auto px-6 sm:px-10">
+                    <h2 className="text-3xl sm:text-4xl font-extrabold text-center text-townwize-primary dark:text-white mb-3">
                         Why Choose Townwize
                     </h2>
-                    <p className="text-center text-townwize-textSecondary dark:text-gray-300 max-w-2xl mx-auto mb-12">
-                        Whether you ride solo or share, enjoy comfort, safety, and verified community rides inside BTK.
+                    <p className="text-center text-gray-500 dark:text-gray-400 max-w-xl mx-auto mb-16 text-sm">
+                        Built exclusively for BTK — not a generic ride app adapted for the area.
                     </p>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-                        {FEATURES.map(({ img, title, body }) => (
-                            <div
-                                key={title}
-                                className="group bg-gray-50 dark:bg-gray-800 rounded-2xl p-8 shadow-md hover:shadow-xl hover:-translate-y-1 transition-all duration-300 text-center flex flex-col items-center"
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        {[
+                            {
+                                icon: FaCar,
+                                label: "Private Rides",
+                                title: "Your ride, your rules",
+                                body: "Book a direct, private trip with a vetted BTK driver. No strangers, no detours — just comfortable, reliable travel.",
+                                stat: "Solo & direct",
+                            },
+                            {
+                                icon: FaUsers,
+                                label: "RideTogether",
+                                title: "Share & save with neighbours",
+                                body: "Match with neighbours heading the same way, split the fare, and reduce traffic — community travel that makes sense.",
+                                stat: "Up to 50% cheaper",
+                                featured: true,
+                            },
+                            {
+                                icon: FaShieldAlt,
+                                label: "Safety First",
+                                title: "Every driver is verified",
+                                body: "All Wizers complete identity and residency checks before their first ride. You always know who's driving.",
+                                stat: "100% vetted drivers",
+                            },
+                        ].map(({ icon: Icon, label, title, body, stat, featured }) => (
+                            <Motion.div
+                                key={label}
+                                initial={{ opacity: 0, y: 16 }}
+                                whileInView={{ opacity: 1, y: 0 }}
+                                viewport={{ once: true }}
+                                transition={{ duration: 0.4 }}
+                                className={`relative rounded-2xl p-8 flex flex-col gap-4 transition-all duration-300 ${
+                                    featured
+                                        ? "bg-townwize-primary text-white shadow-xl ring-2 ring-townwize-primary/20"
+                                        : "bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700 hover:shadow-lg hover:-translate-y-0.5"
+                                }`}
                             >
-                                <div className="w-28 h-28 flex items-center justify-center mb-6 rounded-2xl bg-townwize-accent/10 dark:bg-townwize-accent/15 group-hover:scale-105 transition-transform duration-300">
-                                    <img
-                                        src={img}
-                                        alt={title}
-                                        className="h-20 w-20 object-contain"
-                                        style={{ filter: "brightness(0) saturate(100%) invert(58%) sepia(82%) saturate(400%) hue-rotate(143deg) brightness(95%)" }}
-                                    />
+                                <div className={`w-11 h-11 rounded-xl flex items-center justify-center ${featured ? "bg-white/10" : "bg-townwize-primary/8 dark:bg-white/5"}`}>
+                                    <Icon className={`text-lg ${featured ? "text-white" : "text-townwize-primary dark:text-white"}`} />
                                 </div>
-                                <h3 className="text-xl font-semibold mb-3 text-townwize-primary dark:text-townwize-accent">
-                                    {title}
-                                </h3>
-                                <p className="text-gray-600 dark:text-gray-300 text-sm leading-relaxed">
-                                    {body}
-                                </p>
-                            </div>
+                                <div>
+                                    <p className={`text-xs font-bold uppercase tracking-widest mb-1 ${featured ? "text-white/50" : "text-gray-400"}`}>
+                                        {label}
+                                    </p>
+                                    <h3 className={`text-lg font-bold mb-2 ${featured ? "text-white" : "text-townwize-primary dark:text-white"}`}>
+                                        {title}
+                                    </h3>
+                                    <p className={`text-sm leading-relaxed ${featured ? "text-white/70" : "text-gray-500 dark:text-gray-400"}`}>
+                                        {body}
+                                    </p>
+                                </div>
+                                <div className={`mt-auto pt-4 border-t text-xs font-semibold ${featured ? "border-white/10 text-white/60" : "border-gray-200 dark:border-gray-700 text-gray-400 dark:text-gray-500"}`}>
+                                    {stat}
+                                </div>
+                            </Motion.div>
                         ))}
                     </div>
                 </div>
