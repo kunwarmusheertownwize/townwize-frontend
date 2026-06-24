@@ -121,3 +121,10 @@ export const fetchAuditLogDetail = (id) => call(`/admin/audit/${id}`);
 export const fetchCancellationPolicy = () => call("/admin/cancellation-policy");
 export const saveCancellationPolicy = (config) =>
     call("/admin/cancellation-policy", { method: "PATCH", body: JSON.stringify({ config }) });
+
+export const suspendPassenger = (userId, reason) =>
+    call(`/admin/passengers/${userId}/suspend`, { method: "PATCH", body: JSON.stringify({ reason }) });
+export const unsuspendPassenger = (userId) =>
+    call(`/admin/passengers/${userId}/unsuspend`, { method: "PATCH", body: JSON.stringify({}) });
+export const banPassenger = (userId, reason) =>
+    call(`/admin/passengers/${userId}/ban`, { method: "PATCH", body: JSON.stringify({ reason }) });
