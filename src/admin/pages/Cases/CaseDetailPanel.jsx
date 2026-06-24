@@ -1,11 +1,25 @@
 import { useEffect, useMemo, useState } from "react";
 import StatusBadge from "../../components/common/StatusBadge";
-import { updateCase } from "../../../api/adminApi";
+import { updateCase, presignDocumentUrl } from "../../../api/adminApi";
 
 const STATUSES = ["open", "approved", "rejected", "closed"];
 const PRIORITIES = ["low", "normal", "high", "critical"];
 
+const openPresigned = async (url, setOpening) => {
+  setOpening(true);
+  try {
+    const data = await presignDocumentUrl(url);
+    const presigned = data?.data?.url || data?.url;
+    if (presigned) window.open(presigned, "_blank", "noreferrer");
+  } catch {
+    window.open(url, "_blank", "noreferrer");
+  } finally {
+    setOpening(false);
+  }
+};
+
 const DocLink = ({ url, label }) => {
+  const [opening, setOpening] = useState(false);
   if (!url) {
     return (
       <div className="flex items-center justify-between rounded border border-dashed border-gray-300 bg-gray-50 px-3 py-2 text-xs text-gray-400">
@@ -15,15 +29,15 @@ const DocLink = ({ url, label }) => {
     );
   }
   return (
-    <a
-      href={url}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="flex items-center justify-between rounded border border-blue-200 bg-blue-50 px-3 py-2 text-xs text-blue-700 hover:bg-blue-100"
+    <button
+      type="button"
+      disabled={opening}
+      onClick={() => openPresigned(url, setOpening)}
+      className="w-full flex items-center justify-between rounded border border-blue-200 bg-blue-50 px-3 py-2 text-xs text-blue-700 hover:bg-blue-100 disabled:opacity-60"
     >
       <span className="font-medium">{label}</span>
-      <span className="ml-2 shrink-0">View ↗</span>
-    </a>
+      <span className="ml-2 shrink-0">{opening ? "Opening…" : "View ↗"}</span>
+    </button>
   );
 };
 

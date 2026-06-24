@@ -2,8 +2,9 @@ import { useEffect, useMemo, useState } from "react";
 import EmptyState from "../../components/common/EmptyState";
 import SidePanel from "../../components/panels/SidePanel";
 import StatusBadge from "../../components/common/StatusBadge";
-import { fetchAllDrivers, fetchCaseDetail, fetchCases, updateDriverVehicleApproval } from "../../../api/adminApi";
+import { fetchAllDrivers, fetchCaseDetail, fetchCases, updateDriverVehicleApproval, presignDocumentUrl } from "../../../api/adminApi";
 import CaseDetailPanel from "../Cases/CaseDetailPanel";
+import SecureImg from "../../../components/SecureImg";
 
 const REQUIRED_PHOTO_KEYS = [
   "front",
@@ -101,11 +102,18 @@ function VehicleReviewPanel({ driver, onClose, onSaved }) {
               <div key={key} className="rounded border border-gray-200 p-2">
                 <div className="mb-1 text-[11px] text-gray-600">{labelForPhoto(key)}</div>
                 {found?.url ? (
-                  <a href={found.url} target="_blank" rel="noreferrer" className="text-xs underline">
-                    Open
-                  </a>
+                  <SecureImg
+                    src={found.url}
+                    alt={labelForPhoto(key)}
+                    className="w-full h-24 object-cover rounded cursor-pointer"
+                    onClick={() =>
+                      presignDocumentUrl(found.url)
+                        .then((d) => { const u = d?.data?.url || d?.url; if (u) window.open(u, "_blank", "noreferrer"); })
+                        .catch(() => window.open(found.url, "_blank", "noreferrer"))
+                    }
+                  />
                 ) : (
-                  <span className="text-xs text-red-600">Missing</span>
+                  <div className="w-full h-24 flex items-center justify-center bg-gray-50 rounded text-xs text-red-500">Missing</div>
                 )}
               </div>
             );
