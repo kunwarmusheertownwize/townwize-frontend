@@ -363,24 +363,45 @@ export default function PassengerTripReceipt() {
                     <span>- {toMoney(fare.couponDiscount)}</span>
                   </div>
                 )}
-                <div className="border-t border-gray-200 dark:border-gray-700 pt-2 mt-1 space-y-1">
-                  <div className="flex justify-between text-xs text-gray-400">
-                    <span>Estimated at booking</span>
-                    <span>{toMoney(fare.estimated)}</span>
-                  </div>
-                  {hasAdjustment && (
-                    <div className="flex justify-between text-xs text-gray-400">
-                      <span>Adjustment</span>
-                      <span>{toMoney(fare.adjustment)}</span>
+                {isPooled && farePerSeat ? (
+                  <>
+                    <div className="border-t border-gray-200 dark:border-gray-700 pt-2 mt-1 space-y-1">
+                      <div className="flex justify-between text-xs text-gray-400">
+                        <span>Full trip fare</span>
+                        <span>{toMoney(fare.final)}</span>
+                      </div>
+                      <div className="flex justify-between text-xs text-purple-600 dark:text-purple-400 font-medium">
+                        <span>Shared between {coRiderCount + 1} riders</span>
+                        <span>÷ {coRiderCount + 1}</span>
+                      </div>
                     </div>
-                  )}
-                </div>
-                <div className="flex justify-between font-bold text-base border-t border-gray-200 dark:border-gray-700 pt-2">
-                  <span>Total paid</span>
-                  <span className="text-townwize-primary dark:text-townwize-accent">
-                    {toMoney(fare.final)}
-                  </span>
-                </div>
+                    <div className="flex justify-between font-bold text-base border-t border-gray-200 dark:border-gray-700 pt-2">
+                      <span>Your share</span>
+                      <span className="text-townwize-primary dark:text-townwize-accent">{toMoney(farePerSeat)}</span>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="border-t border-gray-200 dark:border-gray-700 pt-2 mt-1 space-y-1">
+                      <div className="flex justify-between text-xs text-gray-400">
+                        <span>Estimated at booking</span>
+                        <span>{toMoney(fare.estimated)}</span>
+                      </div>
+                      {hasAdjustment && (
+                        <div className="flex justify-between text-xs text-gray-400">
+                          <span>Adjustment</span>
+                          <span>{toMoney(fare.adjustment)}</span>
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex justify-between font-bold text-base border-t border-gray-200 dark:border-gray-700 pt-2">
+                      <span>Total paid</span>
+                      <span className="text-townwize-primary dark:text-townwize-accent">
+                        {toMoney(fare.final)}
+                      </span>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
 
@@ -498,14 +519,34 @@ export default function PassengerTripReceipt() {
                 </div>
               ) : null}
               <div className="border-t border-gray-300 my-2" />
-              <div className="flex justify-between"><span>Estimated at booking</span><span>{toMoney(fare.estimated)}</span></div>
-              {hasAdjustment ? (
-                <div className="flex justify-between text-sm text-gray-500">
-                  <span>Trip adjustment</span>
-                  <span>{toMoney(fare.adjustment)}</span>
-                </div>
-              ) : null}
-              <div className="flex justify-between font-bold text-xl"><span>Total paid</span><span>{toMoney(fare.final)}</span></div>
+              {isPooled && farePerSeat ? (
+                <>
+                  <div className="flex justify-between text-gray-500 text-sm">
+                    <span>Full trip fare</span>
+                    <span>{toMoney(fare.final)}</span>
+                  </div>
+                  <div className="flex justify-between text-purple-700 dark:text-purple-400 text-sm font-medium">
+                    <span>Shared between {coRiderCount + 1} riders</span>
+                    <span>÷ {coRiderCount + 1}</span>
+                  </div>
+                  <div className="border-t border-gray-300 dark:border-gray-600 my-1" />
+                  <div className="flex justify-between font-bold text-xl">
+                    <span>Your share</span>
+                    <span className="text-townwize-primary dark:text-townwize-accent">{toMoney(farePerSeat)}</span>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="flex justify-between"><span>Estimated at booking</span><span>{toMoney(fare.estimated)}</span></div>
+                  {hasAdjustment ? (
+                    <div className="flex justify-between text-sm text-gray-500">
+                      <span>Trip adjustment</span>
+                      <span>{toMoney(fare.adjustment)}</span>
+                    </div>
+                  ) : null}
+                  <div className="flex justify-between font-bold text-xl"><span>Total paid</span><span>{toMoney(fare.final)}</span></div>
+                </>
+              )}
             </div>
           </div>
         </>

@@ -111,7 +111,7 @@ export default function PassengerTrips() {
               const meta = STATUS_META[ride.status] || { label: ride.status, cls: "bg-gray-100 text-gray-600" };
               const dist = distanceOf(ride);
               const isCompleted = ride.status === "COMPLETED";
-              const isMerged = ride.status === "CANCELLED" && ride.linkedRideId;
+              const isMerged = ride.status === "POOLING_MERGED" && !!ride.linkedRideId;
               const rated = ride.passengerRating?.stars;
               const handleClick = () => {
                 if (isCompleted) navigate(`/passenger/trip-receipt/${ride._id}`);
@@ -175,8 +175,8 @@ export default function PassengerTrips() {
                       </span>
                     )}
                     {isMerged && (
-                      <span className="text-[10px] font-semibold text-townwize-primary dark:text-townwize-accent underline underline-offset-2">
-                        View shared receipt →
+                      <span className="flex items-center gap-1 text-[10px] font-semibold text-townwize-primary dark:text-townwize-accent underline underline-offset-2">
+                        <FaUsers size={9} /> View shared ride receipt →
                       </span>
                     )}
                     <span className="ml-auto text-xs text-gray-400 capitalize">
