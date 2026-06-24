@@ -3,6 +3,13 @@ import { Routes, Route } from "react-router-dom";
 import Landing from "../pages/Landing";
 import NotFound from "../pages/Public/NotFound";
 import Unauthorized from "../pages/Public/Unauthorized";
+import About from "../pages/Public/About";
+import Support from "../pages/Public/Support";
+import Guidelines from "../pages/Public/Guidelines";
+import Privacy from "../pages/Public/Privacy";
+import Terms from "../pages/Public/Terms";
+import Careers from "../pages/Public/Careers";
+import Community from "../pages/Public/Community";
 
 // Layouts
 import PassengerLayout from "../layouts/PassengerLayout";
@@ -69,6 +76,15 @@ const AppRoutes = () => {
 
         {/* Landing */}
         <Route path="/" element={<Landing />} />
+
+        {/* Public pages */}
+        <Route path="/about"      element={<About />} />
+        <Route path="/support"    element={<Support />} />
+        <Route path="/guidelines" element={<Guidelines />} />
+        <Route path="/privacy"    element={<Privacy />} />
+        <Route path="/terms"      element={<Terms />} />
+        <Route path="/careers"    element={<Careers />} />
+        <Route path="/community"  element={<Community />} />
 
         {/* ---------------------------- */}
         {/* PASSENGER WEB (Single Layout) */}
