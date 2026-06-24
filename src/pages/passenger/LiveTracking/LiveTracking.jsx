@@ -1141,12 +1141,25 @@ const LiveTracking = () => {
               </div>
             )}
           </div>
-          {showEta && (
-            <div className="shrink-0 text-right">
-              <p className="text-xs text-gray-400">Arrives in</p>
-              <p className="text-xl font-extrabold text-townwize-primary dark:text-townwize-accent">{etaMinutes} min</p>
-            </div>
-          )}
+          <div className="flex items-center gap-3 shrink-0">
+            {showEta && (
+              <div className="text-right">
+                <p className="text-xs text-gray-400">Arrives in</p>
+                <p className="text-xl font-extrabold text-townwize-primary dark:text-townwize-accent">{etaMinutes} min</p>
+              </div>
+            )}
+            {driverInfo.phone && (
+              <a
+                href={`tel:${driverInfo.phone}`}
+                className="flex items-center justify-center h-11 w-11 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400"
+                title="Call Wizer"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M6.62 10.79a15.053 15.053 0 006.59 6.59l2.2-2.2a1 1 0 011.01-.24 11.36 11.36 0 003.56.57 1 1 0 011 1V20a1 1 0 01-1 1A17 17 0 013 4a1 1 0 011-1h3.5a1 1 0 011 1 11.36 11.36 0 00.57 3.57 1 1 0 01-.25 1.01l-2.2 2.21z"/>
+                </svg>
+              </a>
+            )}
+          </div>
         </div>
       )}
 

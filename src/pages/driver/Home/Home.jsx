@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { useDriverMode } from "../../../contexts/useDriverMode";
@@ -46,10 +46,51 @@ const Spinner = () => (
   </svg>
 );
 
+const fmt = (n) => Number(n || 0).toLocaleString();
+
+const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+function WeeklyChart({ breakdown }) {
+  const today = new Date();
+  const slots = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(today);
+    d.setDate(today.getDate() - (6 - i));
+    const key = d.toISOString().slice(0, 10);
+    const entry = (breakdown || []).find((b) => b.date === key);
+    return { label: DAYS[d.getDay()], date: key, total: entry?.total ?? 0, trips: entry?.trips ?? 0 };
+  });
+  const max = Math.max(...slots.map((s) => s.total), 1);
+  return (
+    <div className="flex items-end gap-1.5 h-20">
+      {slots.map((s, i) => {
+        const isToday = i === 6;
+        const pct = Math.max(4, Math.round((s.total / max) * 100));
+        return (
+          <div key={s.date} className="flex-1 flex flex-col items-center gap-1">
+            <div className="w-full rounded-t-sm" style={{ height: `${pct}%`, background: isToday ? "#17BEBB" : "#d1fae5" }} title={`${s.label}: ${fmt(s.total)} PKR (${s.trips} trips)`} />
+            <span className={`text-[9px] font-semibold ${isToday ? "text-townwize-accent" : "text-gray-400"}`}>{s.label}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 const DriverHome = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [earnings, setEarnings] = useState(null);
+  const [earningsLoading, setEarningsLoading] = useState(true);
   const { driverMode, setDriverMode, driverEligibility } = useDriverMode();
+
+  useEffect(() => {
+    let mounted = true;
+    api.get("/driver/earnings")
+      .then((res) => { if (mounted) setEarnings(res?.data?.data || null); })
+      .catch(() => {})
+      .finally(() => { if (mounted) setEarningsLoading(false); });
+    return () => { mounted = false; };
+  }, []);
 
   const handleToggle = async () => {
     if (loading) return;
@@ -120,61 +161,88 @@ const DriverHome = () => {
   const isOnline = driverMode !== DRIVER_MODES.OFFLINE;
 
   return (
-    <div className="mx-auto mt-10 max-w-md rounded-2xl bg-white p-8 text-center shadow-sm ring-1 ring-gray-200 dark:bg-townwize-primaryDark">
-      {/* Status dot + label */}
-      <div className="mb-6 flex items-center justify-center gap-2">
-        <span
-          className={`inline-block h-3 w-3 rounded-full ${
-            isOnline ? "bg-green-500 animate-pulse" : "bg-gray-400"
-          }`}
-        />
-        <span
-          className={`text-sm font-semibold ${
-            isOnline ? "text-green-600 dark:text-green-400" : "text-gray-500 dark:text-gray-400"
-          }`}
-        >
-          {isOnline ? "Online" : "Offline"}
-        </span>
+    <div className="mx-auto mt-6 max-w-md space-y-4">
+      {/* Today's earnings card */}
+      <div className="rounded-2xl bg-townwize-primary dark:bg-townwize-primaryDark p-5 text-white shadow-lg">
+        {earningsLoading ? (
+          <div className="space-y-2 animate-pulse">
+            <div className="h-3 w-24 rounded bg-white/20" />
+            <div className="h-8 w-36 rounded bg-white/20" />
+            <div className="h-3 w-48 rounded bg-white/20 mt-3" />
+          </div>
+        ) : (
+          <>
+            <p className="text-xs text-white/60 uppercase tracking-widest">Today&apos;s Earnings</p>
+            <p className="text-4xl font-extrabold mt-1">{fmt(earnings?.today)} <span className="text-lg font-semibold text-white/60">PKR</span></p>
+            <div className="flex gap-5 mt-3 border-t border-white/10 pt-3">
+              <div>
+                <p className="text-[10px] text-white/50">This week</p>
+                <p className="text-sm font-bold">{fmt(earnings?.week)} PKR</p>
+              </div>
+              <div>
+                <p className="text-[10px] text-white/50">This month</p>
+                <p className="text-sm font-bold">{fmt(earnings?.month)} PKR</p>
+              </div>
+              <div className="ml-auto">
+                <p className="text-[10px] text-white/50">Balance</p>
+                <p className={`text-sm font-bold ${Number(earnings?.balance) < 0 ? "text-red-300" : "text-townwize-accent"}`}>{fmt(earnings?.balance)} PKR</p>
+              </div>
+            </div>
+          </>
+        )}
       </div>
 
-      <h1 className="mb-1 text-2xl font-bold text-gray-900 dark:text-white">
-        Driver Status
-      </h1>
-      <p className="mb-8 text-sm text-gray-500 dark:text-gray-400">
-        {isOnline
-          ? "You are online. Waiting for ride requests."
-          : "Go online to start receiving ride requests"}
-      </p>
-
-      <button
-        onClick={handleToggle}
-        disabled={loading}
-        className={[
-          "relative w-full rounded-2xl py-4 text-lg font-semibold transition-all duration-200",
-          "focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2",
-          loading ? "cursor-not-allowed opacity-70" : "active:scale-[0.98]",
-          isOnline
-            ? "bg-red-500 text-white hover:bg-red-600 focus-visible:ring-red-400 shadow-md"
-            : "bg-townwize-accent text-townwize-primary hover:brightness-110 focus-visible:ring-townwize-accent shadow-lg shadow-townwize-accent/30",
-        ].join(" ")}
-      >
-        {loading ? (
-          <span className="flex items-center justify-center gap-2">
-            <Spinner />
-            {isOnline ? "Going offline…" : "Connecting…"}
-          </span>
-        ) : isOnline ? (
-          "Go Offline"
+      {/* 7-day chart */}
+      <div className="rounded-2xl bg-white dark:bg-townwize-primaryDark p-4 shadow-sm ring-1 ring-gray-200 dark:ring-gray-700">
+        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Last 7 days</p>
+        {earningsLoading ? (
+          <div className="h-20 flex items-end gap-1.5 animate-pulse">
+            {Array.from({ length: 7 }).map((_, i) => (
+              <div key={i} className="flex-1 rounded-t-sm bg-gray-100 dark:bg-gray-700" style={{ height: `${30 + Math.random() * 60}%` }} />
+            ))}
+          </div>
         ) : (
-          "Go Online"
+          <WeeklyChart breakdown={earnings?.breakdown} />
         )}
-      </button>
+      </div>
 
-      {!isOnline && !loading && (
-        <p className="mt-5 text-xs text-gray-400 dark:text-gray-500">
-          Make sure your location services are enabled
+      {/* Online/Offline toggle */}
+      <div className="rounded-2xl bg-white dark:bg-townwize-primaryDark p-6 text-center shadow-sm ring-1 ring-gray-200 dark:ring-gray-700">
+        <div className="mb-4 flex items-center justify-center gap-2">
+          <span className={`inline-block h-3 w-3 rounded-full ${isOnline ? "bg-green-500 animate-pulse" : "bg-gray-400"}`} />
+          <span className={`text-sm font-semibold ${isOnline ? "text-green-600 dark:text-green-400" : "text-gray-500 dark:text-gray-400"}`}>
+            {isOnline ? "Online" : "Offline"}
+          </span>
+        </div>
+
+        <p className="mb-5 text-sm text-gray-500 dark:text-gray-400">
+          {isOnline ? "You are online. Waiting for ride requests." : "Go online to start receiving ride requests"}
         </p>
-      )}
+
+        <button
+          onClick={handleToggle}
+          disabled={loading}
+          className={[
+            "relative w-full rounded-2xl py-4 text-lg font-semibold transition-all duration-200",
+            "focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2",
+            loading ? "cursor-not-allowed opacity-70" : "active:scale-[0.98]",
+            isOnline
+              ? "bg-red-500 text-white hover:bg-red-600 focus-visible:ring-red-400 shadow-md"
+              : "bg-townwize-accent text-townwize-primary hover:brightness-110 focus-visible:ring-townwize-accent shadow-lg shadow-townwize-accent/30",
+          ].join(" ")}
+        >
+          {loading ? (
+            <span className="flex items-center justify-center gap-2">
+              <Spinner />
+              {isOnline ? "Going offline…" : "Connecting…"}
+            </span>
+          ) : isOnline ? "Go Offline" : "Go Online"}
+        </button>
+
+        {!isOnline && !loading && (
+          <p className="mt-4 text-xs text-gray-400 dark:text-gray-500">Make sure your location services are enabled</p>
+        )}
+      </div>
     </div>
   );
 };
