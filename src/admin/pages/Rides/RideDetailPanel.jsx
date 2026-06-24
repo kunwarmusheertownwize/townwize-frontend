@@ -18,6 +18,7 @@ const NEXT_BY_STATUS = {
 
 export default function RideDetailPanel({ ride, onUpdated }) {
   const [selected, setSelected] = useState("");
+  const [cancelReason, setCancelReason] = useState("");
   const [availableDrivers, setAvailableDrivers] = useState([]);
   const [loadingDrivers, setLoadingDrivers] = useState(false);
   const [assigningDriverId, setAssigningDriverId] = useState("");
@@ -29,6 +30,7 @@ export default function RideDetailPanel({ ride, onUpdated }) {
 
   useEffect(() => {
     setSelected("");
+    setCancelReason("");
     setError("");
     setOk("");
   }, [ride?._id, ride?.rideId, ride?.status]);
@@ -63,13 +65,18 @@ export default function RideDetailPanel({ ride, onUpdated }) {
 
   const onSubmit = async () => {
     if (!selected) return;
+    if (selected === "CANCELLED" && !cancelReason.trim()) {
+      setError("A cancellation reason is required.");
+      return;
+    }
     setSaving(true);
     setError("");
     setOk("");
     try {
-      await updateRideStatus(ride._id || ride.rideId, selected);
+      await updateRideStatus(ride._id || ride.rideId, selected, cancelReason.trim() || undefined);
       setOk("Ride status updated.");
       setSelected("");
+      setCancelReason("");
       onUpdated?.();
     } catch (e) {
       setError(e.message || "Failed to update ride status");
@@ -129,6 +136,12 @@ export default function RideDetailPanel({ ride, onUpdated }) {
           </div>
         ) : null}
         {ride.completionReason ? <div>Trip Result: {String(ride.completionReason).replace(/_/g, " ")}</div> : null}
+        {ride.adminCancelReason ? (
+          <div className="mt-2 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-red-800 text-xs">
+            <span className="font-semibold">Admin cancel reason:</span> {ride.adminCancelReason}
+            {ride.adminCancelledByEmail ? ` — by ${ride.adminCancelledByEmail}` : ""}
+          </div>
+        ) : null}
         <div>Type: {ride.rideType || "-"}</div>
         <div>Car Class: {ride.carType || "economy"}</div>
       </div>
@@ -226,7 +239,7 @@ export default function RideDetailPanel({ ride, onUpdated }) {
         <select
           className="w-full rounded-md border px-3 py-2"
           value={selected}
-          onChange={(e) => setSelected(e.target.value)}
+          onChange={(e) => { setSelected(e.target.value); setCancelReason(""); }}
           disabled={saving || options.length === 0}
         >
           <option value="">{options.length ? "Select next status" : "No valid transitions"}</option>
@@ -236,12 +249,27 @@ export default function RideDetailPanel({ ride, onUpdated }) {
             </option>
           ))}
         </select>
+        {selected === "CANCELLED" && (
+          <div className="mt-2">
+            <label className="block text-xs font-semibold text-red-700 mb-1">
+              Cancellation reason <span className="text-red-500">*</span>
+            </label>
+            <textarea
+              rows={3}
+              className="w-full rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm placeholder-red-300 focus:border-red-400 focus:outline-none resize-none"
+              placeholder="Explain why this ride is being cancelled (required)"
+              value={cancelReason}
+              onChange={(e) => setCancelReason(e.target.value)}
+              disabled={saving}
+            />
+          </div>
+        )}
         <button
-          className="mt-2 rounded-md bg-townwize-primary px-3 py-2 text-white disabled:opacity-50"
+          className={`mt-2 rounded-md px-3 py-2 text-white disabled:opacity-50 ${selected === "CANCELLED" ? "bg-red-600 hover:bg-red-700" : "bg-townwize-primary"}`}
           onClick={onSubmit}
           disabled={saving || !selected}
         >
-          {saving ? "Updating..." : "Update Status"}
+          {saving ? "Updating..." : selected === "CANCELLED" ? "Force Cancel Ride" : "Update Status"}
         </button>
       </div>
     </div>
