@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { FaStar, FaGift, FaCopy, FaShareAlt, FaTicketAlt } from "react-icons/fa";
+import { FaStar, FaGift, FaCopy, FaShareAlt, FaTicketAlt, FaCamera } from "react-icons/fa";
 import { toast } from "react-toastify";
 import api from "../../../services/api";
 import { useDriverMode } from "../../../contexts/useDriverMode";
@@ -23,6 +23,135 @@ const StarRow = ({ average, count }) => {
     </div>
   );
 };
+
+const CONDITION_SLOTS = [
+  { field: "vehiclePhotoFront",         key: "front",          label: "Front" },
+  { field: "vehiclePhotoRear",          key: "rear",           label: "Rear" },
+  { field: "vehiclePhotoLeft",          key: "left",           label: "Left" },
+  { field: "vehiclePhotoRight",         key: "right",          label: "Right" },
+  { field: "vehiclePhotoInteriorFront", key: "interior_front", label: "Interior Front" },
+  { field: "vehiclePhotoInteriorRear",  key: "interior_rear",  label: "Interior Rear" },
+  { field: "vehiclePhotoOdometer",      key: "odometer",       label: "Odometer" },
+];
+
+const CONDITION_COLORS = {
+  pass:          "bg-green-100 text-green-700",
+  fail:          "bg-red-100 text-red-700",
+  needs_recheck: "bg-amber-100 text-amber-700",
+  pending:       "bg-gray-100 text-gray-500",
+};
+
+function VehicleConditionCard({ profile, onUploaded }) {
+  const [files, setFiles] = useState({});
+  const [uploading, setUploading] = useState(false);
+  const inputRefs = useRef({});
+
+  const uploadedKeys = new Set(
+    (profile?.vehicle?.conditionPhotos || []).filter((p) => p?.url).map((p) => p.key)
+  );
+  const conditionStatus = profile?.vehicle?.conditionStatus || "pending";
+  const conditionScore  = profile?.vehicle?.conditionScore ?? null;
+  const hasSelection    = Object.values(files).some(Boolean);
+
+  const handleFile = (field, e) => {
+    const f = e.target.files?.[0] || null;
+    setFiles((prev) => ({ ...prev, [field]: f }));
+  };
+
+  const handleSubmit = async () => {
+    if (!hasSelection) return;
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      CONDITION_SLOTS.forEach(({ field }) => {
+        if (files[field]) formData.append(field, files[field]);
+      });
+      await api.post("/driver/documents", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      toast.success("Photos submitted — admin will review within 24 hours");
+      setFiles({});
+      Object.values(inputRefs.current).forEach((el) => { if (el) el.value = ""; });
+      onUploaded?.();
+    } catch (e) {
+      toast.error(e?.response?.data?.error?.message || "Upload failed");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  return (
+    <div className="rounded-xl bg-white dark:bg-townwize-primaryDark p-6 shadow-sm ring-1 ring-gray-200 dark:ring-gray-700 space-y-4">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div className="flex items-center gap-2">
+          <FaCamera className="text-townwize-primary dark:text-white" />
+          <h2 className="text-lg font-semibold dark:text-white">Vehicle Condition Photos</h2>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${CONDITION_COLORS[conditionStatus] || CONDITION_COLORS.pending}`}>
+            {conditionStatus.replace("_", " ")}
+          </span>
+          {conditionScore != null && conditionScore > 0 && (
+            <span className="text-xs text-gray-400">Score: {conditionScore}/100</span>
+          )}
+        </div>
+      </div>
+
+      {conditionStatus === "needs_recheck" && (
+        <p className="text-xs text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-900/20 rounded-lg px-3 py-2">
+          Admin has requested a re-check. Please update your condition photos below.
+        </p>
+      )}
+      {conditionStatus === "fail" && (
+        <p className="text-xs text-red-700 dark:text-red-300 bg-red-50 dark:bg-red-900/20 rounded-lg px-3 py-2">
+          Your vehicle failed the condition check. Upload updated photos to request a re-review.
+        </p>
+      )}
+
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+        {CONDITION_SLOTS.map(({ field, key, label }) => {
+          const alreadyUploaded = uploadedKeys.has(key);
+          const selected = !!files[field];
+          return (
+            <label key={field} className={`cursor-pointer rounded-xl border-2 p-3 text-xs transition-all ${
+              selected
+                ? "border-townwize-accent bg-townwize-accent/5"
+                : alreadyUploaded
+                ? "border-green-200 bg-green-50 dark:bg-green-900/10 dark:border-green-700"
+                : "border-dashed border-gray-300 dark:border-gray-600"
+            }`}>
+              <div className="font-semibold text-gray-700 dark:text-gray-200 mb-1">{label}</div>
+              <div className={`text-[10px] mb-2 ${selected ? "text-townwize-accent" : alreadyUploaded ? "text-green-600 dark:text-green-400" : "text-gray-400"}`}>
+                {selected ? files[field].name : alreadyUploaded ? "✓ Uploaded" : "Not uploaded"}
+              </div>
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                ref={(el) => { inputRefs.current[field] = el; }}
+                onChange={(e) => handleFile(field, e)}
+              />
+              <span className={`inline-block text-[10px] font-bold px-2 py-0.5 rounded-md ${selected ? "bg-townwize-accent text-white" : "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300"}`}>
+                {selected ? "Change" : "Choose"}
+              </span>
+            </label>
+          );
+        })}
+      </div>
+
+      <button
+        onClick={handleSubmit}
+        disabled={!hasSelection || uploading}
+        className="w-full py-2.5 rounded-xl bg-townwize-primary dark:bg-townwize-accent text-white dark:text-townwize-primary text-sm font-bold disabled:opacity-40 transition"
+      >
+        {uploading ? "Uploading…" : "Submit Updated Photos"}
+      </button>
+      <p className="text-[11px] text-gray-400 text-center">
+        Only selected photos will be updated. Admin will be notified to re-review.
+      </p>
+    </div>
+  );
+}
 
 const DriverProfile = () => {
   const navigate = useNavigate();
@@ -61,6 +190,8 @@ const DriverProfile = () => {
     }
   };
 
+  const [loadTick, setLoadTick] = useState(0);
+
   useEffect(() => {
     let mounted = true;
     const load = async () => {
@@ -80,7 +211,7 @@ const DriverProfile = () => {
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [loadTick]);
 
   const docs = useMemo(() => {
     const p = profile || {};
@@ -167,6 +298,8 @@ const DriverProfile = () => {
           ))}
         </div>
       </div>
+
+      <VehicleConditionCard profile={profile} onUploaded={() => setLoadTick((t) => t + 1)} />
 
       {/* Referral & Rewards card */}
       <div className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-gray-200 space-y-5">
