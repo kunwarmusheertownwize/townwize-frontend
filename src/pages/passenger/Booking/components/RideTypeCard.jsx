@@ -10,6 +10,7 @@ import React from "react";
 export default function RideTypeCard({
     title,
     icon,
+    badge,
     selected = false,
     disabled = false,
     children,
@@ -27,7 +28,10 @@ export default function RideTypeCard({
       `}
         >
             {icon && <div className="text-2xl mb-2">{icon}</div>}
-            <span className="text-sm font-medium">{title}</span>
+            <span className="flex items-center text-sm font-medium">
+                {title}
+                {badge}
+            </span>
 
             {selected && children && (
                 <div className="mt-2 text-sm flex flex-col items-center">

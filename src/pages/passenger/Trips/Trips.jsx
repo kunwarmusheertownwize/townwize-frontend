@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { FaCarSide, FaChevronLeft, FaChevronRight, FaStar, FaUsers } from "react-icons/fa";
+import { FaChevronLeft, FaChevronRight, FaStar, FaUsers } from "react-icons/fa";
 import api from "../../../services/api";
 
 const STATUS_META = {
@@ -37,15 +37,70 @@ const distanceOf = (ride) => {
 
 const LIMIT = 10;
 
+function SkeletonCard() {
+  return (
+    <div className="animate-pulse rounded-2xl border border-gray-100 bg-white dark:bg-townwize-primaryDark dark:border-gray-700 p-4 shadow-sm">
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex-1 space-y-2">
+          <div className="flex items-start gap-2.5">
+            <div className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full bg-gray-200 dark:bg-gray-700" />
+            <div className="h-4 w-3/4 rounded-md bg-gray-200 dark:bg-gray-700" />
+          </div>
+          <div className="flex items-start gap-2.5">
+            <div className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full bg-gray-200 dark:bg-gray-700" />
+            <div className="h-4 w-1/2 rounded-md bg-gray-200 dark:bg-gray-700" />
+          </div>
+        </div>
+        <div className="shrink-0 text-right space-y-1">
+          <div className="h-5 w-20 rounded-md bg-gray-200 dark:bg-gray-700" />
+          <div className="h-3 w-12 rounded-md bg-gray-200 dark:bg-gray-700 ml-auto" />
+        </div>
+      </div>
+      <div className="mt-3 flex items-center gap-2">
+        <div className="h-5 w-20 rounded-full bg-gray-200 dark:bg-gray-700" />
+        <div className="h-4 w-28 rounded-md bg-gray-200 dark:bg-gray-700" />
+      </div>
+    </div>
+  );
+}
+
 export default function PassengerTrips() {
   const navigate = useNavigate();
-  const [rides, setRides]     = useState([]);
-  const [total, setTotal]     = useState(0);
-  const [pages, setPages]     = useState(1);
-  const [page, setPage]       = useState(1);
-  const [loading, setLoading] = useState(true);
-  const [error, setError]     = useState("");
+  const [rides, setRides]           = useState([]);
+  const [total, setTotal]           = useState(0);
+  const [pages, setPages]           = useState(1);
+  const [page, setPage]             = useState(1);
+  const [loading, setLoading]       = useState(true);
+  const [error, setError]           = useState("");
   const [refreshKey, setRefreshKey] = useState(0);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const touchStartY = useRef(null);
+
+  const doRefresh = useCallback(() => {
+    setRefreshing(true);
+    setPage(1);
+    setRefreshKey((k) => k + 1);
+  }, []);
+
+  useEffect(() => {
+    const onTouchStart = (e) => {
+      if (window.scrollY === 0) touchStartY.current = e.touches[0].clientY;
+      else touchStartY.current = null;
+    };
+    const onTouchEnd = (e) => {
+      if (touchStartY.current == null) return;
+      const delta = e.changedTouches[0].clientY - touchStartY.current;
+      if (delta >= 60) doRefresh();
+      touchStartY.current = null;
+    };
+    window.addEventListener("touchstart", onTouchStart, { passive: true });
+    window.addEventListener("touchend", onTouchEnd, { passive: true });
+    return () => {
+      window.removeEventListener("touchstart", onTouchStart);
+      window.removeEventListener("touchend", onTouchEnd);
+    };
+  }, [doRefresh]);
 
   useEffect(() => {
     let mounted = true;
@@ -64,7 +119,12 @@ export default function PassengerTrips() {
         if (!mounted) return;
         setError(err?.response?.data?.message || "Failed to load trips");
       })
-      .finally(() => { if (mounted) setLoading(false); });
+      .finally(() => {
+        if (mounted) {
+          setLoading(false);
+          setRefreshing(false);
+        }
+      });
     return () => { mounted = false; };
   }, [page, refreshKey]);
 
@@ -86,21 +146,31 @@ export default function PassengerTrips() {
         </button>
       </div>
 
+      <button
+        onClick={doRefresh}
+        disabled={loading || refreshing}
+        className="sm:hidden flex items-center gap-1.5 text-xs font-medium text-townwize-accent border border-townwize-accent/30 rounded-xl px-3 py-1.5 hover:bg-townwize-accent/5 disabled:opacity-40 transition"
+      >
+        <span className={refreshing ? "animate-spin inline-block" : "inline-block"}>↻</span>
+        {refreshing ? "Refreshing…" : "Refresh"}
+      </button>
+
       {error && (
         <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
       )}
 
       {loading ? (
         <div className="space-y-3">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="h-24 animate-pulse rounded-2xl bg-gray-100 dark:bg-gray-800" />
+          {Array.from({ length: 5 }).map((_, i) => (
+            <SkeletonCard key={i} />
           ))}
         </div>
       ) : rides.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-gray-200 bg-white dark:bg-townwize-primaryDark py-16 text-gray-400">
-          <FaCarSide className="text-4xl" />
-          <p className="text-sm">No trips yet. Book your first ride!</p>
-          <Link to="/passenger/home" className="mt-1 rounded-xl bg-townwize-primary px-5 py-2 text-sm font-semibold text-white">
+          <span className="text-5xl">🚗</span>
+          <p className="text-base font-semibold text-gray-700 dark:text-gray-200">No trips yet</p>
+          <p className="text-sm text-gray-400">Your completed rides will appear here</p>
+          <Link to="/passenger/home" className="mt-2 rounded-xl bg-townwize-primary px-5 py-2 text-sm font-semibold text-white">
             Book a ride
           </Link>
         </div>
@@ -124,7 +194,6 @@ export default function PassengerTrips() {
                   className={`rounded-2xl border border-gray-100 bg-white dark:bg-townwize-primaryDark dark:border-gray-700 p-4 shadow-sm ${isCompleted || isMerged ? "cursor-pointer hover:border-townwize-primary/40 hover:shadow-md transition-shadow" : ""}`}
                 >
                   <div className="flex items-start justify-between gap-3">
-                    {/* Route */}
                     <div className="flex-1 min-w-0 space-y-2">
                       <div className="flex items-start gap-2.5">
                         <span className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full bg-townwize-accent" />
@@ -140,7 +209,6 @@ export default function PassengerTrips() {
                       </div>
                     </div>
 
-                    {/* Fare */}
                     <div className="shrink-0 text-right">
                       <p className="text-base font-bold text-townwize-primary dark:text-white">
                         {fareOf(ride)} PKR
@@ -149,7 +217,6 @@ export default function PassengerTrips() {
                     </div>
                   </div>
 
-                  {/* Footer */}
                   <div className="mt-3 flex items-center gap-2 flex-wrap">
                     <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${meta.cls}`}>
                       {meta.label}
@@ -188,7 +255,6 @@ export default function PassengerTrips() {
             })}
           </div>
 
-          {/* Pagination */}
           {pages > 1 && (
             <div className="flex items-center justify-center gap-3 pt-2">
               <button
