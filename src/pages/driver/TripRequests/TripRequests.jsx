@@ -293,6 +293,13 @@ const TripRequests = () => {
                 <p className="text-xs text-gray-400">ETA to pickup</p>
                 <p className="font-semibold text-gray-900 dark:text-white">{request.etaToPickup}</p>
               </div>
+              <div className="w-px bg-gray-200 dark:bg-gray-600" />
+              <div className="text-center">
+                <p className="text-xs text-gray-400">Est. earning</p>
+                <p className="font-semibold text-townwize-accent">
+                  PKR {Math.round(Number(request.fare || 0) * 0.8).toLocaleString()}
+                </p>
+              </div>
             </div>
           </div>
 
