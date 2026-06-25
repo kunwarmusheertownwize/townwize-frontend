@@ -84,14 +84,28 @@ const DriverNotifications = () => {
 
       {loading ? (
         <div className="space-y-3">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="h-16 animate-pulse rounded-2xl bg-gray-100 dark:bg-gray-800" />
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="animate-pulse rounded-2xl bg-gray-100 dark:bg-gray-800 px-4 py-3 space-y-2">
+              <div className="flex items-center gap-3">
+                <div className="h-2 w-2 rounded-full bg-gray-200 dark:bg-gray-700 shrink-0" />
+                <div className="flex-1 space-y-1.5">
+                  <div className="flex justify-between gap-2">
+                    <div className="h-3 w-32 rounded bg-gray-200 dark:bg-gray-700" />
+                    <div className="h-3 w-10 rounded bg-gray-200 dark:bg-gray-700" />
+                  </div>
+                  <div className="h-2.5 w-48 rounded bg-gray-200 dark:bg-gray-700" />
+                </div>
+              </div>
+            </div>
           ))}
         </div>
       ) : items.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-gray-200 dark:border-gray-700 bg-white dark:bg-townwize-primaryDark py-16 text-gray-400">
-          <FaBell className="text-4xl" />
-          <p className="text-sm">No notifications yet.</p>
+          <FaBell className="text-4xl text-gray-300 dark:text-gray-600" />
+          <div className="text-center space-y-1">
+            <p className="text-sm font-semibold text-gray-500 dark:text-gray-400">No notifications</p>
+            <p className="text-xs text-gray-400 dark:text-gray-500">You&apos;re all caught up!</p>
+          </div>
         </div>
       ) : (
         <div className="space-y-2">

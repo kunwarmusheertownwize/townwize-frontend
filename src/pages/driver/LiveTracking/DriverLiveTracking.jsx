@@ -108,6 +108,8 @@ const DriverLiveTracking = () => {
   const dropoffAddress = request?.dropoff;
   const rideType = request?.rideType;
   const fare = request?.fare;
+  const passengerName = request?.passengerName || null;
+  const passengerPhone = request?.passengerPhone || null;
   const isPooled = rideType === "RIDETOGETHER" && sharedPassengers.length > 0;
   const sp = sharedPassengers[0];
 
@@ -155,6 +157,8 @@ const DriverLiveTracking = () => {
           etaMinutes: activeRide.etaMinutes,
           sharedPassengers: activeRide.sharedPassengers || [],
           poolPickupStage: activeRide.poolPickupStage ?? null,
+          passengerName: activeRide.passengerName || null,
+          passengerPhone: activeRide.passengerPhone || null,
         };
         persistActiveTrip(recovered);
         setRideStatus(recovered.status);
@@ -781,12 +785,17 @@ const DriverLiveTracking = () => {
           End Trip
         </button>
       )}
-      <button
-        onClick={() => toast.info("Calling passenger...")}
-        className="rounded-xl bg-gray-200 px-4 py-3 text-sm dark:bg-gray-700"
-      >
-        Call
-      </button>
+      {passengerPhone ? (
+        <a
+          href={`tel:${passengerPhone}`}
+          className="flex items-center justify-center h-12 w-12 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 shrink-0"
+          title={`Call ${passengerName || "Passenger"}`}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M6.62 10.79a15.053 15.053 0 006.59 6.59l2.2-2.2a1 1 0 011.01-.24 11.36 11.36 0 003.56.57 1 1 0 011 1V20a1 1 0 01-1 1A17 17 0 013 4a1 1 0 011-1h3.5a1 1 0 011 1 11.36 11.36 0 00.57 3.57 1 1 0 01-.25 1.01l-2.2 2.21z"/>
+          </svg>
+        </a>
+      ) : null}
     </div>
   );
 
@@ -869,6 +878,9 @@ const DriverLiveTracking = () => {
             <h1 className="text-lg font-bold">Active Trip</h1>
             {isPooled && <span className="text-xs font-semibold bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded-full">RideTogether</span>}
           </div>
+          {passengerName && (
+            <p className="text-sm text-gray-500 dark:text-gray-400">Passenger: <span className="font-semibold text-gray-700 dark:text-gray-200">{passengerName}</span></p>
+          )}
           {statusLabel && <span className="text-sm text-gray-500">{statusLabel}</span>}
         </div>
 
@@ -913,6 +925,7 @@ const DriverLiveTracking = () => {
       <div className="z-10 border-b border-gray-200 bg-white p-4 shadow-sm dark:bg-townwize-primaryDark flex items-center gap-3">
         <div>
           <h1 className="text-lg font-bold">Active Trip</h1>
+          {passengerName && <p className="text-sm text-gray-500 dark:text-gray-400">Passenger: <span className="font-semibold text-gray-700 dark:text-gray-200">{passengerName}</span></p>}
           {statusLabel && <span className="text-sm text-gray-500">{statusLabel}</span>}
         </div>
         {isPooled && <span className="text-xs font-semibold bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded-full">RideTogether</span>}
@@ -921,11 +934,27 @@ const DriverLiveTracking = () => {
       <div ref={mapRef} className="absolute inset-0 top-[72px] z-0" />
 
       <div className="pointer-events-auto absolute bottom-0 z-50 w-full rounded-t-2xl border-t border-gray-200 bg-white p-4 shadow-2xl dark:bg-townwize-primaryDark max-h-[65vh] overflow-y-auto">
-        <div className="grid gap-2 text-sm md:grid-cols-2">
-          <p><strong>Pickup:</strong> {pickupAddress}</p>
-          <p><strong>Dropoff:</strong> {dropoffAddress}</p>
-          <p><strong>Ride Type:</strong> {rideType}</p>
-          <p><strong>Fare:</strong> {fare} PKR</p>
+        <div className="flex items-start justify-between gap-3 mb-2">
+          <div className="grid gap-2 text-sm md:grid-cols-2 flex-1">
+            {passengerName && (
+              <p className="md:col-span-2"><strong>Passenger:</strong> {passengerName}</p>
+            )}
+            <p><strong>Pickup:</strong> {pickupAddress}</p>
+            <p><strong>Dropoff:</strong> {dropoffAddress}</p>
+            <p><strong>Ride Type:</strong> {rideType}</p>
+            <p><strong>Fare:</strong> {fare} PKR</p>
+          </div>
+          {passengerPhone && (
+            <a
+              href={`tel:${passengerPhone}`}
+              className="flex items-center justify-center h-11 w-11 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 shrink-0"
+              title={`Call ${passengerName || "Passenger"}`}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M6.62 10.79a15.053 15.053 0 006.59 6.59l2.2-2.2a1 1 0 011.01-.24 11.36 11.36 0 003.56.57 1 1 0 011 1V20a1 1 0 01-1 1A17 17 0 013 4a1 1 0 011-1h3.5a1 1 0 011 1 11.36 11.36 0 00.57 3.57 1 1 0 01-.25 1.01l-2.2 2.21z"/>
+              </svg>
+            </a>
+          )}
         </div>
         <div className="mt-3 space-y-3">
           {passengerManifest}

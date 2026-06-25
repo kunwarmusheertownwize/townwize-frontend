@@ -76,6 +76,40 @@ function WeeklyChart({ breakdown }) {
   );
 }
 
+// Returns a human-readable blocked reason for the "Go Online" blocked state
+function getBlockedDetails(driverEligibility) {
+  const {
+    registrationComplete,
+    documentsSubmitted,
+    verificationStatus,
+    conditionStatus,
+    blockedReason,
+  } = driverEligibility || {};
+
+  if (!registrationComplete) {
+    return { icon: "📋", title: "Registration incomplete", body: "Complete your driver profile before going online." };
+  }
+  if (!documentsSubmitted) {
+    return { icon: "📄", title: "Documents missing", body: "Upload all required documents to get verified." };
+  }
+  if (verificationStatus === "REJECTED") {
+    return { icon: "❌", title: "Verification rejected", body: blockedReason || "One or more documents were rejected. Please re-upload or contact support." };
+  }
+  if (verificationStatus === "PENDING" || verificationStatus === "UNDER_REVIEW") {
+    return { icon: "⏳", title: "Under review", body: "Your documents are being reviewed. You will be notified once approved." };
+  }
+  if (conditionStatus && conditionStatus !== "pass") {
+    return {
+      icon: "🚗",
+      title: "Vehicle condition check pending",
+      body: conditionStatus === "needs_recheck"
+        ? "Your vehicle condition photos need re-inspection."
+        : "Complete the vehicle condition inspection to go online.",
+    };
+  }
+  return null;
+}
+
 const DriverHome = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
@@ -160,6 +194,13 @@ const DriverHome = () => {
 
   const isOnline = driverMode !== DRIVER_MODES.OFFLINE;
 
+  const todayKey = new Date().toISOString().slice(0, 10);
+  const tripsToday = earnings?.breakdown?.find((d) => d.date === todayKey)?.trips ?? 0;
+
+  // Determine if the driver is blocked from going online (and why)
+  const isApproved = driverEligibility?.verificationStatus === "APPROVED";
+  const blockedDetails = !isOnline && !isApproved ? getBlockedDetails(driverEligibility) : null;
+
   return (
     <div className="mx-auto mt-6 max-w-md space-y-4">
       {/* Today's earnings card */}
@@ -183,6 +224,10 @@ const DriverHome = () => {
                 <p className="text-[10px] text-white/50">This month</p>
                 <p className="text-sm font-bold">{fmt(earnings?.month)} PKR</p>
               </div>
+              <div>
+                <p className="text-[10px] text-white/50">Trips today</p>
+                <p className="text-sm font-bold">{tripsToday}</p>
+              </div>
               <div className="ml-auto">
                 <p className="text-[10px] text-white/50">Balance</p>
                 <p className={`text-sm font-bold ${Number(earnings?.balance) < 0 ? "text-red-300" : "text-townwize-accent"}`}>{fmt(earnings?.balance)} PKR</p>
@@ -205,6 +250,16 @@ const DriverHome = () => {
           <WeeklyChart breakdown={earnings?.breakdown} />
         )}
       </div>
+
+      {/* Blocked state detail banner */}
+      {blockedDetails && (
+        <div className="rounded-2xl border border-amber-200 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/20 p-4 space-y-1">
+          <p className="text-sm font-semibold text-amber-800 dark:text-amber-300">
+            {blockedDetails.icon} {blockedDetails.title}
+          </p>
+          <p className="text-xs text-amber-700 dark:text-amber-400">{blockedDetails.body}</p>
+        </div>
+      )}
 
       {/* Online/Offline toggle */}
       <div className="rounded-2xl bg-white dark:bg-townwize-primaryDark p-6 text-center shadow-sm ring-1 ring-gray-200 dark:ring-gray-700">
