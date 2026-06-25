@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import StatusBadge from "../../components/common/StatusBadge";
-import { updateCase, presignDocumentUrl, fetchPassengerRides } from "../../../api/adminApi";
+import { updateCase, presignDocumentUrl, fetchPassengerRides, linkCaseRide, fetchRideDetail, escalateCase } from "../../../api/adminApi";
 
-const STATUSES = ["open", "approved", "rejected", "closed"];
+const STATUSES = ["open", "approved", "rejected", "closed", "escalated"];
 const PRIORITIES = ["low", "normal", "high", "critical"];
 
 const openPresigned = async (url, setOpening) => {
@@ -87,11 +87,21 @@ const PassengerDocs = ({ profile }) => {
   );
 };
 
+const PendingBadge = () => (
+  <span className="ml-2 inline-flex items-center rounded-full border border-amber-300 bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-800">
+    Re-submitted — awaiting review
+  </span>
+);
+
 const DriverDocs = ({ profile, referrer }) => {
   const v    = profile?.vehicle          || {};
   const id   = profile?.identity         || {};
   const face = profile?.faceVerification || {};
   const res  = profile?.residency        || {};
+
+  const idPending  = id?.verification?.status  === "PENDING";
+  const vehPending = v?.verification?.status   === "PENDING";
+  const resPending = res?.verification?.status === "PENDING";
 
   return (
     <>
@@ -110,7 +120,7 @@ const DriverDocs = ({ profile, referrer }) => {
         </div>
       )}
 
-      <DocSection title="Identity &amp; Selfie">
+      <DocSection title={<span className="flex items-center">Identity &amp; Selfie{idPending && <PendingBadge />}</span>} accent={idPending ? "amber" : undefined}>
         <DocLink url={id.cnicFrontUrl} label="CNIC Front" />
         <DocLink url={id.cnicBackUrl}  label="CNIC Back"  />
         <DocLink url={face.selfieUrl}  label="Selfie"     />
@@ -119,7 +129,7 @@ const DriverDocs = ({ profile, referrer }) => {
         )}
       </DocSection>
 
-      <DocSection title="Vehicle &amp; Licence">
+      <DocSection title={<span className="flex items-center">Vehicle &amp; Licence{vehPending && <PendingBadge />}</span>} accent={vehPending ? "amber" : undefined}>
         <DocLink url={v.vehicleRegUrl}   label="Vehicle Registration"   />
         <DocLink url={v.licenseFrontUrl} label="Driving Licence Front"  />
         <DocLink url={v.licenseBackUrl}  label="Driving Licence Back"   />
@@ -131,7 +141,7 @@ const DriverDocs = ({ profile, referrer }) => {
       </DocSection>
 
       {(res.proofUrl || res.btkIdFrontUrl) && (
-        <DocSection title="Residency Proof">
+        <DocSection title={<span className="flex items-center">Residency Proof{resPending && <PendingBadge />}</span>} accent={resPending ? "amber" : undefined}>
           <DocLink url={res.proofUrl}      label="Residency Proof" />
           <DocLink url={res.btkIdFrontUrl} label="BTK ID Front"    />
           <DocLink url={res.btkIdBackUrl}  label="BTK ID Back"     />
@@ -235,12 +245,152 @@ function TripHistorySection({ userId }) {
   );
 }
 
+function LinkedRideSection({ caseId, initialRideId, onRefreshed }) {
+  const [rideId, setRideId] = useState("");
+  const [ride, setRide] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [linking, setLinking] = useState(false);
+  const [error, setError] = useState("");
+
+  // Load initial linked ride on mount
+  useEffect(() => {
+    if (!initialRideId) return;
+    setLoading(true);
+    fetchRideDetail(String(initialRideId))
+      .then((res) => setRide(res?.data || null))
+      .catch(() => setRide(null))
+      .finally(() => setLoading(false));
+  }, [initialRideId]);
+
+  const handleLink = async () => {
+    if (!rideId.trim()) { setError("Enter a ride ID."); return; }
+    setLinking(true);
+    setError("");
+    try {
+      await linkCaseRide(caseId, rideId.trim());
+      const res = await fetchRideDetail(rideId.trim());
+      setRide(res?.data || null);
+      setRideId("");
+      onRefreshed?.();
+    } catch (e) {
+      setError(e?.message || "Failed to link ride");
+    } finally {
+      setLinking(false);
+    }
+  };
+
+  const fareFor = (r) => {
+    const v = r?.fareAdjustment?.finalFare ?? r?.fareEstimate ?? 0;
+    return `${Number(v).toLocaleString()} PKR`;
+  };
+
+  const rideStatusCls = (s) => RIDE_STATUS_COLORS[s] || "bg-gray-100 text-gray-600";
+
+  return (
+    <div className="rounded-xl border border-gray-200 p-3 space-y-3">
+      <h4 className="font-semibold text-sm">Linked Ride</h4>
+      <div className="flex gap-2">
+        <input
+          value={rideId}
+          onChange={(e) => setRideId(e.target.value)}
+          placeholder="Ride ID (MongoDB ObjectId)"
+          className="flex-1 rounded border px-3 py-1.5 text-xs focus:border-townwize-primary focus:outline-none"
+        />
+        <button
+          onClick={handleLink}
+          disabled={linking}
+          className="rounded-lg bg-townwize-primary px-3 py-1.5 text-xs font-semibold text-white hover:opacity-90 disabled:opacity-50"
+        >
+          {linking ? "Linking..." : "Link"}
+        </button>
+      </div>
+      {error && <p className="text-xs text-red-600">{error}</p>}
+      {loading && <p className="text-xs text-gray-400">Loading ride...</p>}
+      {ride && (
+        <div className="rounded-lg border border-gray-100 bg-gray-50 p-3 space-y-1.5 text-xs">
+          <div className="flex items-center justify-between">
+            <span className={`rounded-full px-2 py-0.5 font-semibold text-[10px] ${rideStatusCls(ride.status)}`}>{ride.status}</span>
+            <span className="text-gray-400">{ride.createdAt ? new Date(ride.createdAt).toLocaleString() : "-"}</span>
+          </div>
+          {ride.passengerEmail && <div className="text-gray-600">Passenger: <span className="font-medium text-gray-800">{ride.passengerEmail}</span></div>}
+          {ride.driverEmail    && <div className="text-gray-600">Driver: <span className="font-medium text-gray-800">{ride.driverEmail}</span></div>}
+          <div className="text-gray-600">Fare: <span className="font-semibold text-townwize-primary">{fareFor(ride)}</span></div>
+          <div className="text-gray-500 capitalize">Type: {(ride.rideType || "").toLowerCase().replace(/_/g, " ") || "-"}</div>
+          {ride.pickup?.address  && <div className="text-gray-600 truncate">From: {ride.pickup.address}</div>}
+          {ride.dropoff?.address && <div className="text-gray-600 truncate">To: {ride.dropoff.address}</div>}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function EscalateModal({ caseId, onClose, onDone }) {
+  const [level, setLevel] = useState("supervisor");
+  const [reason, setReason] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+
+  const handleConfirm = async () => {
+    if (!reason.trim()) { setErr("Escalation reason is required."); return; }
+    setBusy(true);
+    setErr("");
+    try {
+      await escalateCase(caseId, { reason: reason.trim(), level });
+      onDone();
+      onClose();
+    } catch (e) {
+      setErr(e?.message || "Failed to escalate case");
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+      <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
+        <h3 className="text-base font-bold text-gray-900 mb-1">Escalate Case</h3>
+        <p className="text-sm text-gray-500 mb-4">This will mark the case as ESCALATED and notify the selected level.</p>
+        <label className="block text-xs text-gray-600 mb-1">Escalation Level</label>
+        <select
+          value={level}
+          onChange={(e) => setLevel(e.target.value)}
+          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm mb-3 focus:border-townwize-primary focus:outline-none"
+        >
+          <option value="supervisor">Supervisor</option>
+          <option value="senior_admin">Senior Admin</option>
+        </select>
+        <label className="block text-xs text-gray-600 mb-1">Reason <span className="text-red-500">*</span></label>
+        <textarea
+          value={reason}
+          onChange={(e) => setReason(e.target.value)}
+          rows={3}
+          placeholder="Why is this case being escalated?"
+          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-townwize-primary focus:outline-none"
+        />
+        {err && <p className="mt-2 text-xs text-red-600">{err}</p>}
+        <div className="mt-4 flex gap-3">
+          <button
+            onClick={handleConfirm}
+            disabled={busy}
+            className="flex-1 rounded-lg bg-purple-600 px-4 py-2 text-sm font-semibold text-white hover:bg-purple-700 disabled:opacity-50"
+          >
+            {busy ? "Escalating..." : "Confirm Escalate"}
+          </button>
+          <button onClick={onClose} disabled={busy} className="flex-1 rounded-lg border px-4 py-2 text-sm font-semibold text-gray-700">
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function CaseDetailPanel({ item, onUpdated }) {
   const [status, setStatus] = useState(item.status || "open");
   const [priority, setPriority] = useState(item.priority || "normal");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [ok, setOk] = useState("");
+  const [showEscalateModal, setShowEscalateModal] = useState(false);
 
   useEffect(() => {
     setStatus(item.status || "open");
@@ -271,6 +421,9 @@ export default function CaseDetailPanel({ item, onUpdated }) {
 
   const tier = item.profile?.accountTier;
   const passengerId = item.entityType === "passenger" ? (item.entityId || item.userId || item.profile?._id || item.profile?.userId) : null;
+  const caseId = item.caseId || item._id;
+  const isEscalatable = ["open", "approved", "rejected"].includes(item.status);
+  const isEscalated = item.status === "escalated";
 
   return (
     <div className="space-y-4 text-sm">
@@ -303,9 +456,31 @@ export default function CaseDetailPanel({ item, onUpdated }) {
         </div>
       </div>
 
+      {/* Escalation info when escalated */}
+      {isEscalated && (
+        <div className="rounded-xl border border-purple-200 bg-purple-50 p-3 space-y-1">
+          <p className="text-xs font-semibold text-purple-800">Case is Escalated</p>
+          {item.escalationLevel && (
+            <p className="text-xs text-purple-700">Level: <span className="font-medium capitalize">{item.escalationLevel.replace(/_/g, " ")}</span></p>
+          )}
+          {item.escalationReason && (
+            <p className="text-xs text-purple-700">Reason: <span className="font-medium">{item.escalationReason}</span></p>
+          )}
+          {item.escalatedBy && (
+            <p className="text-xs text-purple-600">Escalated by: {item.escalatedBy}</p>
+          )}
+          {item.escalatedAt && (
+            <p className="text-xs text-purple-600">At: {new Date(item.escalatedAt).toLocaleString()}</p>
+          )}
+        </div>
+      )}
+
       {/* Documents */}
       {item.entityType === "passenger" && <PassengerDocs profile={item.profile} />}
       {item.entityType === "driver"    && <DriverDocs    profile={item.profile} referrer={item.referrer} />}
+
+      {/* Linked Ride */}
+      <LinkedRideSection caseId={caseId} initialRideId={item.linkedRideId} onRefreshed={onUpdated} />
 
       {/* Case action */}
       <div className="rounded-xl border border-gray-200 p-3">
@@ -318,18 +493,36 @@ export default function CaseDetailPanel({ item, onUpdated }) {
         <select className="w-full rounded border px-3 py-2" value={priority} onChange={(e) => setPriority(e.target.value)}>
           {PRIORITIES.map((p) => <option key={p} value={p}>{p}</option>)}
         </select>
-        <button
-          className="mt-3 rounded-md bg-townwize-primary px-3 py-2 text-white disabled:opacity-50"
-          onClick={save}
-          disabled={saving || !canSave}
-        >
-          {saving ? "Saving..." : "Save Changes"}
-        </button>
+        <div className="mt-3 flex items-center gap-2 flex-wrap">
+          <button
+            className="rounded-md bg-townwize-primary px-3 py-2 text-white disabled:opacity-50"
+            onClick={save}
+            disabled={saving || !canSave}
+          >
+            {saving ? "Saving..." : "Save Changes"}
+          </button>
+          {isEscalatable && (
+            <button
+              className="rounded-md border border-purple-300 bg-purple-50 px-3 py-2 text-xs font-semibold text-purple-700 hover:bg-purple-100"
+              onClick={() => setShowEscalateModal(true)}
+            >
+              Escalate
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Trip History — passenger cases only */}
       {item.entityType === "passenger" && passengerId && (
         <TripHistorySection userId={passengerId} />
+      )}
+
+      {showEscalateModal && (
+        <EscalateModal
+          caseId={caseId}
+          onClose={() => setShowEscalateModal(false)}
+          onDone={() => onUpdated?.()}
+        />
       )}
     </div>
   );

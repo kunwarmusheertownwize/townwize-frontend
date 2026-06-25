@@ -129,6 +129,7 @@ export default function CasesList() {
             <option value="open">Open</option>
             <option value="approved">Approved</option>
             <option value="rejected">Rejected</option>
+            <option value="escalated">Escalated</option>
             <option value="closed">Closed</option>
           </select>
         </div>

@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
-import { fetchCases, fetchFinanceSummary, fetchRides, fetchSupportTickets, fetchPriorityAlerts, unblockDriver } from "../../../api/adminApi";
+import { fetchCases, fetchFinanceSummary, fetchRides, fetchSupportTickets, fetchPriorityAlerts, unblockDriver, fetchPendingReviewCount } from "../../../api/adminApi";
 
 const SEVERITY_META = {
   critical: { bg: "bg-red-50 border-red-300",    badge: "bg-red-100 text-red-700",    dot: "bg-red-500",    label: "Critical" },
@@ -191,6 +191,7 @@ export default function AdminDashboard() {
   const [alerts, setAlerts] = useState([]);
   const [alertsLoading, setAlertsLoading] = useState(true);
   const [unblocking, setUnblocking] = useState(null);
+  const [pendingReviewCount, setPendingReviewCount] = useState(null);
 
   useEffect(() => {
     let mounted = true;
@@ -248,6 +249,12 @@ export default function AdminDashboard() {
 
   useEffect(() => { loadAlerts(); }, [loadAlerts]);
 
+  useEffect(() => {
+    fetchPendingReviewCount()
+      .then((res) => setPendingReviewCount(Number(res?.data?.count ?? 0)))
+      .catch(() => {}); // silently fail
+  }, []);
+
   const handleUnblock = async (driverId) => {
     setUnblocking(driverId);
     try {
@@ -267,13 +274,18 @@ export default function AdminDashboard() {
       {error ? <div className="rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div> : null}
 
       {/* ── Priority Alerts ─────────────────────────────────────────────── */}
-      {(alertsLoading || alerts.length > 0) && (
+      {(alertsLoading || alerts.length > 0 || pendingReviewCount > 0) && (
         <div className="space-y-2">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <span className="h-2 w-2 rounded-full bg-red-500 animate-pulse" />
             <h2 className="text-sm font-bold uppercase tracking-wide text-red-600">Priority Alerts — Action Required</h2>
             {!alertsLoading && (
               <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-bold text-red-700">{alerts.length}</span>
+            )}
+            {pendingReviewCount !== null && pendingReviewCount > 0 && (
+              <span className="rounded-full border border-amber-300 bg-amber-100 px-2.5 py-0.5 text-xs font-bold text-amber-800">
+                {pendingReviewCount} Docs Awaiting Review
+              </span>
             )}
             <button onClick={loadAlerts} className="ml-auto text-xs text-gray-400 hover:text-gray-600 underline">Refresh</button>
           </div>

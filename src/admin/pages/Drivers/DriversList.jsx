@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import EmptyState from "../../components/common/EmptyState";
 import SidePanel from "../../components/panels/SidePanel";
 import StatusBadge from "../../components/common/StatusBadge";
-import { fetchAllDrivers, fetchCaseDetail, fetchCases, updateDriverVehicleApproval, presignDocumentUrl } from "../../../api/adminApi";
+import { fetchAllDrivers, fetchCaseDetail, fetchCases, updateDriverVehicleApproval, presignDocumentUrl, bulkVerifyDrivers } from "../../../api/adminApi";
 import CaseDetailPanel from "../Cases/CaseDetailPanel";
 import SecureImg from "../../../components/SecureImg";
 
@@ -193,6 +193,53 @@ function VehicleReviewPanel({ driver, onClose, onSaved }) {
   );
 }
 
+function BulkRejectModal({ count, onConfirm, onCancel }) {
+  const [reason, setReason] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+
+  const handleConfirm = async () => {
+    if (!reason.trim()) { setErr("Rejection reason is required."); return; }
+    setBusy(true);
+    setErr("");
+    try {
+      await onConfirm(reason.trim());
+    } catch (e) {
+      setErr(e?.message || "Failed to reject documents");
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+      <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
+        <h3 className="text-base font-bold text-gray-900 mb-1">Reject Documents</h3>
+        <p className="text-sm text-gray-500 mb-4">You are rejecting documents for <strong>{count}</strong> driver(s). Provide a reason.</p>
+        <textarea
+          value={reason}
+          onChange={(e) => setReason(e.target.value)}
+          rows={4}
+          placeholder="Reason for rejection..."
+          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-townwize-primary focus:outline-none"
+        />
+        {err && <p className="mt-2 text-xs text-red-600">{err}</p>}
+        <div className="mt-4 flex gap-3">
+          <button
+            onClick={handleConfirm}
+            disabled={busy}
+            className="flex-1 rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50"
+          >
+            {busy ? "Rejecting..." : "Confirm Reject"}
+          </button>
+          <button onClick={onCancel} disabled={busy} className="flex-1 rounded-lg border px-4 py-2 text-sm font-semibold text-gray-700">
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function DriversList() {
   const [items, setItems] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
@@ -207,10 +254,36 @@ export default function DriversList() {
   const [driverLoading, setDriverLoading] = useState(true);
   const [reviewDriverKey, setReviewDriverKey] = useState("");
 
+  // Bulk selection state
+  const [checkedIds, setCheckedIds] = useState(new Set());
+  const [showRejectModal, setShowRejectModal] = useState(false);
+  const [bulkError, setBulkError] = useState("");
+
   const reviewDriver = useMemo(
     () => driverRows.find((d) => String(d.userId || d.id || "") === String(reviewDriverKey)) || null,
     [driverRows, reviewDriverKey]
   );
+
+  const allIds = useMemo(() => driverRows.map((d) => String(d.userId || d.id || "")), [driverRows]);
+  const allChecked = allIds.length > 0 && allIds.every((id) => checkedIds.has(id));
+  const someChecked = checkedIds.size > 0;
+
+  const toggleAll = () => {
+    if (allChecked) {
+      setCheckedIds(new Set());
+    } else {
+      setCheckedIds(new Set(allIds));
+    }
+  };
+
+  const toggleOne = (id) => {
+    setCheckedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
 
   useEffect(() => {
     let mounted = true;
@@ -300,6 +373,24 @@ export default function DriversList() {
     }
   };
 
+  const handleBulkApprove = async () => {
+    setBulkError("");
+    try {
+      await bulkVerifyDrivers({ driverIds: [...checkedIds], action: "approve" });
+      setCheckedIds(new Set());
+      await refresh();
+    } catch (e) {
+      setBulkError(e?.message || "Bulk approve failed");
+    }
+  };
+
+  const handleBulkReject = async (reason) => {
+    await bulkVerifyDrivers({ driverIds: [...checkedIds], action: "reject", rejectionReason: reason });
+    setCheckedIds(new Set());
+    setShowRejectModal(false);
+    await refresh();
+  };
+
   return (
     <div className="space-y-4">
       <h1 className="text-xl font-semibold">Driver Verification Cases</h1>
@@ -383,14 +474,24 @@ export default function DriversList() {
         </table>
       </div>
 
+      {/* Vehicle Reviews with bulk checkboxes */}
       <div className="rounded-xl border border-gray-200 bg-white">
         <div className="border-b border-gray-100 px-4 py-3">
           <h2 className="text-base font-semibold">Vehicle Reviews</h2>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[920px] text-sm">
+          <table className="w-full min-w-[980px] text-sm">
             <thead className="bg-gray-50">
               <tr>
+                <th className="px-4 py-3 w-10">
+                  <input
+                    type="checkbox"
+                    checked={allChecked}
+                    onChange={toggleAll}
+                    className="h-4 w-4 cursor-pointer rounded border-gray-300 accent-townwize-primary"
+                    title="Select all"
+                  />
+                </th>
                 <th className="px-4 py-3 text-left">Driver</th>
                 <th className="px-4 py-3 text-left">Vehicle</th>
                 <th className="px-4 py-3 text-left">Status</th>
@@ -400,15 +501,26 @@ export default function DriversList() {
             </thead>
             <tbody>
               {driverLoading ? (
-                <tr><td className="px-4 py-8 text-center text-gray-500" colSpan={5}>Loading drivers...</td></tr>
+                <tr><td className="px-4 py-8 text-center text-gray-500" colSpan={6}>Loading drivers...</td></tr>
               ) : driverRows.length === 0 ? (
-                <tr><td className="px-4 py-8 text-center text-gray-500" colSpan={5}>No drivers found.</td></tr>
+                <tr><td className="px-4 py-8 text-center text-gray-500" colSpan={6}>No drivers found.</td></tr>
               ) : (
                 driverRows.map((d) => {
+                  const driverId = String(d.userId || d.id || "");
                   const photoCount = Array.isArray(d.vehicleMeta?.conditionPhotos) ? d.vehicleMeta.conditionPhotos.length : 0;
                   const evidencePercent = Math.min(100, Math.round((photoCount / 7) * 100));
+                  const isChecked = checkedIds.has(driverId);
                   return (
-                    <tr key={d.userId || d.id} className="border-t border-gray-100">
+                    <tr key={driverId} className={`border-t border-gray-100 ${isChecked ? "bg-blue-50" : ""}`}>
+                      <td className="px-4 py-3">
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={() => toggleOne(driverId)}
+                          className="h-4 w-4 cursor-pointer rounded border-gray-300 accent-townwize-primary"
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      </td>
                       <td className="px-4 py-3">
                         <div className="font-medium">{d.name || "-"}</div>
                         <div className="text-xs text-gray-600">{d.phone || "-"}</div>
@@ -435,7 +547,7 @@ export default function DriversList() {
                       <td className="px-4 py-3">
                         <button
                           className="rounded border px-3 py-1 text-xs font-medium hover:bg-gray-50"
-                          onClick={() => setReviewDriverKey(String(d.userId || d.id || ""))}
+                          onClick={() => setReviewDriverKey(driverId)}
                         >
                           Review
                         </button>
@@ -473,6 +585,43 @@ export default function DriversList() {
           <div className="py-6 text-sm text-gray-500">Loading driver...</div>
         )}
       </SidePanel>
+
+      {/* Bulk Action Bar */}
+      {someChecked && (
+        <div className="fixed bottom-6 left-1/2 z-40 -translate-x-1/2">
+          <div className="flex items-center gap-3 rounded-2xl border border-gray-200 bg-white px-5 py-3 shadow-2xl">
+            <span className="text-sm font-semibold text-gray-800">{checkedIds.size} selected</span>
+            <span className="h-4 w-px bg-gray-200" />
+            <button
+              onClick={handleBulkApprove}
+              className="rounded-lg bg-green-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-green-700"
+            >
+              Approve Documents
+            </button>
+            <button
+              onClick={() => { setBulkError(""); setShowRejectModal(true); }}
+              className="rounded-lg bg-red-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-red-700"
+            >
+              Reject Documents
+            </button>
+            <button
+              onClick={() => setCheckedIds(new Set())}
+              className="rounded-lg border px-4 py-1.5 text-xs font-semibold text-gray-600 hover:bg-gray-50"
+            >
+              Clear
+            </button>
+            {bulkError && <span className="text-xs text-red-600">{bulkError}</span>}
+          </div>
+        </div>
+      )}
+
+      {showRejectModal && (
+        <BulkRejectModal
+          count={checkedIds.size}
+          onConfirm={handleBulkReject}
+          onCancel={() => setShowRejectModal(false)}
+        />
+      )}
     </div>
   );
 }
