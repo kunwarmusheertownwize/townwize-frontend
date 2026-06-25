@@ -19,6 +19,13 @@ export const updateDriverVehicleApproval = (driverUserId, body) =>
 export const fetchPriorityAlerts = () => call("/admin/drivers/priority-alerts");
 export const unblockDriver = (driverUserId) =>
     call(`/admin/drivers/${driverUserId}/unblock`, { method: "PATCH", body: JSON.stringify({}) });
+export const bulkVerifyDrivers = (body) =>
+    call("/admin/drivers/bulk-verify", { method: "POST", body: JSON.stringify(body || {}) });
+export const fetchPendingReviewCount = () => call("/admin/drivers/pending-review-count");
+export const suspendDriver = (driverUserId, body) =>
+    call(`/admin/drivers/${driverUserId}/suspend`, { method: "PATCH", body: JSON.stringify(body || {}) });
+export const reinstateDriver = (driverUserId) =>
+    call(`/admin/drivers/${driverUserId}/reinstate`, { method: "PATCH", body: JSON.stringify({}) });
 
 export const fetchCases = (params) => {
     const q = new URLSearchParams(params || {}).toString();
@@ -135,3 +142,11 @@ export const fetchPassengerRides = (userId, params) => {
 
 export const presignDocumentUrl = (url) =>
     call(`/admin/documents/presign?url=${encodeURIComponent(url)}`);
+
+// Case — link ride
+export const linkCaseRide = (caseId, rideId) =>
+    call(`/admin/cases/${caseId}/link-ride`, { method: "PATCH", body: JSON.stringify({ rideId }) });
+
+// Case — escalate
+export const escalateCase = (caseId, body) =>
+    call(`/admin/cases/${caseId}/escalate`, { method: "PATCH", body: JSON.stringify(body || {}) });
