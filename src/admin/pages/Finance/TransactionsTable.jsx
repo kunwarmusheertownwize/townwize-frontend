@@ -1,6 +1,40 @@
 import { useEffect, useState } from "react";
 import EmptyState from "../../components/common/EmptyState";
+import Pagination from "../../components/common/Pagination";
 import { fetchFinanceTransactions } from "../../../api/adminApi";
+
+const exportCsv = (rows) => {
+  const headers = ["Date", "Txn ID", "Type", "Ride ID", "Driver", "Gross (PKR)", "Tax (PKR)", "Platform Fee (PKR)", "Commission (PKR)", "Townwize Revenue (PKR)", "Driver Earning (PKR)", "Status"];
+  const lines = [
+    headers.join(","),
+    ...rows.map((r) =>
+      [
+        r.createdAt ? new Date(r.createdAt).toLocaleDateString() : "-",
+        r.id || r._id || "-",
+        r.type || "-",
+        r.ride || "-",
+        r.driver || "-",
+        r.gross || 0,
+        r.tax || 0,
+        r.platformFee || 0,
+        r.commission || 0,
+        r.townwizeRevenue || 0,
+        r.driverEarning ?? r.net ?? 0,
+        r.status || "-",
+      ]
+        .map((v) => `"${String(v).replace(/"/g, '""')}"`)
+        .join(",")
+    ),
+  ];
+
+  const blob = new Blob([lines.join("\n")], { type: "text/csv" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `townwize-transactions-${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+};
 
 export default function TransactionsTable() {
   const [items, setItems] = useState([]);
@@ -40,7 +74,16 @@ export default function TransactionsTable() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-xl font-semibold">Transactions</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-xl font-semibold">Transactions</h1>
+        <button
+          onClick={() => exportCsv(items)}
+          disabled={items.length === 0}
+          className="rounded-lg border border-townwize-primary px-3 py-1.5 text-sm font-medium text-townwize-primary hover:bg-townwize-primary hover:text-white disabled:opacity-40 transition-colors"
+        >
+          Export CSV
+        </button>
+      </div>
       <div className="rounded-xl border bg-white p-4">
         <div className="flex flex-col gap-3 md:flex-row">
           <select className="rounded-md border px-3 py-2 text-sm" value={type} onChange={(e) => { setPage(1); setType(e.target.value); }}>
@@ -101,11 +144,7 @@ export default function TransactionsTable() {
 
       <div className="flex items-center justify-between text-sm">
         <span>Total: {meta.total}</span>
-        <div className="flex items-center gap-2">
-          <button className="rounded border px-3 py-1 disabled:opacity-50" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>Prev</button>
-          <span>Page {meta.page} / {meta.totalPages}</span>
-          <button className="rounded border px-3 py-1 disabled:opacity-50" disabled={page >= meta.totalPages} onClick={() => setPage((p) => p + 1)}>Next</button>
-        </div>
+        <Pagination page={page} totalPages={meta.totalPages} onPage={setPage} />
       </div>
     </div>
   );

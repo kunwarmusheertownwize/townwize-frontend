@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import StatusBadge from "../../components/common/StatusBadge";
-import { updateCase, presignDocumentUrl } from "../../../api/adminApi";
+import { updateCase, presignDocumentUrl, fetchPassengerRides } from "../../../api/adminApi";
 
 const STATUSES = ["open", "approved", "rejected", "closed"];
 const PRIORITIES = ["low", "normal", "high", "critical"];
@@ -149,6 +149,92 @@ const DriverDocs = ({ profile, referrer }) => {
   );
 };
 
+const RIDE_STATUS_COLORS = {
+  COMPLETED:       "bg-green-100 text-green-700",
+  CANCELLED:       "bg-red-100 text-red-700",
+  ON_TRIP:         "bg-blue-100 text-blue-700",
+  REQUESTED:       "bg-gray-100 text-gray-700",
+  DRIVER_ASSIGNED: "bg-yellow-100 text-yellow-700",
+  EN_ROUTE:        "bg-yellow-100 text-yellow-700",
+  ARRIVED:         "bg-teal-100 text-teal-700",
+};
+
+function TripHistorySection({ userId }) {
+  const [open, setOpen] = useState(false);
+  const [rides, setRides] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [fetched, setFetched] = useState(false);
+
+  const load = async () => {
+    if (fetched) return;
+    setLoading(true);
+    setError("");
+    try {
+      const res = await fetchPassengerRides(userId, { page: "1" });
+      setRides(res?.data?.rides || []);
+      setFetched(true);
+    } catch (e) {
+      setError(e.message || "Failed to load trip history");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleToggle = () => {
+    const next = !open;
+    setOpen(next);
+    if (next && !fetched) load();
+  };
+
+  const fareFor = (r) => {
+    const v = r.fareAdjustment?.finalFare ?? r.fareEstimate ?? 0;
+    return `${Number(v).toLocaleString()} PKR`;
+  };
+
+  return (
+    <div className="rounded-xl border border-gray-200">
+      <button
+        type="button"
+        onClick={handleToggle}
+        className="w-full flex items-center justify-between px-3 py-2.5 text-sm font-semibold text-gray-800 hover:bg-gray-50 rounded-xl"
+      >
+        <span>Trip History</span>
+        <span className="text-gray-400 text-xs">{open ? "Hide ▲" : "Show ▼"}</span>
+      </button>
+
+      {open && (
+        <div className="px-3 pb-3 space-y-2 border-t border-gray-100 pt-2">
+          {loading && <p className="text-xs text-gray-400">Loading trips...</p>}
+          {error && <p className="text-xs text-red-600">{error}</p>}
+          {!loading && !error && rides.length === 0 && (
+            <p className="text-xs text-gray-400">No rides found for this passenger.</p>
+          )}
+          {rides.map((r) => {
+            const statusCls = RIDE_STATUS_COLORS[r.status] || "bg-gray-100 text-gray-600";
+            const pickup  = r.pickup?.address  || r.pickup?.lat  ? `${r.pickup?.address  || `${r.pickup?.lat},${r.pickup?.lng}`}`  : "-";
+            const dropoff = r.dropoff?.address || r.dropoff?.lat ? `${r.dropoff?.address || `${r.dropoff?.lat},${r.dropoff?.lng}`}` : "-";
+            return (
+              <div key={r._id} className="rounded-lg border border-gray-100 bg-gray-50 px-3 py-2 text-xs space-y-1">
+                <div className="flex items-center justify-between gap-2">
+                  <span className={`rounded-full px-2 py-0.5 font-semibold text-[10px] ${statusCls}`}>{r.status}</span>
+                  <span className="text-gray-400">{r.createdAt ? new Date(r.createdAt).toLocaleDateString("en-PK", { day: "numeric", month: "short", year: "2-digit" }) : "-"}</span>
+                </div>
+                <div className="text-gray-600 truncate">From: <span className="font-medium text-gray-800">{pickup}</span></div>
+                <div className="text-gray-600 truncate">To: <span className="font-medium text-gray-800">{dropoff}</span></div>
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-500 capitalize">{(r.rideType || "").toLowerCase().replace(/_/g, " ")}</span>
+                  <span className="font-semibold text-townwize-primary">{fareFor(r)}</span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function CaseDetailPanel({ item, onUpdated }) {
   const [status, setStatus] = useState(item.status || "open");
   const [priority, setPriority] = useState(item.priority || "normal");
@@ -184,6 +270,7 @@ export default function CaseDetailPanel({ item, onUpdated }) {
   };
 
   const tier = item.profile?.accountTier;
+  const passengerId = item.entityType === "passenger" ? (item.entityId || item.userId || item.profile?._id || item.profile?.userId) : null;
 
   return (
     <div className="space-y-4 text-sm">
@@ -239,6 +326,11 @@ export default function CaseDetailPanel({ item, onUpdated }) {
           {saving ? "Saving..." : "Save Changes"}
         </button>
       </div>
+
+      {/* Trip History — passenger cases only */}
+      {item.entityType === "passenger" && passengerId && (
+        <TripHistorySection userId={passengerId} />
+      )}
     </div>
   );
 }
