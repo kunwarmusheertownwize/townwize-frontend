@@ -182,6 +182,7 @@ const LiveTracking = () => {
   const lastRouteStatusRef = useRef(null);
   const lastRouteOriginRef = useRef(null); // lat/lng used for last Directions call during ON_TRIP
   const hasFitBoundsRef = useRef(false);
+  const passengerMarkerRef = useRef(null);
   const altRoutesRef = useRef([]);
   const tripZoomAppliedRef = useRef(false); // set exactly once when ON_TRIP begins
 
@@ -472,6 +473,71 @@ const LiveTracking = () => {
     };
   }, [ride]);
 
+
+  // ─────────────────────────────────────────────
+  // Passenger own-position arrow (blue, heading-aware)
+  // Only show before ON_TRIP — once in car, hide it.
+  // ─────────────────────────────────────────────
+  useEffect(() => {
+    const status = String(ride?.status || "").toUpperCase();
+    const showSelf = !["ON_TRIP", "COMPLETED", "CANCELLED"].includes(status);
+    if (!showSelf || !mapInstanceRef.current || !window.google) return;
+
+    const watchId = navigator.geolocation.watchPosition(
+      (pos) => {
+        const { latitude: lat, longitude: lng, heading } = pos.coords;
+        const map = mapInstanceRef.current;
+        if (!map) return;
+
+        const hasHeading = heading != null && !isNaN(heading);
+
+        const buildIcon = (h) => {
+          if (hasHeading) {
+            return {
+              path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW,
+              rotation: h,
+              scale: 6,
+              fillColor: "#4285F4",
+              fillOpacity: 1,
+              strokeColor: "#ffffff",
+              strokeWeight: 2,
+            };
+          }
+          return {
+            path: google.maps.SymbolPath.CIRCLE,
+            scale: 7,
+            fillColor: "#4285F4",
+            fillOpacity: 1,
+            strokeColor: "#ffffff",
+            strokeWeight: 2,
+          };
+        };
+
+        if (!passengerMarkerRef.current) {
+          passengerMarkerRef.current = new google.maps.Marker({
+            map,
+            position: { lat, lng },
+            icon: buildIcon(heading || 0),
+            title: "Your location",
+            zIndex: 5,
+          });
+        } else {
+          passengerMarkerRef.current.setPosition({ lat, lng });
+          passengerMarkerRef.current.setIcon(buildIcon(heading || 0));
+        }
+      },
+      null,
+      { enableHighAccuracy: true, maximumAge: 3000, timeout: 10000 }
+    );
+
+    return () => {
+      navigator.geolocation.clearWatch(watchId);
+      if (passengerMarkerRef.current) {
+        passengerMarkerRef.current.setMap(null);
+        passengerMarkerRef.current = null;
+      }
+    };
+  }, [ride?.status]);
 
   // ─────────────────────────────────────────────
   // Status-driven map behavior

@@ -6,6 +6,8 @@ import api from "../../../services/api";
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
+const pad = (n) => String(n).padStart(2, "0");
+
 const formatScheduled = (iso) => {
   const d = new Date(iso);
   return d.toLocaleString("en-PK", {
@@ -14,16 +16,66 @@ const formatScheduled = (iso) => {
   });
 };
 
-const localDatetimeValue = (date = new Date()) => {
-  const pad = (n) => String(n).padStart(2, "0");
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+const todayStr = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 };
 
-// Minimum 15 min from now
-const minDatetimeValue = () => {
+// Minimum time on a given date (15 min from now if today, else "00:00")
+const minTimeForDate = (dateStr) => {
+  if (!dateStr || dateStr !== todayStr()) return "00:00";
   const d = new Date(Date.now() + 15 * 60 * 1000);
-  return localDatetimeValue(d);
+  return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
 };
+
+// Combine "YYYY-MM-DD" + "HH:MM" → ISO datetime-local string
+const combineDateTime = (date, time) => (date && time ? `${date}T${time}` : "");
+
+// Split ISO datetime-local string → { date, time }
+const splitDateTime = (val) => val
+  ? { date: val.slice(0, 10), time: val.slice(11, 16) }
+  : { date: "", time: "" };
+
+// ── Native-friendly date+time picker ───────────────────────────────────────
+const inputCls = "w-full rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 px-3 py-2.5 text-sm text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-townwize-primary";
+
+function DateTimePicker({ value, onChange, required = false }) {
+  const { date, time } = splitDateTime(value);
+  const minDate = todayStr();
+
+  const handleDate = (e) => onChange(combineDateTime(e.target.value, time));
+  const handleTime = (e) => onChange(combineDateTime(date, e.target.value));
+
+  const preview = value
+    ? new Date(value).toLocaleString("en-PK", { weekday: "short", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })
+    : null;
+
+  return (
+    <div className="space-y-2">
+      <div className="grid grid-cols-2 gap-2">
+        <input
+          type="date"
+          value={date}
+          min={minDate}
+          onChange={handleDate}
+          required={required}
+          className={inputCls}
+        />
+        <input
+          type="time"
+          value={time}
+          min={minTimeForDate(date)}
+          onChange={handleTime}
+          required={required && !!date}
+          className={inputCls}
+        />
+      </div>
+      {preview && (
+        <p className="text-[11px] text-townwize-accent font-medium pl-1">{preview}</p>
+      )}
+    </div>
+  );
+}
 
 // ── Sub-components ─────────────────────────────────────────────────────────
 
@@ -218,29 +270,26 @@ const CreateTab = () => {
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
-          <div className="space-y-2">
-            <label className="text-xs text-gray-500 dark:text-gray-400 font-medium">Departure</label>
-            <input
-              type="datetime-local"
-              value={form.scheduledAt}
-              min={minDatetimeValue()}
-              onChange={(e) => handleChange("scheduledAt", e.target.value)}
-              className="w-full rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 px-3 py-2.5 text-sm text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-townwize-primary"
-            />
-          </div>
-          <div className="space-y-2">
-            <label className="text-xs text-gray-500 dark:text-gray-400 font-medium">Max seats</label>
-            <select
-              value={form.maxSeats}
-              onChange={(e) => handleChange("maxSeats", Number(e.target.value))}
-              className="w-full rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 px-3 py-2.5 text-sm text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-townwize-primary"
-            >
-              <option value={2}>2</option>
-              <option value={3}>3</option>
-              <option value={4}>4</option>
-            </select>
-          </div>
+        <div className="space-y-2">
+          <label className="text-xs text-gray-500 dark:text-gray-400 font-medium">Departure date & time</label>
+          <DateTimePicker
+            value={form.scheduledAt}
+            onChange={(v) => handleChange("scheduledAt", v)}
+            required
+          />
+        </div>
+
+        <div className="space-y-2">
+          <label className="text-xs text-gray-500 dark:text-gray-400 font-medium">Max seats</label>
+          <select
+            value={form.maxSeats}
+            onChange={(e) => handleChange("maxSeats", Number(e.target.value))}
+            className="w-full rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 px-3 py-2.5 text-sm text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-townwize-primary"
+          >
+            <option value={2}>2</option>
+            <option value={3}>3</option>
+            <option value={4}>4</option>
+          </select>
         </div>
       </div>
 
@@ -325,11 +374,10 @@ const SearchTab = () => {
         </div>
 
         <div className="space-y-2">
-          <input
-            type="datetime-local"
+          <label className="text-xs text-gray-500 dark:text-gray-400 font-medium">Departure time (optional)</label>
+          <DateTimePicker
             value={form.scheduledAt}
-            onChange={(e) => setForm((f) => ({ ...f, scheduledAt: e.target.value }))}
-            className="w-full rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 px-3 py-2.5 text-sm text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-townwize-primary"
+            onChange={(v) => setForm((f) => ({ ...f, scheduledAt: v }))}
           />
           <p className="text-[10px] text-gray-400">Searches ±90 minutes around your selected time</p>
         </div>
