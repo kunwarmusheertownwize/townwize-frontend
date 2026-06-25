@@ -87,11 +87,21 @@ const PassengerDocs = ({ profile }) => {
   );
 };
 
+const PendingBadge = () => (
+  <span className="ml-2 inline-flex items-center rounded-full border border-amber-300 bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-800">
+    Re-submitted — awaiting review
+  </span>
+);
+
 const DriverDocs = ({ profile, referrer }) => {
   const v    = profile?.vehicle          || {};
   const id   = profile?.identity         || {};
   const face = profile?.faceVerification || {};
   const res  = profile?.residency        || {};
+
+  const idPending  = id?.verification?.status  === "PENDING";
+  const vehPending = v?.verification?.status   === "PENDING";
+  const resPending = res?.verification?.status === "PENDING";
 
   return (
     <>
@@ -110,7 +120,7 @@ const DriverDocs = ({ profile, referrer }) => {
         </div>
       )}
 
-      <DocSection title="Identity &amp; Selfie">
+      <DocSection title={<span className="flex items-center">Identity &amp; Selfie{idPending && <PendingBadge />}</span>} accent={idPending ? "amber" : undefined}>
         <DocLink url={id.cnicFrontUrl} label="CNIC Front" />
         <DocLink url={id.cnicBackUrl}  label="CNIC Back"  />
         <DocLink url={face.selfieUrl}  label="Selfie"     />
@@ -119,7 +129,7 @@ const DriverDocs = ({ profile, referrer }) => {
         )}
       </DocSection>
 
-      <DocSection title="Vehicle &amp; Licence">
+      <DocSection title={<span className="flex items-center">Vehicle &amp; Licence{vehPending && <PendingBadge />}</span>} accent={vehPending ? "amber" : undefined}>
         <DocLink url={v.vehicleRegUrl}   label="Vehicle Registration"   />
         <DocLink url={v.licenseFrontUrl} label="Driving Licence Front"  />
         <DocLink url={v.licenseBackUrl}  label="Driving Licence Back"   />
@@ -131,7 +141,7 @@ const DriverDocs = ({ profile, referrer }) => {
       </DocSection>
 
       {(res.proofUrl || res.btkIdFrontUrl) && (
-        <DocSection title="Residency Proof">
+        <DocSection title={<span className="flex items-center">Residency Proof{resPending && <PendingBadge />}</span>} accent={resPending ? "amber" : undefined}>
           <DocLink url={res.proofUrl}      label="Residency Proof" />
           <DocLink url={res.btkIdFrontUrl} label="BTK ID Front"    />
           <DocLink url={res.btkIdBackUrl}  label="BTK ID Back"     />
