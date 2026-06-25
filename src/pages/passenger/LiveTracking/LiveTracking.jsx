@@ -691,8 +691,6 @@ const LiveTracking = () => {
       driverMarkerRef.current.content = buildMarkerEl(heading || 0);
     }
 
-    const currentStatus = rideRef.current?.status;
-
     if (currentStatus === "ON_TRIP") {
       if (!tripZoomAppliedRef.current) {
         map.setZoom(16);
