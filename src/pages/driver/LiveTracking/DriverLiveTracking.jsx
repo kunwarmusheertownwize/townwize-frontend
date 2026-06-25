@@ -23,6 +23,7 @@ const DriverLiveTracking = () => {
   const [sharedPassengers, setSharedPassengers] = useState(request?.sharedPassengers || []);
   const [lastKnownPosition, setLastKnownPosition] = useState(null);
   const [driverPosition, setDriverPosition] = useState(null);
+  const [driverHeading, setDriverHeading] = useState(null);
   const [mapReady, setMapReady] = useState(false);
   const [arriving, setArriving] = useState(false);
   const [startingTrip, setStartingTrip] = useState(false);
@@ -195,6 +196,10 @@ const DriverLiveTracking = () => {
         const coords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
         setDriverPosition(coords);
         setLastKnownPosition(coords);
+        const rawHeading = pos.coords.heading;
+        if (rawHeading != null && !isNaN(rawHeading)) {
+          setDriverHeading(rawHeading);
+        }
         if (rideStatusRef.current === "ON_TRIP") {
           if (lastTripPositionRef.current) {
             const distM = haversineM(lastTripPositionRef.current, coords);
@@ -277,10 +282,17 @@ const DriverLiveTracking = () => {
           gestureHandling: "greedy", streetViewControl: false, mapTypeControl: false,
         });
         setMapReady(true);
-        const markerEl = document.createElement("div");
-        markerEl.style.cssText = "width:16px;height:16px;border-radius:50%;background:#103139;border:2px solid #fff;";
-        driverMarkerRef.current = new google.maps.marker.AdvancedMarkerElement({
-          map: mapInstanceRef.current, position, content: markerEl,
+        driverMarkerRef.current = new google.maps.Marker({
+          map: mapInstanceRef.current,
+          position,
+          icon: {
+            path: google.maps.SymbolPath.CIRCLE,
+            scale: 9,
+            fillColor: "#17BEBB",
+            fillOpacity: 1,
+            strokeColor: "#ffffff",
+            strokeWeight: 2,
+          },
         });
       })
       .catch(() => toast.error("Failed to load Google Maps"));
@@ -289,13 +301,41 @@ const DriverLiveTracking = () => {
 
   useEffect(() => {
     if (!driverMarkerRef.current || !driverPosition) return;
-    driverMarkerRef.current.position = driverPosition;
-    if (!mapInstanceRef.current) return;
-    const isOnTrip = rideStatusRef.current === "ON_TRIP";
+    driverMarkerRef.current.setPosition(driverPosition);
+
+    // Update heading — prefer GPS heading, fall back to computed bearing
     if (prevDriverPositionRef.current && haversineM(prevDriverPositionRef.current, driverPosition) > 5) {
       lastHeadingRef.current = bearingDeg(prevDriverPositionRef.current, driverPosition);
     }
     prevDriverPositionRef.current = driverPosition;
+
+    const effectiveHeading = (driverHeading != null && !isNaN(driverHeading))
+      ? driverHeading
+      : lastHeadingRef.current;
+
+    if (effectiveHeading != null && !isNaN(effectiveHeading)) {
+      driverMarkerRef.current.setIcon({
+        path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW,
+        rotation: effectiveHeading,
+        scale: 8,
+        fillColor: "#17BEBB",
+        fillOpacity: 1,
+        strokeColor: "#ffffff",
+        strokeWeight: 2,
+      });
+    } else {
+      driverMarkerRef.current.setIcon({
+        path: google.maps.SymbolPath.CIRCLE,
+        scale: 9,
+        fillColor: "#17BEBB",
+        fillOpacity: 1,
+        strokeColor: "#ffffff",
+        strokeWeight: 2,
+      });
+    }
+
+    if (!mapInstanceRef.current) return;
+    const isOnTrip = rideStatusRef.current === "ON_TRIP";
     const heading = lastHeadingRef.current;
     if (isOnTrip && heading !== null) {
       mapInstanceRef.current.setHeading(heading);
@@ -308,7 +348,7 @@ const DriverLiveTracking = () => {
       mapInstanceRef.current.setZoom(15);
       mapInstanceRef.current.setCenter(driverPosition);
     }
-  }, [driverPosition]);
+  }, [driverPosition, driverHeading]);
 
   // Route polyline — adapts to pool stage for secondary pickup navigation
   useEffect(() => {
