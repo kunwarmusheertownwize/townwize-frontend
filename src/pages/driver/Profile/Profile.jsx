@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { FaStar, FaGift, FaCopy, FaShareAlt, FaTicketAlt, FaCamera } from "react-icons/fa";
 import { toast } from "react-toastify";
@@ -153,6 +153,143 @@ function VehicleConditionCard({ profile, onUploaded }) {
   );
 }
 
+const DOC_SECTIONS = [
+  {
+    key: "identity",
+    label: "Identity & Selfie",
+    getStatus: (p) => p?.identity?.verification?.status || "PENDING",
+    getRemark: (p) => p?.identity?.verification?.remarks || "",
+    fields: [
+      { field: "cnicFront", label: "CNIC Front",  hasUrl: (p) => !!p?.identity?.cnicFrontUrl },
+      { field: "cnicBack",  label: "CNIC Back",   hasUrl: (p) => !!p?.identity?.cnicBackUrl  },
+      { field: "selfie",    label: "Live Selfie", hasUrl: (p) => !!p?.faceVerification?.selfieUrl },
+    ],
+  },
+  {
+    key: "vehicle",
+    label: "Vehicle & Licence",
+    getStatus: (p) => p?.vehicle?.verification?.status || "PENDING",
+    getRemark: (p) => p?.vehicle?.verification?.remarks || "",
+    fields: [
+      { field: "vehicleRegistration", label: "Vehicle Registration", hasUrl: (p) => !!p?.vehicle?.vehicleRegUrl },
+      { field: "licenseFront",        label: "Licence Front",        hasUrl: (p) => !!p?.vehicle?.licenseFrontUrl },
+      { field: "licenseBack",         label: "Licence Back",         hasUrl: (p) => !!p?.vehicle?.licenseBackUrl  },
+    ],
+  },
+  {
+    key: "residency",
+    label: "BTK Residency",
+    getStatus: (p) => p?.residency?.verification?.status || "PENDING",
+    getRemark: (p) => p?.residency?.verification?.remarks || "",
+    fields: [
+      { field: "residencyProof", label: "Residency Proof", hasUrl: (p) => !!p?.residency?.proofUrl      },
+      { field: "btkIdFront",     label: "BTK ID Front",    hasUrl: (p) => !!p?.residency?.btkIdFrontUrl },
+      { field: "btkIdBack",      label: "BTK ID Back",     hasUrl: (p) => !!p?.residency?.btkIdBackUrl  },
+    ],
+  },
+];
+
+const STATUS_STYLE = {
+  APPROVED: "bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400",
+  REJECTED: "bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-400",
+  PENDING:  "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400",
+};
+
+function DocumentSections({ profile, onUploaded }) {
+  const [files, setFiles] = useState({});
+  const [uploading, setUploading] = useState(false);
+  const inputRefs = useRef({});
+
+  const handleFile = (field, e) => {
+    const f = e.target.files?.[0] || null;
+    setFiles((prev) => ({ ...prev, [field]: f }));
+  };
+
+  const hasAny = Object.values(files).some(Boolean);
+
+  const handleSubmit = async () => {
+    if (!hasAny) return;
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      Object.entries(files).forEach(([field, file]) => { if (file) formData.append(field, file); });
+      await api.post("/driver/documents", formData, { headers: { "Content-Type": "multipart/form-data" } });
+      toast.success("Documents re-submitted — admin will review within 24 hours");
+      setFiles({});
+      Object.values(inputRefs.current).forEach((el) => { if (el) el.value = ""; });
+      onUploaded?.();
+    } catch (e) {
+      toast.error(e?.response?.data?.error?.message || "Upload failed");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  return (
+    <div className="rounded-xl bg-white dark:bg-townwize-primaryDark p-6 shadow-sm ring-1 ring-gray-200 dark:ring-gray-700 space-y-5">
+      <h2 className="text-lg font-semibold dark:text-white">Documents</h2>
+      {DOC_SECTIONS.map((section) => {
+        const status = String(section.getStatus(profile)).toUpperCase();
+        const remark = section.getRemark(profile);
+        const isRejected = status === "REJECTED";
+        return (
+          <div key={section.key} className={`rounded-xl border p-4 space-y-3 ${isRejected ? "border-red-200 dark:border-red-800" : "border-gray-200 dark:border-gray-700"}`}>
+            <div className="flex items-center justify-between gap-2 flex-wrap">
+              <span className="font-semibold text-sm dark:text-white">{section.label}</span>
+              <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${STATUS_STYLE[status] || STATUS_STYLE.PENDING}`}>
+                {status.charAt(0) + status.slice(1).toLowerCase()}
+              </span>
+            </div>
+            {isRejected && remark && (
+              <p className="text-xs text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 rounded-lg px-3 py-2">
+                Rejected: {remark}
+              </p>
+            )}
+            <div className="grid grid-cols-1 gap-2">
+              {section.fields.map(({ field, label, hasUrl }) => {
+                const submitted = hasUrl(profile);
+                const selected = !!files[field];
+                return (
+                  <label key={field} className={`flex items-center justify-between gap-2 cursor-pointer rounded-lg border px-3 py-2 text-xs transition-all ${
+                    selected ? "border-townwize-accent bg-townwize-accent/5" : "border-gray-200 dark:border-gray-700"
+                  }`}>
+                    <div className="flex items-center gap-2">
+                      <span className={submitted ? "text-green-600" : "text-gray-400"}>
+                        {submitted ? "✓" : "○"}
+                      </span>
+                      <span className="dark:text-gray-200">{label}</span>
+                      {selected && <span className="text-townwize-accent font-medium truncate max-w-[120px]">{files[field].name}</span>}
+                    </div>
+                    <span className={`shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-md ${selected ? "bg-townwize-accent text-white" : "bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-300"}`}>
+                      {selected ? "Change" : isRejected ? "Re-upload" : "Replace"}
+                    </span>
+                    <input
+                      type="file"
+                      accept="image/*,application/pdf"
+                      className="hidden"
+                      ref={(el) => { inputRefs.current[field] = el; }}
+                      onChange={(e) => handleFile(field, e)}
+                    />
+                  </label>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })}
+      {hasAny && (
+        <button
+          onClick={handleSubmit}
+          disabled={uploading}
+          className="w-full py-2.5 rounded-xl bg-townwize-primary dark:bg-townwize-accent text-white dark:text-townwize-primary text-sm font-bold disabled:opacity-40 transition"
+        >
+          {uploading ? "Uploading…" : "Re-submit Selected Documents"}
+        </button>
+      )}
+    </div>
+  );
+}
+
 const DriverProfile = () => {
   const navigate = useNavigate();
   const { driverEligibility } = useDriverMode();
@@ -213,21 +350,6 @@ const DriverProfile = () => {
     };
   }, [loadTick]);
 
-  const docs = useMemo(() => {
-    const p = profile || {};
-    return [
-      { label: "Residency Proof", ok: Boolean(p?.residency?.proofUrl) },
-      { label: "BTK ID Front", ok: Boolean(p?.residency?.btkIdFrontUrl) },
-      { label: "BTK ID Back", ok: Boolean(p?.residency?.btkIdBackUrl) },
-      { label: "Vehicle Registration", ok: Boolean(p?.vehicle?.vehicleRegUrl) },
-      { label: "License Front", ok: Boolean(p?.vehicle?.licenseFrontUrl) },
-      { label: "License Back", ok: Boolean(p?.vehicle?.licenseBackUrl) },
-      { label: "CNIC Front", ok: Boolean(p?.identity?.cnicFrontUrl) },
-      { label: "CNIC Back", ok: Boolean(p?.identity?.cnicBackUrl) },
-      { label: "Live Selfie", ok: Boolean(p?.faceVerification?.selfieUrl) },
-    ];
-  }, [profile]);
-
   if (loading) {
     return (
       <div className="mx-auto mt-8 max-w-4xl rounded-xl bg-white p-6 shadow-sm">
@@ -287,17 +409,7 @@ const DriverProfile = () => {
         </div>
       </div>
 
-      <div className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-gray-200">
-        <h2 className="mb-3 text-lg font-semibold">Document Checklist</h2>
-        <div className="grid gap-2 sm:grid-cols-2">
-          {docs.map((d) => (
-            <div key={d.label} className="flex items-center justify-between rounded-lg border border-gray-200 px-3 py-2 text-sm">
-              <span>{d.label}</span>
-              <span className={d.ok ? "text-green-700" : "text-red-600"}>{d.ok ? "Submitted" : "Missing"}</span>
-            </div>
-          ))}
-        </div>
-      </div>
+      <DocumentSections profile={profile} onUploaded={() => setLoadTick((t) => t + 1)} />
 
       <VehicleConditionCard profile={profile} onUploaded={() => setLoadTick((t) => t + 1)} />
 
