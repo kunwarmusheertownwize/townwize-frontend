@@ -46,6 +46,7 @@ import PassengerAccount from "../pages/passenger/Account/Account";
 import PassengerSettings from "../pages/passenger/Settings/Settings";
 import PassengerTripReceipt from "../pages/passenger/TripSummary/PassengerTripReceipt";
 import PassengerSupport from "../pages/passenger/Support/Support";
+import ScheduledRides from "../pages/passenger/ScheduledRides/ScheduledRides";
 
 // Driver Screens
 import DriverHome from "../pages/driver/Home/Home";
@@ -117,6 +118,7 @@ const AppRoutes = () => {
           <Route path="/passenger/booking" element={<Booking />} />
           <Route path="/passenger/trips" element={<PassengerTrips />} />
           <Route path="/passenger/support" element={<PassengerSupport />} />
+          <Route path="/passenger/scheduled-rides" element={<ScheduledRides />} />
         </Route>
 
         {/* ---------------------------- */}

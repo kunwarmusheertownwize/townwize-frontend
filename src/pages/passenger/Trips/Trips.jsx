@@ -7,6 +7,7 @@ const STATUS_META = {
   COMPLETED:       { label: "Completed",      cls: "bg-green-100 text-green-700" },
   CANCELLED:       { label: "Cancelled",      cls: "bg-red-100 text-red-600" },
   POOLING_MERGED:  { label: "Joined group",   cls: "bg-purple-100 text-purple-700" },
+  SCHEDULED:       { label: "Scheduled",      cls: "bg-amber-100 text-amber-700" },
   REQUESTED:       { label: "Requested",      cls: "bg-blue-100 text-blue-600" },
   DRIVER_ASSIGNED: { label: "Assigned",       cls: "bg-blue-100 text-blue-600" },
   EN_ROUTE:        { label: "En Route",       cls: "bg-blue-100 text-blue-600" },
