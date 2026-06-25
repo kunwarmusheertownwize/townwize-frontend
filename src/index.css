@@ -8,8 +8,8 @@
 /* === Theme (Townwize) === */
 @theme {
   /* Brand Colors */
-  --color-townwize-primary: #03311C;
-  --color-townwize-primaryDark: #0B242A;
+  --color-townwize-primary: #023645;
+  --color-townwize-primaryDark: #08110f;
   --color-townwize-accent: #17BEBB;
   --color-townwize-success: #00F57A;
 
@@ -18,7 +18,7 @@
   --color-townwize-bgDark: #1F2937;
 
   /* Text */
-  --color-townwize-textPrimary: #03311C;
+  --color-townwize-textPrimary: #023645;
   --color-townwize-textSecondary: #6B7280;
   --color-townwize-textContent: #f5f5f5;
 
