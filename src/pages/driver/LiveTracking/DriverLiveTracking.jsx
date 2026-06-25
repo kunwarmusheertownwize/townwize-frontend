@@ -203,7 +203,8 @@ const DriverLiveTracking = () => {
           lastTripPositionRef.current = coords;
         }
         if (rideId) {
-          api.post("/driver/location", { rideId, lat: coords.lat, lng: coords.lng }).catch(() => {});
+          const heading = pos.coords.heading != null && !isNaN(pos.coords.heading) ? pos.coords.heading : null;
+          api.post("/driver/location", { rideId, lat: coords.lat, lng: coords.lng, heading }).catch(() => {});
         }
       },
       () => toast.error("Enable location permissions"),
