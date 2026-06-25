@@ -75,7 +75,7 @@ export default function TransactionsTable() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold">Transactions</h1>
+        <h1 className="dark:text-white text-xl font-semibold">Transactions</h1>
         <button
           onClick={() => exportCsv(items)}
           disabled={items.length === 0}
@@ -84,20 +84,20 @@ export default function TransactionsTable() {
           Export CSV
         </button>
       </div>
-      <div className="rounded-xl border bg-white p-4">
+      <div className="rounded-xl border bg-white dark:bg-gray-900 p-4">
         <div className="flex flex-col gap-3 md:flex-row">
-          <select className="rounded-md border px-3 py-2 text-sm" value={type} onChange={(e) => { setPage(1); setType(e.target.value); }}>
+          <select className="rounded-md border px-3 py-2 text-sm dark:bg-gray-800 dark:text-white dark:border-gray-600" value={type} onChange={(e) => { setPage(1); setType(e.target.value); }}>
             <option value="all">All Types</option>
             <option value="ride">Ride</option>
             <option value="refund">Refund</option>
           </select>
-          <input className="w-full rounded-md border px-3 py-2 text-sm md:w-96" placeholder="Search transactions" value={q} onChange={(e) => { setPage(1); setQ(e.target.value); }} />
+          <input className="w-full rounded-md border px-3 py-2 text-sm md:w-96 dark:bg-gray-800 dark:text-white dark:border-gray-600" placeholder="Search transactions" value={q} onChange={(e) => { setPage(1); setQ(e.target.value); }} />
         </div>
       </div>
 
-      <div className="overflow-x-auto rounded-xl border bg-white">
+      <div className="overflow-x-auto rounded-xl border bg-white dark:bg-gray-900">
         <table className="w-full text-sm">
-          <thead className="bg-gray-50">
+          <thead className="bg-gray-50 dark:bg-gray-800">
             <tr>
               <th className="px-4 py-3 text-left">Txn ID</th>
               <th className="px-4 py-3 text-left">Type</th>
@@ -115,7 +115,7 @@ export default function TransactionsTable() {
           </thead>
           <tbody>
             {loading ? (
-              <tr><td className="px-4 py-10 text-center text-gray-500" colSpan={12}>Loading...</td></tr>
+              <tr><td className="px-4 py-10 text-center text-gray-500 dark:text-gray-400" colSpan={12}>Loading...</td></tr>
             ) : error ? (
               <tr><td className="px-4 py-10 text-center text-red-600" colSpan={12}>{error}</td></tr>
             ) : items.length === 0 ? (

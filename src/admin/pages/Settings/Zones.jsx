@@ -892,13 +892,13 @@ export default function Zones() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-xl font-semibold">Service Zones</h1>
+      <h1 className="dark:text-white text-xl font-semibold">Service Zones</h1>
 
-      {message ? <div className="rounded-md border border-green-300 bg-green-50 px-3 py-2 text-sm text-green-700">{message}</div> : null}
-      {error ? <div className="rounded-md border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div> : null}
+      {message ? <div className="rounded-md border border-green-300 bg-green-50 px-3 py-2 text-sm text-green-700 dark:bg-gray-800 dark:text-white dark:border-gray-600">{message}</div> : null}
+      {error ? <div className="rounded-md border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-gray-800 dark:text-white dark:border-gray-600">{error}</div> : null}
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
-        <div className="xl:col-span-2 bg-white rounded-xl border border-gray-200 p-3">
+        <div className="xl:col-span-2 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-3">
           <div className="flex flex-wrap gap-2 mb-3">
             <div ref={searchBoxRef} className="min-w-[240px] flex-1" />
             <button className="px-3 py-2 rounded-md border text-sm" onClick={onUseMyLocation}>
@@ -923,25 +923,25 @@ export default function Zones() {
           </div>
         </div>
 
-        <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-3">
+        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-4 space-y-3">
           <div className="grid grid-cols-1 gap-3">
             <input
-              className="border rounded-md px-3 py-2 text-sm"
+              className="border rounded-md px-3 py-2 text-sm dark:bg-gray-800 dark:text-white dark:border-gray-600"
               placeholder="Code"
               value={form.code}
               disabled={isEditing}
               onChange={(e) => setForm((p) => ({ ...p, code: e.target.value }))}
             />
             <input
-              className="border rounded-md px-3 py-2 text-sm"
+              className="border rounded-md px-3 py-2 text-sm dark:bg-gray-800 dark:text-white dark:border-gray-600"
               placeholder="Zone name"
               value={form.name}
               onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
             />
             <div>
-              <label className="block text-xs text-gray-500 mb-1">Zone Category</label>
+              <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Zone Category</label>
               <select
-                className="w-full border rounded-md px-3 py-2 text-sm"
+                className="w-full border rounded-md px-3 py-2 text-sm dark:bg-gray-800 dark:text-white dark:border-gray-600"
                 value={form.category}
                 onChange={(e) => setForm((p) => ({ ...p, category: e.target.value }))}
               >
@@ -956,25 +956,25 @@ export default function Zones() {
               </p>
             </div>
             <div className="grid grid-cols-2 gap-2">
-              <select className="border rounded-md px-3 py-2 text-sm" value={form.type} onChange={(e) => setForm((p) => ({ ...p, type: e.target.value }))}>
+              <select className="border rounded-md px-3 py-2 text-sm dark:bg-gray-800 dark:text-white dark:border-gray-600" value={form.type} onChange={(e) => setForm((p) => ({ ...p, type: e.target.value }))}>
                 <option value="polygon">Polygon</option>
                 <option value="circle">Circle</option>
               </select>
               <input
                 type="number"
-                className="border rounded-md px-3 py-2 text-sm"
+                className="border rounded-md px-3 py-2 text-sm dark:bg-gray-800 dark:text-white dark:border-gray-600"
                 value={form.priority}
                 onChange={(e) => setForm((p) => ({ ...p, priority: e.target.value }))}
               />
             </div>
             {form.type === "circle" ? (
               <div className="grid grid-cols-2 gap-2 items-center">
-                <label className="text-sm text-gray-600">Radius (km)</label>
+                <label className="text-sm text-gray-600 dark:text-gray-400">Radius (km)</label>
                 <input
                   type="number"
                   min="0.1"
                   step="0.1"
-                  className="border rounded-md px-3 py-2 text-sm"
+                  className="border rounded-md px-3 py-2 text-sm dark:bg-gray-800 dark:text-white dark:border-gray-600"
                   value={form.radiusKm}
                   onChange={(e) => setForm((p) => ({ ...p, radiusKm: e.target.value }))}
                 />
@@ -983,7 +983,7 @@ export default function Zones() {
             {form.type === "polygon" ? (
               <div className="space-y-2">
                 <textarea
-                  className="w-full border rounded-md px-3 py-2 text-sm min-h-[110px]"
+                  className="w-full border rounded-md px-3 py-2 text-sm min-h-[110px] dark:bg-gray-800 dark:text-white dark:border-gray-600"
                   placeholder={"Polygon points, one per line:\n24.860700, 67.001100\n24.861500, 67.012000"}
                   value={polygonText}
                   onChange={(e) => setPolygonText(e.target.value)}
@@ -1023,21 +1023,21 @@ export default function Zones() {
               {saving ? "Saving..." : isEditing ? "Update Zone" : "Create Zone"}
             </button>
             <button className="px-3 py-2 rounded-md border text-sm" onClick={resetForm}>Reset</button>
-            {isEditing && selectedZone ? <span className="text-xs text-gray-500">Editing: {selectedZone.code}</span> : null}
+            {isEditing && selectedZone ? <span className="text-xs text-gray-500 dark:text-gray-400">Editing: {selectedZone.code}</span> : null}
           </div>
         </div>
       </div>
 
-      <div className="bg-white rounded-xl border border-gray-200 p-4">
+      <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
         <div className="flex flex-col md:flex-row gap-3">
           <input
-            className="w-full md:w-96 border rounded-md px-3 py-2 text-sm"
+            className="w-full md:w-96 border rounded-md px-3 py-2 text-sm dark:bg-gray-800 dark:text-white dark:border-gray-600"
             placeholder="Search by code or name"
             value={query}
             onChange={(e) => { setPage(1); setQuery(e.target.value); }}
           />
           <select
-            className="border rounded-md px-3 py-2 text-sm"
+            className="border rounded-md px-3 py-2 text-sm dark:bg-gray-800 dark:text-white dark:border-gray-600"
             value={status}
             onChange={(e) => { setPage(1); setStatus(e.target.value); }}
           >
@@ -1048,9 +1048,9 @@ export default function Zones() {
         </div>
       </div>
 
-      <div className="overflow-x-auto bg-white rounded-xl border border-gray-200">
+      <div className="overflow-x-auto bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700">
         <table className="w-full text-sm">
-          <thead className="bg-gray-50">
+          <thead className="bg-gray-50 dark:bg-gray-800">
             <tr>
               <th className="px-4 py-3 text-left">Code</th>
               <th className="px-4 py-3 text-left">Name</th>
@@ -1064,12 +1064,12 @@ export default function Zones() {
           </thead>
           <tbody>
             {loading ? (
-              <tr><td className="px-4 py-10 text-center text-gray-500" colSpan={8}>Loading zones...</td></tr>
+              <tr><td className="px-4 py-10 text-center text-gray-500 dark:text-gray-400" colSpan={8}>Loading zones...</td></tr>
             ) : items.length === 0 ? (
-              <tr><td className="px-4 py-8 text-center text-gray-500" colSpan={8}>No zones found.</td></tr>
+              <tr><td className="px-4 py-8 text-center text-gray-500 dark:text-gray-400" colSpan={8}>No zones found.</td></tr>
             ) : (
               items.map((z) => (
-                <tr key={z._id} className="border-t border-gray-100">
+                <tr key={z._id} className="border-t border-gray-100 dark:border-gray-700">
                   <td className="px-4 py-3">{z.code || "-"}</td>
                   <td className="px-4 py-3">{z.name || "-"}</td>
                   <td className="px-4 py-3">

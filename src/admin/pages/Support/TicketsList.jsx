@@ -115,22 +115,22 @@ export default function TicketsList() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-xl font-semibold">Support Tickets</h1>
+      <h1 className="dark:text-white text-xl font-semibold">Support Tickets</h1>
 
       {error ? <div className="rounded border border-red-200 bg-red-50 px-3 py-2 text-red-700">{error}</div> : null}
       {ok ? <div className="rounded border border-green-200 bg-green-50 px-3 py-2 text-green-700">{ok}</div> : null}
 
       <div className="rounded-xl border border-gray-200 bg-white p-4 space-y-3">
-        <h2 className="text-sm font-semibold">Create Ticket</h2>
+        <h2 className="dark:text-white text-sm font-semibold">Create Ticket</h2>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
           <input
-            className="md:col-span-2 rounded-md border px-3 py-2 text-sm"
+            className="md:col-span-2 rounded-md border px-3 py-2 text-sm dark:bg-gray-800 dark:text-white dark:border-gray-600"
             placeholder="Subject"
             value={createForm.subject}
             onChange={(e) => setCreateForm((p) => ({ ...p, subject: e.target.value }))}
           />
           <select
-            className="rounded-md border px-3 py-2 text-sm"
+            className="rounded-md border px-3 py-2 text-sm dark:bg-gray-800 dark:text-white dark:border-gray-600"
             value={createForm.category}
             onChange={(e) => setCreateForm((p) => ({ ...p, category: e.target.value }))}
           >
@@ -141,7 +141,7 @@ export default function TicketsList() {
             <option value="safety">Safety</option>
           </select>
           <select
-            className="rounded-md border px-3 py-2 text-sm"
+            className="rounded-md border px-3 py-2 text-sm dark:bg-gray-800 dark:text-white dark:border-gray-600"
             value={createForm.priority}
             onChange={(e) => setCreateForm((p) => ({ ...p, priority: e.target.value }))}
           >
@@ -151,7 +151,7 @@ export default function TicketsList() {
             <option value="critical">Critical</option>
           </select>
           <textarea
-            className="md:col-span-3 rounded-md border px-3 py-2 text-sm"
+            className="md:col-span-3 rounded-md border px-3 py-2 text-sm dark:bg-gray-800 dark:text-white dark:border-gray-600"
             rows={2}
             placeholder="Description (optional)"
             value={createForm.description}
@@ -171,7 +171,7 @@ export default function TicketsList() {
       <div className="rounded-xl border border-gray-200 bg-white p-4">
         <div className="flex flex-col gap-3 md:flex-row">
           <select
-            className="rounded-md border px-3 py-2 text-sm"
+            className="rounded-md border px-3 py-2 text-sm dark:bg-gray-800 dark:text-white dark:border-gray-600"
             value={status}
             onChange={(e) => {
               setPage(1);
@@ -186,7 +186,7 @@ export default function TicketsList() {
             <option value="closed">Closed</option>
           </select>
           <input
-            className="w-full rounded-md border px-3 py-2 text-sm md:w-96"
+            className="w-full rounded-md border px-3 py-2 text-sm md:w-96 dark:bg-gray-800 dark:text-white dark:border-gray-600"
             placeholder="Search tickets"
             value={query}
             onChange={(e) => {
@@ -261,7 +261,7 @@ export default function TicketsList() {
               </tr>
             ) : (
               items.map((t) => (
-                <tr key={t._id} className="cursor-pointer border-t hover:bg-gray-50" onClick={() => setSelectedId(t._id)}>
+                <tr key={t._id} className="cursor-pointer border-t hover:bg-gray-50 dark:hover:bg-gray-800" onClick={() => setSelectedId(t._id)}>
                   <td className="px-4 py-3 break-all">{t.ticketNo || t._id}</td>
                   <td className="px-4 py-3">
                     <StatusBadge status={t.status || "-"} />

@@ -1,10 +1,10 @@
 export default function AlertsPanel({ alerts = [] }) {
     return (
-        <div className="bg-white dark:bg-townwize-primary rounded-xl p-5 border border-gray-200 dark:border-gray-700">
-            <h3 className="font-semibold mb-4">Critical Alerts</h3>
+        <div className="bg-white dark:bg-gray-900 dark:bg-townwize-primary rounded-xl p-5 border border-gray-200 dark:border-gray-700">
+            <h3 className="dark:text-white font-semibold mb-4">Critical Alerts</h3>
 
             {alerts.length === 0 ? (
-                <p className="text-sm text-gray-500">No active alerts</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">No active alerts</p>
             ) : (
                 <ul className="space-y-3 text-sm">
                     {alerts.map((a, idx) => (

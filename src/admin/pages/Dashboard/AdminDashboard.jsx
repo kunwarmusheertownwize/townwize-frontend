@@ -262,16 +262,16 @@ export default function AdminDashboard() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-xl font-semibold">Dashboard</h1>
+      <h1 className="dark:text-white text-xl font-semibold">Dashboard</h1>
 
-      {error ? <div className="rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div> : null}
+      {error ? <div className="rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-gray-800 dark:text-white dark:border-gray-600">{error}</div> : null}
 
       {/* ── Priority Alerts ─────────────────────────────────────────────── */}
       {(alertsLoading || alerts.length > 0) && (
         <div className="space-y-2">
           <div className="flex items-center gap-2">
             <span className="h-2 w-2 rounded-full bg-red-500 animate-pulse" />
-            <h2 className="text-sm font-bold uppercase tracking-wide text-red-600">Priority Alerts — Action Required</h2>
+            <h2 className="dark:text-white text-sm font-bold uppercase tracking-wide text-red-600">Priority Alerts — Action Required</h2>
             {!alertsLoading && (
               <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-bold text-red-700">{alerts.length}</span>
             )}

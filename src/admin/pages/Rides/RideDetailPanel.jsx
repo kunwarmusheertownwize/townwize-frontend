@@ -15,7 +15,7 @@ function RouteMapCard({ pickup, dropoff }) {
     : null;
 
   return (
-    <div className="rounded-xl border border-gray-200 p-3">
+    <div className="rounded-xl border border-gray-200 dark:border-gray-700 p-3">
       <div className="flex items-center justify-between mb-2">
         <h4 className="font-semibold">Route Map</h4>
         <a
@@ -36,7 +36,7 @@ function RouteMapCard({ pickup, dropoff }) {
           onError={(e) => { e.currentTarget.style.display = "none"; }}
         />
       ) : (
-        <div className="rounded-lg bg-gray-50 border border-dashed border-gray-200 px-4 py-5 text-center text-xs text-gray-400">
+        <div className="rounded-lg bg-gray-50 dark:bg-gray-800 border border-dashed border-gray-200 dark:border-gray-700 px-4 py-5 text-center text-xs text-gray-400">
           <div className="mb-1 text-lg">🗺️</div>
           <div>Pickup: {pickup.lat?.toFixed(5)}, {pickup.lng?.toFixed(5)}</div>
           <div>Dropoff: {dropoff.lat?.toFixed(5)}, {dropoff.lng?.toFixed(5)}</div>
@@ -148,21 +148,21 @@ export default function RideDetailPanel({ ride, onUpdated }) {
       {error ? <div className="rounded border border-red-200 bg-red-50 px-3 py-2 text-red-700">{error}</div> : null}
       {ok ? <div className="rounded border border-green-200 bg-green-50 px-3 py-2 text-green-700">{ok}</div> : null}
 
-      <div className="rounded-xl border border-gray-200 p-3">
+      <div className="rounded-xl border border-gray-200 dark:border-gray-700 p-3">
         <div className="flex items-center justify-between">
           <strong>{ride.rideId || ride._id}</strong>
           <StatusBadge status={ride.status || "-"} />
         </div>
-        <div className="mt-2 text-gray-600">{ride.createdAt ? new Date(ride.createdAt).toLocaleString() : "-"}</div>
+        <div className="mt-2 text-gray-600 dark:text-gray-400">{ride.createdAt ? new Date(ride.createdAt).toLocaleString() : "-"}</div>
       </div>
 
-      <div className="rounded-xl border border-gray-200 p-3">
+      <div className="rounded-xl border border-gray-200 dark:border-gray-700 p-3">
         <h4 className="mb-2 font-semibold">Participants</h4>
         <div>Passenger: {ride.passengerEmail || "-"}</div>
         <div>Driver: {ride.driverEmail || "Unassigned"}</div>
       </div>
 
-      <div className="rounded-xl border border-gray-200 p-3">
+      <div className="rounded-xl border border-gray-200 dark:border-gray-700 p-3">
         <h4 className="mb-2 font-semibold">Route & Metrics</h4>
         <div>{ride.route || "-"}</div>
         <div className="mt-2">ETA: {ride.etaMinutes ?? "-"}m</div>
@@ -192,7 +192,7 @@ export default function RideDetailPanel({ ride, onUpdated }) {
       ) : null}
 
       {(ride.finalFareBreakdown || ride.estimatedFareBreakdown) ? (
-        <div className="rounded-xl border border-gray-200 p-3">
+        <div className="rounded-xl border border-gray-200 dark:border-gray-700 p-3">
           <h4 className="mb-2 font-semibold">Internal Fare Split</h4>
           <div>
             Townwize Commission:{" "}
@@ -226,15 +226,15 @@ export default function RideDetailPanel({ ride, onUpdated }) {
       ) : null}
 
       {ride.status === "REQUESTED" ? (
-        <div className="rounded-xl border border-gray-200 p-3">
+        <div className="rounded-xl border border-gray-200 dark:border-gray-700 p-3">
           <div className="mb-2 flex items-center justify-between gap-3">
             <h4 className="font-semibold">Nearest Eligible Drivers</h4>
-            <span className="text-xs text-gray-500">
+            <span className="text-xs text-gray-500 dark:text-gray-400">
               {loadingDrivers ? "Refreshing..." : `${availableDrivers.length} available`}
             </span>
           </div>
           {availableDrivers.length === 0 ? (
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-gray-500 dark:text-gray-400">
               No matching online drivers found right now.
             </p>
           ) : (
@@ -242,18 +242,18 @@ export default function RideDetailPanel({ ride, onUpdated }) {
               {availableDrivers.slice(0, 8).map((driver) => (
                 <div
                   key={driver.driverId}
-                  className="rounded-lg border border-gray-100 bg-gray-50 p-2"
+                  className="rounded-lg border border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 p-2"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <div className="font-medium break-words">
                         {driver.email || driver.phone || driver.driverId}
                       </div>
-                      <div className="text-xs text-gray-500">
+                      <div className="text-xs text-gray-500 dark:text-gray-400">
                         {driver.carType} | {driver.vehicle?.make || "-"}{" "}
                         {driver.vehicle?.model || ""} | {driver.vehicle?.number || "-"}
                       </div>
-                      <div className="text-xs text-gray-500">
+                      <div className="text-xs text-gray-500 dark:text-gray-400">
                         {driver.pickupDistanceKm == null
                           ? "Distance unknown"
                           : `${driver.pickupDistanceKm} km from pickup`}{" "}
@@ -276,9 +276,9 @@ export default function RideDetailPanel({ ride, onUpdated }) {
         </div>
       ) : null}
 
-      <div className="rounded-xl border border-gray-200 p-3">
+      <div className="rounded-xl border border-gray-200 dark:border-gray-700 p-3">
         <h4 className="mb-2 font-semibold">Admin Action</h4>
-        <p className="mb-2 text-xs text-gray-500">
+        <p className="mb-2 text-xs text-gray-500 dark:text-gray-400">
           Only valid next transitions are shown based on current ride status.
         </p>
         <select
@@ -301,7 +301,7 @@ export default function RideDetailPanel({ ride, onUpdated }) {
             </label>
             <textarea
               rows={3}
-              className="w-full rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm placeholder-red-300 focus:border-red-400 focus:outline-none resize-none"
+              className="w-full rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm placeholder-red-300 focus:border-red-400 focus:outline-none resize-none dark:bg-gray-800 dark:text-white dark:border-gray-600"
               placeholder="Explain why this ride is being cancelled (required)"
               value={cancelReason}
               onChange={(e) => setCancelReason(e.target.value)}

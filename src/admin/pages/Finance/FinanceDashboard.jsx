@@ -30,9 +30,9 @@ export default function FinanceDashboard() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-xl font-semibold">Finance</h1>
+      <h1 className="text-xl font-semibold dark:text-white">Finance</h1>
 
-      {error ? <div className="rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div> : null}
+      {error ? <div className="rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-gray-800 dark:text-white dark:border-gray-600">{error}</div> : null}
 
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
         <KPI label="Gross Revenue" value={loading ? "..." : money(summary?.grossRevenue)} />
@@ -48,7 +48,7 @@ export default function FinanceDashboard() {
         <KPI label="Completed Payouts" value={loading ? "..." : money(summary?.completedPayouts)} />
       </div>
 
-      <div className="rounded-xl border bg-white p-6 text-sm text-gray-600">
+      <div className="rounded-xl border bg-white dark:bg-gray-900 dark:border-gray-700 p-6 text-sm text-gray-600 dark:text-gray-400">
         Use Transactions and Payouts sections for detailed financial records.
       </div>
     </div>
@@ -57,9 +57,9 @@ export default function FinanceDashboard() {
 
 function KPI({ label, value }) {
   return (
-    <div className="rounded-xl border bg-white p-4">
-      <div className="text-xs text-gray-500">{label}</div>
-      <div className="text-lg font-bold">{value}</div>
+    <div className="rounded-xl border bg-white dark:bg-gray-900 dark:border-gray-700 p-4">
+      <div className="text-xs text-gray-500 dark:text-gray-400">{label}</div>
+      <div className="text-lg font-bold dark:text-white">{value}</div>
     </div>
   );
 }

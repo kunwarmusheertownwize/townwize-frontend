@@ -126,7 +126,7 @@ function VehicleReviewPanel({ driver, onClose, onSaved }) {
         <div className="grid grid-cols-1 gap-3">
           <label className="text-xs text-gray-600">
             Car Type
-            <select value={carType} onChange={(e) => setCarType(e.target.value)} className="mt-1 w-full rounded border px-2 py-2 text-sm">
+            <select value={carType} onChange={(e) => setCarType(e.target.value)} className="mt-1 w-full rounded border px-2 py-2 text-sm dark:bg-gray-800 dark:text-white dark:border-gray-600">
               <option value="economy">economy</option>
               <option value="comfort">comfort</option>
               <option value="xl">xl</option>
@@ -137,7 +137,7 @@ function VehicleReviewPanel({ driver, onClose, onSaved }) {
             <select
               value={verificationStatus}
               onChange={(e) => setVerificationStatus(e.target.value)}
-              className="mt-1 w-full rounded border px-2 py-2 text-sm"
+              className="mt-1 w-full rounded border px-2 py-2 text-sm dark:bg-gray-800 dark:text-white dark:border-gray-600"
             >
               <option value="PENDING">PENDING</option>
               <option value="APPROVED">APPROVED</option>
@@ -149,7 +149,7 @@ function VehicleReviewPanel({ driver, onClose, onSaved }) {
             <select
               value={conditionStatus}
               onChange={(e) => setConditionStatus(e.target.value)}
-              className="mt-1 w-full rounded border px-2 py-2 text-sm"
+              className="mt-1 w-full rounded border px-2 py-2 text-sm dark:bg-gray-800 dark:text-white dark:border-gray-600"
             >
               <option value="pending">pending</option>
               <option value="pass" disabled={!canSetPass}>
@@ -167,7 +167,7 @@ function VehicleReviewPanel({ driver, onClose, onSaved }) {
               max="100"
               value={conditionScore}
               onChange={(e) => setConditionScore(e.target.value)}
-              className="mt-1 w-full rounded border px-2 py-2 text-sm"
+              className="mt-1 w-full rounded border px-2 py-2 text-sm dark:bg-gray-800 dark:text-white dark:border-gray-600"
             />
           </label>
           <label className="text-xs text-gray-600">
@@ -175,7 +175,7 @@ function VehicleReviewPanel({ driver, onClose, onSaved }) {
             <textarea
               value={remarks}
               onChange={(e) => setRemarks(e.target.value)}
-              className="mt-1 w-full rounded border px-2 py-2 text-sm"
+              className="mt-1 w-full rounded border px-2 py-2 text-sm dark:bg-gray-800 dark:text-white dark:border-gray-600"
               rows={3}
               placeholder="Reason for rejection or recheck notes"
             />
@@ -186,7 +186,7 @@ function VehicleReviewPanel({ driver, onClose, onSaved }) {
           <button onClick={handleSave} disabled={saving} className="rounded bg-townwize-primary px-3 py-2 text-sm text-white disabled:opacity-50">
             {saving ? "Saving..." : "Save Decision"}
           </button>
-          <button onClick={onClose} className="rounded border px-3 py-2 text-sm">Close</button>
+          <button onClick={onClose} className="rounded border px-3 py-2 text-sm dark:bg-gray-800 dark:text-white dark:border-gray-600">Close</button>
         </div>
       </div>
     </div>
@@ -302,12 +302,12 @@ export default function DriversList() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-xl font-semibold">Driver Verification Cases</h1>
+      <h1 className="dark:text-white text-xl font-semibold">Driver Verification Cases</h1>
 
       <div className="rounded-xl border border-gray-200 bg-white p-4">
         <div className="flex flex-col gap-3 md:flex-row">
           <select
-            className="rounded-md border px-3 py-2 text-sm"
+            className="rounded-md border px-3 py-2 text-sm dark:bg-gray-800 dark:text-white dark:border-gray-600"
             value={status}
             onChange={(e) => {
               setPage(1);
@@ -321,7 +321,7 @@ export default function DriversList() {
             <option value="closed">Closed</option>
           </select>
           <input
-            className="w-full rounded-md border px-3 py-2 text-sm md:w-96"
+            className="w-full rounded-md border px-3 py-2 text-sm md:w-96 dark:bg-gray-800 dark:text-white dark:border-gray-600"
             placeholder="Search drivers"
             value={query}
             onChange={(e) => {
@@ -366,7 +366,7 @@ export default function DriversList() {
               </tr>
             ) : (
               items.map((it) => (
-                <tr key={it.caseId || it._id} className="cursor-pointer border-t hover:bg-gray-50" onClick={() => setSelectedId(it.caseId || it._id)}>
+                <tr key={it.caseId || it._id} className="cursor-pointer border-t hover:bg-gray-50 dark:hover:bg-gray-800" onClick={() => setSelectedId(it.caseId || it._id)}>
                   <td className="px-4 py-3 break-all">{it.caseId || it._id}</td>
                   <td className="px-4 py-3 break-words">{it.name || "-"}</td>
                   <td className="px-4 py-3 break-words">{it.phone || "-"}</td>
@@ -385,7 +385,7 @@ export default function DriversList() {
 
       <div className="rounded-xl border border-gray-200 bg-white">
         <div className="border-b border-gray-100 px-4 py-3">
-          <h2 className="text-base font-semibold">Vehicle Reviews</h2>
+          <h2 className="dark:text-white text-base font-semibold">Vehicle Reviews</h2>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full min-w-[920px] text-sm">
@@ -434,7 +434,7 @@ export default function DriversList() {
                       </td>
                       <td className="px-4 py-3">
                         <button
-                          className="rounded border px-3 py-1 text-xs font-medium hover:bg-gray-50"
+                          className="rounded border px-3 py-1 text-xs font-medium hover:bg-gray-50 dark:hover:bg-gray-800"
                           onClick={() => setReviewDriverKey(String(d.userId || d.id || ""))}
                         >
                           Review

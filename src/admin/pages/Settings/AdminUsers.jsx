@@ -52,12 +52,12 @@ export default function AdminUsers() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-xl font-semibold">Admin Users</h1>
+      <h1 className="dark:text-white text-xl font-semibold">Admin Users</h1>
 
-      {message ? <div className="rounded border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-700">{message}</div> : null}
-      {error ? <div className="rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div> : null}
+      {message ? <div className="rounded border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-700 dark:bg-gray-800 dark:text-white dark:border-gray-600">{message}</div> : null}
+      {error ? <div className="rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-gray-800 dark:text-white dark:border-gray-600">{error}</div> : null}
 
-      <div className="bg-white dark:bg-townwize-primary rounded-xl border border-gray-200 dark:border-gray-700 p-4">
+      <div className="bg-white dark:bg-gray-900 dark:bg-townwize-primary rounded-xl border border-gray-200 dark:border-gray-700 p-4">
         <input
           value={query}
           onChange={(e) => {
@@ -65,13 +65,13 @@ export default function AdminUsers() {
             setQuery(e.target.value);
           }}
           placeholder="Search admin email"
-          className="w-full md:w-[420px] border rounded-md px-3 py-2 text-sm"
+          className="w-full md:w-[420px] border rounded-md px-3 py-2 text-sm dark:bg-gray-800 dark:text-white dark:border-gray-600"
         />
       </div>
 
-      <div className="overflow-x-auto bg-white dark:bg-townwize-primary rounded-xl border border-gray-200 dark:border-gray-700">
+      <div className="overflow-x-auto bg-white dark:bg-gray-900 dark:bg-townwize-primary rounded-xl border border-gray-200 dark:border-gray-700">
         <table className="w-full text-sm">
-          <thead className="bg-gray-50 dark:bg-townwize-primaryDark">
+          <thead className="bg-gray-50 dark:bg-gray-800 dark:bg-townwize-primaryDark">
             <tr>
               <th className="px-4 py-3 text-left">Email</th>
               <th className="px-4 py-3 text-left">Role</th>
@@ -84,7 +84,7 @@ export default function AdminUsers() {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={6} className="px-4 py-10 text-center text-gray-500">
+                <td colSpan={6} className="px-4 py-10 text-center text-gray-500 dark:text-gray-400">
                   Loading admin users...
                 </td>
               </tr>

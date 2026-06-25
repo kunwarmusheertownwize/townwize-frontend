@@ -89,11 +89,11 @@ export default function PassengersList() {
 
     return (
         <div className="space-y-4">
-            <h1 className="text-xl font-semibold">Passenger Verification Cases</h1>
+            <h1 className="dark:text-white text-xl font-semibold">Passenger Verification Cases</h1>
 
             <div className="rounded-xl border border-gray-200 bg-white p-4">
                 <div className="flex flex-col gap-3 md:flex-row">
-                    <select className="border rounded-md px-3 py-2 text-sm" value={status} onChange={(e) => { setPage(1); setStatus(e.target.value); }}>
+                    <select className="border rounded-md px-3 py-2 text-sm dark:bg-gray-800 dark:text-white dark:border-gray-600" value={status} onChange={(e) => { setPage(1); setStatus(e.target.value); }}>
                         <option value="all">All Statuses</option>
                         <option value="open">Open</option>
                         <option value="approved">Approved</option>
@@ -101,7 +101,7 @@ export default function PassengersList() {
                         <option value="closed">Closed</option>
                     </select>
 
-                    <input className="w-full md:w-96 border rounded-md px-3 py-2 text-sm" placeholder="Search passengers" value={query} onChange={(e) => { setPage(1); setQuery(e.target.value); }} />
+                    <input className="w-full md:w-96 border rounded-md px-3 py-2 text-sm dark:bg-gray-800 dark:text-white dark:border-gray-600" placeholder="Search passengers" value={query} onChange={(e) => { setPage(1); setQuery(e.target.value); }} />
                 </div>
             </div>
 
@@ -173,7 +173,7 @@ export default function PassengersList() {
                         ) : items.length === 0 ? (
                             <tr><td className="p-8" colSpan={7}><EmptyState title="No passengers found" description="Try adjusting filters" /></td></tr>
                         ) : items.map((it) => (
-                            <tr key={it.caseId || it._id} className="cursor-pointer border-t hover:bg-gray-50" onClick={() => setSelectedId(it.caseId || it._id)}>
+                            <tr key={it.caseId || it._id} className="cursor-pointer border-t hover:bg-gray-50 dark:hover:bg-gray-800" onClick={() => setSelectedId(it.caseId || it._id)}>
                                 <td className="px-4 py-3 break-all">{it.caseId || it._id}</td>
                                 <td className="px-4 py-3 break-words">{it.name || "-"}</td>
                                 <td className="px-4 py-3 break-words">{it.phone || "-"}</td>

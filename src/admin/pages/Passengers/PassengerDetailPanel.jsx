@@ -7,7 +7,7 @@ const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 const Row = ({ label, value, highlight }) => (
     <div className="flex justify-between items-start py-1.5 border-b border-gray-100 dark:border-gray-700 last:border-0">
-        <span className="text-xs text-gray-500 shrink-0 w-36">{label}</span>
+        <span className="text-xs text-gray-500 dark:text-gray-400 shrink-0 w-36">{label}</span>
         <span className={`text-xs font-medium text-right ${highlight ? "text-townwize-primary dark:text-white font-semibold" : "text-gray-800 dark:text-gray-200"}`}>
             {value ?? "—"}
         </span>
@@ -125,13 +125,13 @@ export default function PassengerDetailPanel({ passengerId, onUpdated }) {
                                 onChange={(e) => setReason(e.target.value)}
                                 placeholder="Reason (required)"
                                 rows={3}
-                                className="w-full text-sm border border-gray-300 dark:border-gray-600 rounded-xl px-3 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-red-400 resize-none mb-4"
+                                className="w-full text-sm border border-gray-300 dark:border-gray-600 rounded-xl px-3 py-2 bg-white dark:bg-gray-900 dark:bg-gray-800 text-gray-900 dark:text-white dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-red-400 resize-none mb-4"
                             />
                         )}
                         <div className="flex gap-2">
                             <button
                                 onClick={closeModal}
-                                className="flex-1 py-2 rounded-xl border border-gray-200 dark:border-gray-700 text-sm font-semibold text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition"
+                                className="flex-1 py-2 rounded-xl border border-gray-200 dark:border-gray-700 text-sm font-semibold text-gray-600 dark:text-gray-400 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 dark:bg-gray-800 dark:hover:bg-gray-800 transition"
                             >
                                 Cancel
                             </button>
@@ -226,7 +226,7 @@ export default function PassengerDetailPanel({ passengerId, onUpdated }) {
                                 </button>
                             )}
                             {userStatus === "banned" && (
-                                <span className="text-xs text-gray-400 dark:text-gray-500 italic">Account is permanently banned.</span>
+                                <span className="text-xs text-gray-400 dark:text-gray-500 dark:text-gray-400 italic">Account is permanently banned.</span>
                             )}
                         </div>
                     </div>

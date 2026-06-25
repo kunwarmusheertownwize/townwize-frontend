@@ -88,12 +88,12 @@ export default function DriverPayoutRequests() {
               onChange={(e) => setRejectReason(e.target.value)}
               placeholder="Reason (optional)"
               rows={3}
-              className="w-full text-sm border border-gray-300 dark:border-gray-600 rounded-xl px-3 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-red-400 resize-none"
+              className="w-full text-sm border border-gray-300 dark:border-gray-600 rounded-xl px-3 py-2 bg-white dark:bg-gray-900 dark:bg-gray-800 text-gray-900 dark:text-white dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-red-400 resize-none"
             />
             <div className="flex gap-2 mt-4">
               <button
                 onClick={() => { setRejectModal(null); setRejectReason(""); }}
-                className="flex-1 py-2 rounded-xl border border-gray-200 dark:border-gray-700 text-sm font-semibold text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition"
+                className="flex-1 py-2 rounded-xl border border-gray-200 dark:border-gray-700 text-sm font-semibold text-gray-600 dark:text-gray-400 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 dark:bg-gray-800 dark:hover:bg-gray-800 transition"
               >
                 Cancel
               </button>
@@ -119,7 +119,7 @@ export default function DriverPayoutRequests() {
         <select
           value={statusFilter}
           onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
-          className="text-sm border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-2 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-townwize-primary"
+          className="text-sm border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-2 bg-white dark:bg-gray-900 dark:bg-gray-800 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-townwize-primary"
         >
           <option value="">All statuses</option>
           <option value="PENDING">Pending</option>
@@ -151,7 +151,7 @@ export default function DriverPayoutRequests() {
               </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-gray-700/60">
                 {items.map((item) => (
-                  <tr key={item._id} className="hover:bg-gray-50 dark:hover:bg-gray-800/40 transition">
+                  <tr key={item._id} className="hover:bg-gray-50 dark:hover:bg-gray-800 dark:bg-gray-800 dark:hover:bg-gray-800/40 transition">
                     <td className="px-4 py-3">
                       <p className="font-semibold text-gray-900 dark:text-white truncate max-w-[160px]">{item.driverEmail}</p>
                       <p className="text-[11px] text-gray-400">{item.driverPhone}</p>
@@ -225,15 +225,15 @@ export default function DriverPayoutRequests() {
           <button
             onClick={() => setPage((p) => Math.max(1, p - 1))}
             disabled={page === 1}
-            className="px-3 py-1.5 rounded-xl border border-gray-200 dark:border-gray-700 text-sm disabled:opacity-40 hover:bg-gray-50 dark:hover:bg-gray-800 transition"
+            className="px-3 py-1.5 rounded-xl border border-gray-200 dark:border-gray-700 text-sm disabled:opacity-40 hover:bg-gray-50 dark:hover:bg-gray-800 dark:bg-gray-800 dark:hover:bg-gray-800 transition"
           >
             ←
           </button>
-          <span className="text-sm text-gray-500">Page {page} of {pages}</span>
+          <span className="text-sm text-gray-500 dark:text-gray-400">Page {page} of {pages}</span>
           <button
             onClick={() => setPage((p) => Math.min(pages, p + 1))}
             disabled={page === pages}
-            className="px-3 py-1.5 rounded-xl border border-gray-200 dark:border-gray-700 text-sm disabled:opacity-40 hover:bg-gray-50 dark:hover:bg-gray-800 transition"
+            className="px-3 py-1.5 rounded-xl border border-gray-200 dark:border-gray-700 text-sm disabled:opacity-40 hover:bg-gray-50 dark:hover:bg-gray-800 dark:bg-gray-800 dark:hover:bg-gray-800 transition"
           >
             →
           </button>
