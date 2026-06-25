@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
+  checkZoneOverlap,
   createZone,
   deleteZone,
   fetchZoneById,
@@ -132,6 +133,9 @@ export default function Zones() {
   const [locationBusy, setLocationBusy] = useState(false);
   const [saving, setSaving] = useState(false);
   const [editingId, setEditingId] = useState("");
+
+  // Overlap warning modal
+  const [overlapWarning, setOverlapWarning] = useState(null); // null | { overlaps: [{zoneId, zoneName}], pendingPayload, pendingIsEditing }
 
   const mapRef = useRef(null);
   const mapNodeRef = useRef(null);
@@ -609,20 +613,15 @@ export default function Zones() {
     clearAllDrawnOverlays();
   };
 
-  const onSave = async () => {
-    const geometry = currentGeometry();
-    if (!geometry) {
-      setError(form.type === "circle" ? "Draw a circle zone first." : "Draw a polygon zone first.");
-      return;
-    }
+  const doSave = async (payload, editing) => {
     setSaving(true);
     setError("");
     setMessage("");
     try {
-      const payload = buildZonePayload(form, geometry);
-      if (isEditing) {
-        delete payload.code;
-        await updateZone(editingId, payload);
+      if (editing) {
+        const p = { ...payload };
+        delete p.code;
+        await updateZone(editingId, p);
         setMessage("Zone updated.");
       } else {
         await createZone(payload);
@@ -635,6 +634,42 @@ export default function Zones() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const onSave = async () => {
+    const geometry = currentGeometry();
+    if (!geometry) {
+      setError(form.type === "circle" ? "Draw a circle zone first." : "Draw a polygon zone first.");
+      return;
+    }
+    const payload = buildZonePayload(form, geometry);
+    setError("");
+    setMessage("");
+
+    // Check for overlaps before saving
+    try {
+      const res = await checkZoneOverlap({
+        geometry,
+        type: form.type,
+        ...(isEditing ? { excludeZoneId: editingId } : {}),
+      });
+      const overlaps = res?.data?.overlaps || [];
+      if (overlaps.length > 0) {
+        setOverlapWarning({ overlaps, pendingPayload: payload, pendingIsEditing: isEditing });
+        return;
+      }
+    } catch {
+      // If overlap check fails, proceed with save
+    }
+
+    await doSave(payload, isEditing);
+  };
+
+  const onOverlapConfirm = async () => {
+    if (!overlapWarning) return;
+    const { pendingPayload, pendingIsEditing } = overlapWarning;
+    setOverlapWarning(null);
+    await doSave(pendingPayload, pendingIsEditing);
   };
 
   const onEdit = async (zone) => {
@@ -1109,6 +1144,38 @@ export default function Zones() {
           <button className="px-3 py-1 border rounded disabled:opacity-50" disabled={page >= meta.totalPages} onClick={() => setPage((p) => p + 1)}>Next</button>
         </div>
       </div>
+
+      {/* ── Overlap Warning Modal ──────────────────────────────────────── */}
+      {overlapWarning && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-sm rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 p-5 space-y-4 shadow-xl">
+            <h3 className="font-semibold text-amber-700 dark:text-amber-400">Zone Overlap Detected</h3>
+            <p className="text-sm text-gray-700 dark:text-gray-300">
+              This zone overlaps with:
+            </p>
+            <ul className="list-disc list-inside text-sm text-gray-800 dark:text-gray-200 space-y-1">
+              {overlapWarning.overlaps.map((o) => (
+                <li key={o.zoneId}>{o.zoneName}</li>
+              ))}
+            </ul>
+            <p className="text-xs text-gray-500 dark:text-gray-400">Do you want to save anyway?</p>
+            <div className="flex gap-2 justify-end">
+              <button
+                className="rounded-md border border-gray-200 dark:border-gray-600 px-3 py-1.5 text-sm font-medium dark:text-gray-300"
+                onClick={() => setOverlapWarning(null)}
+              >
+                Cancel
+              </button>
+              <button
+                className="rounded-md bg-amber-600 hover:bg-amber-700 px-3 py-1.5 text-sm font-medium text-white"
+                onClick={onOverlapConfirm}
+              >
+                Save Anyway
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

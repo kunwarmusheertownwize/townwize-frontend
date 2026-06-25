@@ -99,6 +99,8 @@ export const updateZonePriority = (zoneId, priority) =>
     call(`/admin/zones/${zoneId}/priority`, { method: "PATCH", body: JSON.stringify({ priority }) });
 export const deleteZone = (zoneId) =>
     call(`/admin/zones/${zoneId}`, { method: "DELETE" });
+export const checkZoneOverlap = (body) =>
+    call("/admin/zones/check-overlap", { method: "POST", body: JSON.stringify(body || {}) });
 
 export const fetchNotifications = (params) => {
     const q = new URLSearchParams(params || {}).toString();
