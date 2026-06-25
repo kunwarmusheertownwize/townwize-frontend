@@ -8,8 +8,8 @@ export async function fetchDriverTrips() {
   return unwrap(res) || [];
 }
 
-export async function fetchDriverEarnings() {
-  const res = await api.get("/driver/earnings");
+export async function fetchDriverEarnings(period = "weekly") {
+  const res = await api.get("/driver/earnings", { params: { period } });
   return (
     unwrap(res) || {
       today: 0,

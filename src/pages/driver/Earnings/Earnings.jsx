@@ -1,10 +1,13 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { toast } from "react-toastify";
 import { fetchDriverEarnings, fetchPayoutRequests, submitPayoutRequest } from "../../../api/driverApi";
 
 const toMoney = (n) => `PKR ${Number(n || 0).toLocaleString()}`;
 const fmtDate = (iso) =>
   iso ? new Date(iso).toLocaleDateString("en-PK", { day: "numeric", month: "short", year: "numeric" }) : "—";
+
+const fmtShortDate = (iso) =>
+  iso ? new Date(iso).toLocaleDateString("en-PK", { day: "numeric", month: "short" }) : "—";
 
 const STATUS_STYLE = {
   PENDING:  "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300",
@@ -19,6 +22,81 @@ const STATUS_LABEL = {
   PAID: "Confirmed",
   REJECTED: "Rejected",
 };
+
+// Aggregate daily breakdown rows into weekly buckets for 30-day view
+const groupIntoWeeks = (dailyRows) => {
+  // dailyRows are sorted newest-first; reverse to process chronologically
+  const sorted = [...dailyRows].sort((a, b) => (a.date < b.date ? -1 : 1));
+  if (!sorted.length) return [];
+
+  const weeks = [];
+  let weekIndex = 0;
+  let weekLabel = "W1";
+  let weekTrips = 0;
+  let weekGross = 0;
+  let weekCommission = 0;
+  let weekTotal = 0;
+  let weekStart = sorted[0]?.date;
+  let dayCount = 0;
+
+  sorted.forEach((row) => {
+    if (dayCount > 0 && dayCount % 7 === 0) {
+      weeks.push({ label: weekLabel, trips: weekTrips, gross: weekGross, commission: weekCommission, total: weekTotal, startDate: weekStart, endDate: row.date });
+      weekIndex += 1;
+      weekLabel = `W${weekIndex + 1}`;
+      weekTrips = 0;
+      weekGross = 0;
+      weekCommission = 0;
+      weekTotal = 0;
+      weekStart = row.date;
+    }
+    weekTrips += Number(row.trips || 0);
+    weekGross += Number(row.gross || 0);
+    weekCommission += Number(row.commission || 0);
+    weekTotal += Number(row.total || 0);
+    dayCount += 1;
+  });
+
+  // Flush remaining days
+  if (weekTrips > 0 || dayCount > 0) {
+    weeks.push({ label: weekLabel, trips: weekTrips, gross: weekGross, commission: weekCommission, total: weekTotal, startDate: weekStart, endDate: sorted[sorted.length - 1]?.date });
+  }
+
+  return weeks.reverse(); // newest first
+};
+
+function BarChart({ rows, labelKey, valueKey, period }) {
+  if (!rows.length) return null;
+  const maxVal = Math.max(...rows.map((r) => Number(r[valueKey] || 0)), 1);
+  const displayRows = period === "monthly" ? [...rows].reverse() : [...rows].reverse();
+
+  return (
+    <div className="flex items-end gap-1 h-24 w-full overflow-x-auto">
+      {displayRows.map((row, i) => {
+        const val = Number(row[valueKey] || 0);
+        const pct = maxVal > 0 ? (val / maxVal) * 100 : 0;
+        const label = period === "monthly"
+          ? row.label
+          : fmtShortDate(row[labelKey]);
+        return (
+          <div key={i} className="flex-1 min-w-[28px] flex flex-col items-center gap-1 group relative">
+            <div
+              className="w-full rounded-t-sm bg-townwize-accent/80 hover:bg-townwize-accent transition-all"
+              style={{ height: `${Math.max(pct, 2)}%` }}
+            />
+            <span className="text-[9px] text-gray-400 dark:text-gray-500 truncate w-full text-center leading-none">
+              {label}
+            </span>
+            {/* Tooltip */}
+            <div className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-[10px] rounded px-2 py-1 whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none z-10 shadow-lg">
+              {toMoney(val)} · {row.trips} trip{row.trips !== 1 ? "s" : ""}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
 function PaymentModal({ balanceOwed, onClose, onSubmit }) {
   const [amount, setAmount] = useState(balanceOwed > 0 ? balanceOwed : "");
@@ -93,6 +171,7 @@ function PaymentModal({ balanceOwed, onClose, onSubmit }) {
 
 const Earnings = () => {
   const [loading, setLoading] = useState(true);
+  const [chartPeriod, setChartPeriod] = useState("weekly"); // "weekly" | "monthly"
   const [data, setData] = useState({
     today: 0, week: 0, month: 0,
     balance: 0, balanceStatus: "clear",
@@ -102,10 +181,10 @@ const Earnings = () => {
   const [requests, setRequests] = useState([]);
   const [showModal, setShowModal] = useState(false);
 
-  const load = async () => {
+  const load = useCallback(async (period = chartPeriod) => {
     setLoading(true);
     try {
-      const [earnings, reqs] = await Promise.all([fetchDriverEarnings(), fetchPayoutRequests()]);
+      const [earnings, reqs] = await Promise.all([fetchDriverEarnings(period), fetchPayoutRequests()]);
       setData({
         today: Number(earnings?.today || 0),
         week: Number(earnings?.week || 0),
@@ -123,9 +202,9 @@ const Earnings = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [chartPeriod]);
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(chartPeriod); }, [chartPeriod]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const hasPending = requests.some((r) => r.status === "PENDING");
   const balanceOwed = data.balance < 0 ? Math.abs(data.balance) : 0;
@@ -135,8 +214,12 @@ const Earnings = () => {
   const handleSubmit = async (amount, note) => {
     await submitPayoutRequest(amount, note);
     toast.success("Payment submitted! Admin will confirm within 1–2 business days.");
-    load();
+    load(chartPeriod);
   };
+
+  // Compute weekly-aggregated rows for monthly chart
+  const weeklyRows = groupIntoWeeks(data.breakdown);
+  const chartRows = chartPeriod === "monthly" ? weeklyRows : data.breakdown;
 
   return (
     <div className="max-w-3xl mx-auto mt-8 px-4 pb-12 space-y-6">
@@ -155,7 +238,7 @@ const Earnings = () => {
           <p className="text-sm text-gray-500 dark:text-gray-400">Your income &amp; commission overview</p>
         </div>
         <button
-          onClick={load}
+          onClick={() => load(chartPeriod)}
           className="px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 text-sm hover:bg-gray-50 dark:hover:bg-gray-800 transition"
         >
           Refresh
@@ -259,27 +342,98 @@ const Earnings = () => {
             </div>
           </div>
 
-          {/* Daily breakdown */}
+          {/* Bar chart with period toggle */}
+          <div className="bg-white dark:bg-townwize-primaryDark rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-4">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                Earnings Chart
+              </h2>
+              <div className="flex rounded-xl overflow-hidden border border-gray-200 dark:border-gray-600 text-xs font-semibold">
+                <button
+                  onClick={() => setChartPeriod("weekly")}
+                  className={`px-3 py-1.5 transition ${
+                    chartPeriod === "weekly"
+                      ? "bg-townwize-primary text-white"
+                      : "bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700"
+                  }`}
+                >
+                  7 Days
+                </button>
+                <button
+                  onClick={() => setChartPeriod("monthly")}
+                  className={`px-3 py-1.5 transition ${
+                    chartPeriod === "monthly"
+                      ? "bg-townwize-primary text-white"
+                      : "bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700"
+                  }`}
+                >
+                  30 Days
+                </button>
+              </div>
+            </div>
+
+            {chartRows.length === 0 ? (
+              <div className="text-sm text-gray-400 py-6 text-center">No data for this period.</div>
+            ) : (
+              <BarChart
+                rows={chartRows}
+                labelKey="date"
+                valueKey="total"
+                period={chartPeriod}
+              />
+            )}
+
+            <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-2 text-center">
+              {chartPeriod === "monthly"
+                ? "30-day net earnings grouped by week — hover bars for details"
+                : "Last 7 days net earnings — hover bars for details"}
+            </p>
+          </div>
+
+          {/* Daily / Weekly breakdown table with commission columns */}
           <div>
             <h2 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-3">
-              Recent Daily Breakdown
+              {chartPeriod === "monthly" ? "Weekly Breakdown (30 Days)" : "Daily Breakdown"}
             </h2>
             {data.breakdown.length === 0 ? (
               <div className="text-sm text-gray-400 py-6 text-center">No completed trips yet.</div>
             ) : (
-              <div className="space-y-2">
-                {data.breakdown.map((row) => (
-                  <div
-                    key={row.date}
-                    className="flex items-center justify-between px-4 py-3 bg-white dark:bg-townwize-primaryDark rounded-xl shadow-sm border border-gray-100 dark:border-gray-700"
-                  >
-                    <div>
-                      <p className="text-sm font-medium text-gray-900 dark:text-white">{row.date}</p>
-                      <p className="text-xs text-gray-400">{Number(row.trips || 0)} trip{row.trips !== 1 ? "s" : ""}</p>
-                    </div>
-                    <p className="font-semibold text-gray-900 dark:text-white">{toMoney(row.total)}</p>
-                  </div>
-                ))}
+              <div className="rounded-2xl border border-gray-100 dark:border-gray-700 overflow-hidden">
+                {/* Table header */}
+                <div className="grid grid-cols-5 gap-2 px-4 py-2 bg-gray-50 dark:bg-gray-800 text-[10px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                  <span className="col-span-1">Date</span>
+                  <span className="text-center">Trips</span>
+                  <span className="text-right">Gross</span>
+                  <span className="text-right">Commission</span>
+                  <span className="text-right">Net</span>
+                </div>
+
+                {/* Rows — use weekly aggregated for monthly view */}
+                <div className="divide-y divide-gray-100 dark:divide-gray-700">
+                  {(chartPeriod === "monthly" ? weeklyRows : data.breakdown).map((row, i) => {
+                    const label = chartPeriod === "monthly"
+                      ? row.label
+                      : fmtShortDate(row.date);
+                    const gross = Number(row.gross || 0);
+                    const commission = Number(row.commission || 0);
+                    const net = Number(row.total || 0);
+                    return (
+                      <div
+                        key={i}
+                        className="grid grid-cols-5 gap-2 px-4 py-3 bg-white dark:bg-townwize-primaryDark items-center text-sm"
+                      >
+                        <div className="col-span-1">
+                          <p className="font-medium text-gray-900 dark:text-white leading-tight">{label}</p>
+                          <p className="text-[10px] text-gray-400">{Number(row.trips || 0)} trip{row.trips !== 1 ? "s" : ""}</p>
+                        </div>
+                        <p className="text-center text-gray-700 dark:text-gray-300 font-medium">{Number(row.trips || 0)}</p>
+                        <p className="text-right text-gray-700 dark:text-gray-300">{toMoney(gross)}</p>
+                        <p className="text-right text-red-500 font-medium">-{toMoney(commission)}</p>
+                        <p className="text-right font-semibold text-gray-900 dark:text-white">{toMoney(net)}</p>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             )}
           </div>
