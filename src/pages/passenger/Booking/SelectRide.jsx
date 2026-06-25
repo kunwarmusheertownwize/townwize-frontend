@@ -936,6 +936,11 @@ navigate("/passenger/trip-summary", {
             <RideTypeCard
               title="RideTogether"
               icon={<FaUsers />}
+              badge={
+                <span className="ml-1.5 inline-flex items-center gap-1 text-[10px] font-bold text-townwize-accent bg-white/20 px-2 py-0.5 rounded-full leading-none">
+                  Share &amp; Save
+                </span>
+              }
               selected={selectedType === "RideTogether"}
               disabled={!routeReady}
               onSelect={() => {
@@ -957,6 +962,13 @@ navigate("/passenger/trip-summary", {
                   etaText || "—"
                 )}
               </span>
+
+              {/* Split fare hint */}
+              {effectiveDistanceKm > 0 && (
+                <div className="text-[11px] text-gray-200 dark:text-gray-300 mt-0.5">
+                  Est. ~PKR {Math.round(getPreviewFare("RideTogether") / 2)}/rider
+                </div>
+              )}
 
               {/* Distance */}
               <div className="text-xs text-gray-200 dark:text-gray-300 mt-1">
