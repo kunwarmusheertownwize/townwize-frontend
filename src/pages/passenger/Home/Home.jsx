@@ -50,6 +50,9 @@ const Home = () => {
   const sessionTokenRef = useRef(null);
   const locationBiasRef = useRef(null);
   const currentCoordsRef = useRef(null);
+  // Recent pickups dropdown
+  const [showRecentPickups, setShowRecentPickups] = useState(false);
+  const [recentPickups, setRecentPickups] = useState([]);
   // Calendar
   const [month, setMonth] = useState(new Date())
   // Booking confirmed?
@@ -94,6 +97,47 @@ const Home = () => {
     }
     return slots;
   }, []);
+  // ── Recent pickups helpers ─────────────────────────────────────────────
+  const loadRecentPickups = () => {
+    try {
+      const stored = JSON.parse(localStorage.getItem("_tw_recent_pickups") || "[]");
+      setRecentPickups(Array.isArray(stored) ? stored : []);
+    } catch {
+      setRecentPickups([]);
+    }
+  };
+
+  const handlePickupFocus = () => {
+    loadRecentPickups();
+    setShowRecentPickups(true);
+  };
+
+  const handleSelectRecentPickup = (entry) => {
+    setPickup(entry.address);
+    if (entry.lat != null && entry.lng != null) {
+      currentCoordsRef.current = { lat: entry.lat, lng: entry.lng };
+    }
+    setShowRecentPickups(false);
+    setPickupSuggestions([]);
+    if (dropoffRef.current) dropoffRef.current.focus();
+  };
+
+  const handleRemoveRecentPickup = (address, e) => {
+    e.stopPropagation();
+    try {
+      const stored = JSON.parse(localStorage.getItem("_tw_recent_pickups") || "[]");
+      const updated = stored.filter((e) => e.address !== address);
+      localStorage.setItem("_tw_recent_pickups", JSON.stringify(updated));
+      setRecentPickups(updated);
+    } catch {}
+  };
+
+  const handleClearRecentPickups = () => {
+    localStorage.removeItem("_tw_recent_pickups");
+    setRecentPickups([]);
+    setShowRecentPickups(false);
+  };
+
   // ✅ Run map reload after remount (handles Back navigation)
   useEffect(() => {
     const handleForceReload = () => {
@@ -363,8 +407,15 @@ const Home = () => {
         const addr = formatAddress(p);
         setter(addr || prediction.placePrediction.text?.text || "");
 
-        // 🔥 Clear suggestions instantly
-        if (setter === setPickup) setPickupSuggestions([]);
+        // Capture lat/lng for the pickup field
+        if (setter === setPickup) {
+          setPickupSuggestions([]);
+          setShowRecentPickups(false);
+          const loc = p?.location || p?.Fg; // New Places API: location is the LatLng
+          if (loc && typeof loc.lat === "function") {
+            currentCoordsRef.current = { lat: loc.lat(), lng: loc.lng() };
+          }
+        }
         if (setter === setDropoff) setDropoffSuggestions([]);
 
         // start a new session after selection
@@ -382,8 +433,15 @@ const Home = () => {
         const addr = formatAddress(p);
         setter(addr || prediction.description || "");
 
-        // 🔥 Clear suggestions instantly
-        if (setter === setPickup) setPickupSuggestions([]);
+        // Capture lat/lng for the pickup field
+        if (setter === setPickup) {
+          setPickupSuggestions([]);
+          setShowRecentPickups(false);
+          const geom = p?.geometry?.location;
+          if (geom && typeof geom.lat === "function") {
+            currentCoordsRef.current = { lat: geom.lat(), lng: geom.lng() };
+          }
+        }
         if (setter === setDropoff) setDropoffSuggestions([]);
 
         const { AutocompleteSessionToken } = await google.maps.importLibrary("places");
@@ -474,6 +532,13 @@ const Home = () => {
           setRideConfirmed={setRideConfirmed}
           handleFindRide={handleFindRide}
           handleSwap={handleSwap}
+          recentPickups={recentPickups}
+          showRecentPickups={showRecentPickups}
+          setShowRecentPickups={setShowRecentPickups}
+          onPickupFocus={handlePickupFocus}
+          onSelectRecentPickup={handleSelectRecentPickup}
+          onRemoveRecentPickup={handleRemoveRecentPickup}
+          onClearRecentPickups={handleClearRecentPickups}
         />
 
         {/* Right: Illustration */}

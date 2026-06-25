@@ -35,7 +35,14 @@ const HeroForm = ({
   rideConfirmed,
   setRideConfirmed,
   handleFindRide,
-  handleSwap
+  handleSwap,
+  recentPickups,
+  showRecentPickups,
+  setShowRecentPickups,
+  onPickupFocus,
+  onSelectRecentPickup,
+  onRemoveRecentPickup,
+  onClearRecentPickups,
 }) => {
   const { t } = useTranslation();
 
@@ -66,6 +73,13 @@ const HeroForm = ({
             dropoffRef={dropoffRef}
             handleGetCurrentLocation={handleGetCurrentLocation}
             locating={locating}
+            recentPickups={recentPickups}
+            showRecentPickups={showRecentPickups}
+            setShowRecentPickups={setShowRecentPickups}
+            onPickupFocus={onPickupFocus}
+            onSelectRecentPickup={onSelectRecentPickup}
+            onRemoveRecentPickup={onRemoveRecentPickup}
+            onClearRecentPickups={onClearRecentPickups}
           />
 
           {/* Swap Button */}

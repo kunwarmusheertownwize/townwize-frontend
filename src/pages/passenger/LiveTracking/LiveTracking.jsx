@@ -163,6 +163,7 @@ const LiveTracking = () => {
   const mapInstanceRef = useRef(null);
   const driverMarkerRef = useRef(null);
   const prevDriverPosRef = useRef(null);
+  const lastDriverHeadingRef = useRef(null); // heading from GPS or computed bearing
   const pickupMarkerRef = useRef(null);
   const routeRendererRef = useRef(null);
 
@@ -337,8 +338,12 @@ const LiveTracking = () => {
       });
     },
 
-    onDriverLocation: ({ lat, lng, rideId: locationRideId }) => {
+    onDriverLocation: ({ lat, lng, heading, rideId: locationRideId }) => {
       if (locationRideId && String(locationRideId) !== String(rideId)) return;
+      // Store GPS heading from driver (may be null on stationary device)
+      if (heading != null && !isNaN(heading)) {
+        lastDriverHeadingRef.current = heading;
+      }
       setRide((prev) => {
         if (!prev) return prev;
         return { ...prev, driver: { ...(prev.driver || {}), lat, lng } };
@@ -635,36 +640,56 @@ const LiveTracking = () => {
     const map = mapInstanceRef.current;
     const pos = { lat: driverLat, lng: driverLng };
 
-    // Calculate bearing from previous position for arrow rotation
-    let bearing = 0;
-    if (prevDriverPosRef.current) {
+    // Use GPS heading if available; otherwise compute bearing from position delta
+    let heading = lastDriverHeadingRef.current;
+    if (heading == null && prevDriverPosRef.current) {
       const { lat: lat1, lng: lng1 } = prevDriverPosRef.current;
       const toRad = (d) => (d * Math.PI) / 180;
-      const dLng = toRad(pos.lng - lng1);
+      const dLngR = toRad(pos.lng - lng1);
       const lat1R = toRad(lat1);
       const lat2R = toRad(pos.lat);
-      const y = Math.sin(dLng) * Math.cos(lat2R);
-      const x = Math.cos(lat1R) * Math.sin(lat2R) - Math.sin(lat1R) * Math.cos(lat2R) * Math.cos(dLng);
-      bearing = ((Math.atan2(y, x) * 180) / Math.PI + 360) % 360;
+      const y = Math.sin(dLngR) * Math.cos(lat2R);
+      const x = Math.cos(lat1R) * Math.sin(lat2R) - Math.sin(lat1R) * Math.cos(lat2R) * Math.cos(dLngR);
+      const computed = ((Math.atan2(y, x) * 180) / Math.PI + 360) % 360;
+      // Only use computed bearing if driver has moved more than ~5m (avoid jitter at rest)
+      const prevPos = prevDriverPosRef.current;
+      const R = 6371000;
+      const dLat = ((pos.lat - prevPos.lat) * Math.PI) / 180;
+      const dLngM = ((pos.lng - prevPos.lng) * Math.PI) / 180;
+      const a = Math.sin(dLat / 2) ** 2 + Math.cos((prevPos.lat * Math.PI) / 180) * Math.cos(lat2R) * Math.sin(dLngM / 2) ** 2;
+      const distM = R * 2 * Math.asin(Math.sqrt(a));
+      if (distM > 5) heading = computed;
     }
     prevDriverPosRef.current = pos;
 
+    // Determine marker style based on ride status
+    const currentStatus = String(rideRef.current?.status || "").toUpperCase();
+    const useArrow = ["EN_ROUTE", "ON_TRIP", "ARRIVED"].includes(currentStatus);
+    // Arrow only when driver is moving (has a valid heading)
+    const showArrow = useArrow && heading != null;
+
+    const buildMarkerEl = (rotation) => {
+      const el = document.createElement("div");
+      el.style.cssText = "width:36px;height:36px;display:flex;align-items:center;justify-content:center;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.35))";
+      if (showArrow) {
+        el.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 36 36" style="transform:rotate(${rotation}deg);transition:transform 0.4s ease"><circle cx="18" cy="18" r="16" fill="#17BEBB" stroke="#023645" stroke-width="2"/><polygon points="18,5 24.5,27 18,22.5 11.5,27" fill="#023645"/><polygon points="18,7 23.5,25.5 18,21 12.5,25.5" fill="white"/></svg>`;
+      } else {
+        el.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 36 36"><circle cx="18" cy="18" r="16" fill="#17BEBB" stroke="#023645" stroke-width="2"/><circle cx="18" cy="18" r="6" fill="white"/></svg>`;
+      }
+      return el;
+    };
+
     if (!driverMarkerRef.current) {
-      const driverEl = document.createElement("div");
-      driverEl.style.cssText = "width:36px;height:36px;display:flex;align-items:center;justify-content:center;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.35))";
-      driverEl.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 36 36" style="transform:rotate(${bearing}deg);transition:transform 0.4s ease"><circle cx="18" cy="18" r="16" fill="#17BEBB" stroke="white" stroke-width="2.5"/><polygon points="18,6 24,26 18,22 12,26" fill="white"/></svg>`;
       driverMarkerRef.current = new google.maps.marker.AdvancedMarkerElement({
         map,
         position: pos,
-        content: driverEl,
+        content: buildMarkerEl(heading || 0),
       });
     } else {
       driverMarkerRef.current.position = pos;
-      const svg = driverMarkerRef.current.content?.querySelector("svg");
-      if (svg && prevDriverPosRef.current) svg.style.transform = `rotate(${bearing}deg)`;
+      // Update marker icon (replace content to switch between arrow/circle or update rotation)
+      driverMarkerRef.current.content = buildMarkerEl(heading || 0);
     }
-
-    const currentStatus = rideRef.current?.status;
 
     if (currentStatus === "ON_TRIP") {
       if (!tripZoomAppliedRef.current) {

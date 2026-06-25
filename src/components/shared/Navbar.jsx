@@ -175,6 +175,16 @@ const Navbar = () => {
                     {t("drive")}
                   </button>
 
+                  <button
+                    onClick={() => handleNav("/passenger/scheduled-rides")}
+                    className={`transition cursor-pointer ${isActive("/passenger/scheduled-rides")
+                      ? "text-townwize-primary dark:text-townwize-accent font-semibold"
+                      : "text-gray-700 dark:text-gray-300 hover:text-townwize-primary dark:hover:text-townwize-accent"
+                    }`}
+                  >
+                    Scheduled
+                  </button>
+
                   {/* About Dropdown (UNCHANGED) */}
                   <div className="relative">
                     <button
