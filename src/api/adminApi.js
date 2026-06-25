@@ -141,3 +141,8 @@ export const fetchPassengerRides = (userId, params) => {
 
 export const presignDocumentUrl = (url) =>
     call(`/admin/documents/presign?url=${encodeURIComponent(url)}`);
+
+export const fetchRideDemandHeatmap = (days = 7) =>
+    call(`/admin/analytics/ride-demand-heatmap?days=${days}`);
+export const fetchDriverActiveHours = () =>
+    call("/admin/analytics/driver-active-hours");

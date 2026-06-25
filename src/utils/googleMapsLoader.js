@@ -5,7 +5,7 @@ import { Loader } from "@googlemaps/js-api-loader";
 const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
 
 // 🔥 MASTER library list — MUST match all app code everywhere
-const LIBRARIES = ["places", "marker", "geometry", "routes", "geocoding"].sort();
+const LIBRARIES = ["places", "marker", "geometry", "routes", "geocoding", "visualization"].sort();
 
 // 🔥 Stable loader configuration (never changes)
 const LOADER_OPTIONS = {

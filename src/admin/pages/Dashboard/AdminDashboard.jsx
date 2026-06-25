@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
-import { fetchCases, fetchFinanceSummary, fetchRides, fetchSupportTickets, fetchPriorityAlerts, unblockDriver } from "../../../api/adminApi";
+import { fetchCases, fetchDriverActiveHours, fetchFinanceSummary, fetchRides, fetchSupportTickets, fetchPriorityAlerts, unblockDriver } from "../../../api/adminApi";
 
 const SEVERITY_META = {
   critical: { bg: "bg-red-50 border-red-300",    badge: "bg-red-100 text-red-700",    dot: "bg-red-500",    label: "Critical" },
@@ -172,6 +172,70 @@ function CompletionRing({ completed, cancelled, loading }) {
   );
 }
 
+// ── Driver Active Hours 7×24 grid ─────────────────────────────────────────
+const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+// MongoDB $dayOfWeek: 1=Sun, 2=Mon, ..., 7=Sat
+const HOUR_LABELS = ["12AM", "6AM", "12PM", "6PM"];
+
+function ActiveHoursGrid({ data, loading }) {
+  const maxCount = data.reduce((m, d) => Math.max(m, d.count), 1);
+  const cellMap = new Map(data.map((d) => [`${d.day}-${d.hour}`, d.count]));
+
+  if (loading) {
+    return (
+      <div className="animate-pulse">
+        <div className="h-32 bg-gray-100 dark:bg-gray-700 rounded" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="overflow-x-auto">
+      <div className="min-w-[420px]">
+        {/* Hour labels top */}
+        <div className="flex ml-10 mb-1">
+          {Array.from({ length: 24 }, (_, h) => (
+            <div key={h} className="flex-1 text-center" style={{ minWidth: 0 }}>
+              {h % 6 === 0 && (
+                <span className="text-[9px] text-gray-400 dark:text-gray-500">
+                  {HOUR_LABELS[h / 6]}
+                </span>
+              )}
+            </div>
+          ))}
+        </div>
+        {/* Grid rows: days 1-7 (Sun=1 ... Sat=7) → reorder Mon–Sun for display */}
+        {[2, 3, 4, 5, 6, 7, 1].map((dayNum, rowIdx) => (
+          <div key={dayNum} className="flex items-center mb-0.5">
+            <div className="w-10 shrink-0 text-[9px] font-medium text-gray-500 dark:text-gray-400 text-right pr-1.5">
+              {DAY_LABELS[dayNum - 1]}
+            </div>
+            <div className="flex flex-1">
+              {Array.from({ length: 24 }, (_, hour) => {
+                const count = cellMap.get(`${dayNum}-${hour}`) || 0;
+                const intensity = count / maxCount;
+                return (
+                  <div
+                    key={hour}
+                    className="flex-1 rounded-sm"
+                    style={{
+                      height: 16,
+                      minWidth: 0,
+                      backgroundColor: `rgba(23, 190, 187, ${intensity})`,
+                      border: "1px solid rgba(0,0,0,0.04)",
+                    }}
+                    title={`${DAY_LABELS[dayNum - 1]} ${hour}:00 — ${count} rides`}
+                  />
+                );
+              })}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function AdminDashboard() {
   const [data, setData] = useState({
     activeRides: 0, ridesToday: 0, openCases: 0, openTickets: 0,
@@ -191,6 +255,9 @@ export default function AdminDashboard() {
   const [alerts, setAlerts] = useState([]);
   const [alertsLoading, setAlertsLoading] = useState(true);
   const [unblocking, setUnblocking] = useState(null);
+
+  const [activeHours, setActiveHours] = useState([]);
+  const [activeHoursLoading, setActiveHoursLoading] = useState(true);
 
   useEffect(() => {
     let mounted = true;
@@ -247,6 +314,24 @@ export default function AdminDashboard() {
   }, []);
 
   useEffect(() => { loadAlerts(); }, [loadAlerts]);
+
+  useEffect(() => {
+    let mounted = true;
+    const run = async () => {
+      setActiveHoursLoading(true);
+      try {
+        const res = await fetchDriverActiveHours();
+        if (!mounted) return;
+        setActiveHours(res?.data || []);
+      } catch {
+        // silently fail
+      } finally {
+        if (mounted) setActiveHoursLoading(false);
+      }
+    };
+    run();
+    return () => { mounted = false; };
+  }, []);
 
   const handleUnblock = async (driverId) => {
     setUnblocking(driverId);
@@ -358,6 +443,23 @@ export default function AdminDashboard() {
           <span className="text-[10px] text-gray-400">PKR · completed rides only</span>
         </div>
         <RevenueChart slots={revenueSlots} loading={loading} />
+      </div>
+
+      {/* ── Driver Active Hours ─────────────────────────────────────────────── */}
+      <div className="rounded-xl border bg-white dark:bg-townwize-primaryDark dark:border-gray-700 p-4">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-200">Driver Active Hours (last 30 days)</h3>
+          <div className="flex items-center gap-2 text-[10px] text-gray-400">
+            <span>Low</span>
+            <div className="flex gap-0.5">
+              {[0.15, 0.3, 0.5, 0.7, 0.9].map((v) => (
+                <div key={v} className="w-3 h-3 rounded-sm" style={{ backgroundColor: `rgba(23,190,187,${v})` }} />
+              ))}
+            </div>
+            <span>High</span>
+          </div>
+        </div>
+        <ActiveHoursGrid data={activeHours} loading={activeHoursLoading} />
       </div>
     </div>
   );

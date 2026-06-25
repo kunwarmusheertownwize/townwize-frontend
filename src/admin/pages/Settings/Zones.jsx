@@ -3,6 +3,7 @@ import {
   checkZoneOverlap,
   createZone,
   deleteZone,
+  fetchRideDemandHeatmap,
   fetchZoneById,
   fetchZones,
   updateZone,
@@ -136,6 +137,11 @@ export default function Zones() {
 
   // Overlap warning modal
   const [overlapWarning, setOverlapWarning] = useState(null); // null | { overlaps: [{zoneId, zoneName}], pendingPayload, pendingIsEditing }
+
+  // Demand heatmap
+  const [heatmapEnabled, setHeatmapEnabled] = useState(false);
+  const [heatmapLoading, setHeatmapLoading] = useState(false);
+  const heatmapLayerRef = useRef(null);
 
   const mapRef = useRef(null);
   const mapNodeRef = useRef(null);
@@ -613,6 +619,41 @@ export default function Zones() {
     clearAllDrawnOverlays();
   };
 
+  const toggleHeatmap = async () => {
+    if (heatmapEnabled) {
+      // Remove heatmap layer
+      if (heatmapLayerRef.current) {
+        heatmapLayerRef.current.setMap(null);
+        heatmapLayerRef.current = null;
+      }
+      setHeatmapEnabled(false);
+      return;
+    }
+    if (!mapRef.current || !window.google?.maps) {
+      setError("Map is not ready. Try again in a moment.");
+      return;
+    }
+    setHeatmapLoading(true);
+    try {
+      const res = await fetchRideDemandHeatmap(7);
+      const points = (res?.data?.data || []).map(
+        (p) => new window.google.maps.LatLng(p.lat, p.lng)
+      );
+      if (heatmapLayerRef.current) heatmapLayerRef.current.setMap(null);
+      heatmapLayerRef.current = new window.google.maps.visualization.HeatmapLayer({
+        data: points,
+        map: mapRef.current,
+        radius: 40,
+        opacity: 0.7,
+      });
+      setHeatmapEnabled(true);
+    } catch (e) {
+      setError(e?.message || "Failed to load heatmap data");
+    } finally {
+      setHeatmapLoading(false);
+    }
+  };
+
   const doSave = async (payload, editing) => {
     setSaving(true);
     setError("");
@@ -947,6 +988,13 @@ export default function Zones() {
             </button>
             <button className="px-3 py-2 rounded-md border text-sm" onClick={clearAllDrawnOverlays}>
               Clear Shape
+            </button>
+            <button
+              className={`px-3 py-2 rounded-md border text-sm font-medium transition ${heatmapEnabled ? "bg-townwize-accent text-white border-townwize-accent" : "border-gray-200 dark:border-gray-600 dark:text-gray-300"}`}
+              onClick={toggleHeatmap}
+              disabled={heatmapLoading}
+            >
+              {heatmapLoading ? "Loading..." : heatmapEnabled ? "Hide Heatmap" : "Demand Heatmap"}
             </button>
           </div>
           <div
