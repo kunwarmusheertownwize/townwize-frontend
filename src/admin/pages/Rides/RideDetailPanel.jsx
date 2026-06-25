@@ -3,6 +3,8 @@ import StatusBadge from "../../components/common/StatusBadge";
 import {
   assignRideDriver,
   fetchRideAvailableDrivers,
+  openRideDispute,
+  resolveRideDispute,
   updateRideStatus,
 } from "../../../api/adminApi";
 
@@ -66,6 +68,14 @@ export default function RideDetailPanel({ ride, onUpdated }) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [ok, setOk] = useState("");
+
+  // Dispute modal state
+  const [disputeModal, setDisputeModal] = useState(null); // null | 'open' | 'resolve'
+  const [disputeReason, setDisputeReason] = useState("");
+  const [disputeResolution, setDisputeResolution] = useState("");
+  const [disputeFareAdj, setDisputeFareAdj] = useState("");
+  const [disputeSaving, setDisputeSaving] = useState(false);
+  const [disputeError, setDisputeError] = useState("");
 
   const options = useMemo(() => NEXT_BY_STATUS[ride?.status] || [], [ride?.status]);
 
@@ -140,6 +150,44 @@ export default function RideDetailPanel({ ride, onUpdated }) {
       setError(e.message || "Failed to assign driver");
     } finally {
       setAssigningDriverId("");
+    }
+  };
+
+  const fmtDate = (iso) => iso ? new Date(iso).toLocaleString("en-PK", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "-";
+
+  const onOpenDisputeSubmit = async () => {
+    if (!disputeReason.trim()) { setDisputeError("Reason is required."); return; }
+    setDisputeSaving(true);
+    setDisputeError("");
+    try {
+      const adj = disputeFareAdj !== "" && !isNaN(Number(disputeFareAdj)) ? Number(disputeFareAdj) : undefined;
+      await openRideDispute(ride._id || ride.rideId, { reason: disputeReason.trim(), ...(adj !== undefined ? { fareAdjustment: adj } : {}) });
+      setDisputeModal(null);
+      setDisputeReason("");
+      setDisputeFareAdj("");
+      onUpdated?.();
+    } catch (e) {
+      setDisputeError(e.message || "Failed to open dispute");
+    } finally {
+      setDisputeSaving(false);
+    }
+  };
+
+  const onResolveDisputeSubmit = async () => {
+    if (!disputeResolution.trim()) { setDisputeError("Resolution is required."); return; }
+    setDisputeSaving(true);
+    setDisputeError("");
+    try {
+      const adj = disputeFareAdj !== "" && !isNaN(Number(disputeFareAdj)) ? Number(disputeFareAdj) : undefined;
+      await resolveRideDispute(ride._id || ride.rideId, { resolution: disputeResolution.trim(), ...(adj !== undefined ? { fareAdjustment: adj } : {}) });
+      setDisputeModal(null);
+      setDisputeResolution("");
+      setDisputeFareAdj("");
+      onUpdated?.();
+    } catch (e) {
+      setDisputeError(e.message || "Failed to resolve dispute");
+    } finally {
+      setDisputeSaving(false);
     }
   };
 
@@ -317,6 +365,142 @@ export default function RideDetailPanel({ ride, onUpdated }) {
           {saving ? "Updating..." : selected === "CANCELLED" ? "Force Cancel Ride" : "Update Status"}
         </button>
       </div>
+
+      {/* ── Dispute Section ────────────────────────────────────────────── */}
+      <div className="rounded-xl border border-gray-200 dark:border-gray-700 p-3">
+        <h4 className="mb-2 font-semibold dark:text-white">Dispute</h4>
+
+        {(!ride.disputeStatus || ride.disputeStatus === "NONE") && (
+          <div>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">No dispute has been raised for this ride.</p>
+            <button
+              onClick={() => { setDisputeModal("open"); setDisputeReason(""); setDisputeFareAdj(""); setDisputeError(""); }}
+              className="rounded-md bg-amber-600 hover:bg-amber-700 px-3 py-1.5 text-xs font-semibold text-white"
+            >
+              Open Dispute
+            </button>
+          </div>
+        )}
+
+        {ride.disputeStatus === "OPEN" && (
+          <div className="space-y-2">
+            <div className="rounded-lg border border-red-300 dark:border-red-700 bg-red-50 dark:bg-red-900/20 p-3">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-xs font-bold text-red-700 dark:text-red-400 uppercase">Dispute Open</span>
+              </div>
+              <p className="text-sm text-red-800 dark:text-red-300">{ride.disputeReason}</p>
+              <div className="mt-1 text-xs text-red-600 dark:text-red-400">
+                Opened by {ride.disputeOpenedBy || "-"} on {fmtDate(ride.disputeOpenedAt)}
+              </div>
+              {ride.disputeFareAdjustment != null && (
+                <div className="mt-1 text-xs text-red-600 dark:text-red-400">
+                  Fare adjustment: {Number(ride.disputeFareAdjustment).toLocaleString()} PKR
+                </div>
+              )}
+            </div>
+            <button
+              onClick={() => { setDisputeModal("resolve"); setDisputeResolution(""); setDisputeFareAdj(""); setDisputeError(""); }}
+              className="rounded-md bg-green-600 hover:bg-green-700 px-3 py-1.5 text-xs font-semibold text-white"
+            >
+              Resolve Dispute
+            </button>
+          </div>
+        )}
+
+        {ride.disputeStatus === "RESOLVED" && (
+          <div className="rounded-lg border border-green-300 dark:border-green-700 bg-green-50 dark:bg-green-900/20 p-3 space-y-1">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-green-700 dark:text-green-400 uppercase">Resolved</span>
+            </div>
+            <p className="text-sm text-green-800 dark:text-green-300">{ride.disputeResolution}</p>
+            <div className="text-xs text-green-600 dark:text-green-400">
+              Resolved by {ride.resolvedBy || "-"} on {fmtDate(ride.resolvedAt)}
+            </div>
+            {ride.disputeFareAdjustment != null && (
+              <div className="text-xs text-green-600 dark:text-green-400">
+                Fare adjustment: {Number(ride.disputeFareAdjustment).toLocaleString()} PKR
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* ── Dispute Modal ─────────────────────────────────────────────── */}
+      {disputeModal && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-sm rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 p-5 space-y-3 shadow-xl">
+            <h3 className="font-semibold dark:text-white">
+              {disputeModal === "open" ? "Open Dispute" : "Resolve Dispute"}
+            </h3>
+            {disputeModal === "open" ? (
+              <>
+                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">
+                  Reason <span className="text-red-500">*</span>
+                  <textarea
+                    rows={3}
+                    className="mt-1 w-full rounded-md border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm dark:text-white focus:outline-none resize-none"
+                    placeholder="Describe the dispute..."
+                    value={disputeReason}
+                    onChange={(e) => setDisputeReason(e.target.value)}
+                    disabled={disputeSaving}
+                  />
+                </label>
+                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">
+                  Fare adjustment (PKR, negative = refund)
+                  <input
+                    type="number"
+                    className="mt-1 w-full rounded-md border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm dark:text-white focus:outline-none"
+                    placeholder="e.g. -200"
+                    value={disputeFareAdj}
+                    onChange={(e) => setDisputeFareAdj(e.target.value)}
+                    disabled={disputeSaving}
+                  />
+                </label>
+              </>
+            ) : (
+              <>
+                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">
+                  Resolution <span className="text-red-500">*</span>
+                  <textarea
+                    rows={3}
+                    className="mt-1 w-full rounded-md border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm dark:text-white focus:outline-none resize-none"
+                    placeholder="Describe the resolution..."
+                    value={disputeResolution}
+                    onChange={(e) => setDisputeResolution(e.target.value)}
+                    disabled={disputeSaving}
+                  />
+                </label>
+                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">
+                  Fare adjustment (PKR, negative = refund)
+                  <input
+                    type="number"
+                    className="mt-1 w-full rounded-md border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm dark:text-white focus:outline-none"
+                    placeholder="e.g. -200"
+                    value={disputeFareAdj}
+                    onChange={(e) => setDisputeFareAdj(e.target.value)}
+                    disabled={disputeSaving}
+                  />
+                </label>
+              </>
+            )}
+            {disputeError && <div className="rounded border border-red-200 bg-red-50 dark:bg-red-900/20 px-2 py-1.5 text-xs text-red-700 dark:text-red-400">{disputeError}</div>}
+            <div className="flex gap-2 justify-end">
+              <button
+                className="rounded-md border border-gray-200 dark:border-gray-600 px-3 py-1.5 text-xs font-semibold dark:text-gray-300"
+                onClick={() => setDisputeModal(null)}
+                disabled={disputeSaving}
+              >Cancel</button>
+              <button
+                className={`rounded-md px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50 ${disputeModal === "open" ? "bg-amber-600 hover:bg-amber-700" : "bg-green-600 hover:bg-green-700"}`}
+                onClick={disputeModal === "open" ? onOpenDisputeSubmit : onResolveDisputeSubmit}
+                disabled={disputeSaving}
+              >
+                {disputeSaving ? "Saving..." : disputeModal === "open" ? "Open Dispute" : "Resolve Dispute"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

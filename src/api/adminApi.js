@@ -44,6 +44,10 @@ export const assignRideDriver = (rideId, driverId) =>
         method: "PATCH",
         body: JSON.stringify({ driverId }),
     });
+export const openRideDispute = (rideId, body) =>
+    call(`/admin/rides/${rideId}/dispute`, { method: "PATCH", body: JSON.stringify(body || {}) });
+export const resolveRideDispute = (rideId, body) =>
+    call(`/admin/rides/${rideId}/resolve-dispute`, { method: "PATCH", body: JSON.stringify(body || {}) });
 
 export const fetchSupportTickets = (params) => {
     const q = new URLSearchParams(params || {}).toString();
