@@ -188,7 +188,7 @@ export default function ReferralDashboard() {
                                 </thead>
                                 <tbody className="divide-y divide-gray-100">
                                     {codes.map((c) => (
-                                        <tr key={c._id} className="hover:bg-gray-50">
+                                        <tr key={c._id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
                                             <td className="px-3 py-2.5 font-mono font-bold text-townwize-primary">{c.code}</td>
                                             <td className="px-3 py-2.5">
                                                 <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${c.type === "GUEST_INVITE" ? "bg-amber-100 text-amber-700" : "bg-blue-100 text-blue-700"}`}>
@@ -329,7 +329,7 @@ export default function ReferralDashboard() {
                                 </thead>
                                 <tbody className="divide-y divide-gray-100">
                                     {passengers.map((p) => (
-                                        <tr key={p.userId} className="hover:bg-gray-50">
+                                        <tr key={p.userId} className="hover:bg-gray-50 dark:hover:bg-gray-800">
                                             <td className="px-3 py-2.5 font-medium">{p.name}</td>
                                             <td className="px-3 py-2.5 text-xs text-gray-600">{p.email}</td>
                                             <td className="px-3 py-2.5 text-xs text-gray-500">{p.phone}</td>

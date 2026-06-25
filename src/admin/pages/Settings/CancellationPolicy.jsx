@@ -57,9 +57,9 @@ function NumberInput({ value, onChange, min = 0, suffix, disabled }) {
         value={value}
         onChange={(e) => onChange(e.target.value === "" ? "" : Number(e.target.value))}
         disabled={disabled}
-        className="w-24 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-1.5 text-sm text-right focus:outline-none focus:ring-2 focus:ring-townwize-primary disabled:opacity-50"
+        className="w-24 rounded-lg border border-gray-200 dark:border-gray-700 dark:border-gray-600 bg-white dark:bg-gray-900 dark:bg-gray-700 px-3 py-1.5 text-sm text-right focus:outline-none focus:ring-2 focus:ring-townwize-primary disabled:opacity-50"
       />
-      {suffix && <span className="text-xs text-gray-500 w-8">{suffix}</span>}
+      {suffix && <span className="text-xs text-gray-500 dark:text-gray-400 w-8">{suffix}</span>}
     </div>
   );
 }
@@ -126,21 +126,21 @@ export default function CancellationPolicy() {
       </div>
 
       {error && (
-        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700">{error}</div>
+        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700 dark:bg-gray-800 dark:text-white dark:border-gray-600">{error}</div>
       )}
       {success && (
-        <div className="rounded-xl border border-green-200 bg-green-50 px-4 py-2 text-sm text-green-700">{success}</div>
+        <div className="rounded-xl border border-green-200 bg-green-50 px-4 py-2 text-sm text-green-700 dark:bg-gray-800 dark:text-white dark:border-gray-600">{success}</div>
       )}
 
       {loading ? (
         <div className="space-y-3">
-          {[1, 2, 3].map((i) => <div key={i} className="h-20 animate-pulse rounded-2xl bg-gray-100 dark:bg-gray-800" />)}
+          {[1, 2, 3].map((i) => <div key={i} className="h-20 animate-pulse rounded-2xl bg-gray-100 dark:bg-gray-700 dark:bg-gray-800" />)}
         </div>
       ) : (
         <div className="space-y-4">
 
           {/* ── Passenger Cancellation ─────────────────────────────────────── */}
-          <section className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-5">
+          <section className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 dark:bg-gray-800 p-5">
             <h2 className="text-sm font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1">
               Passenger Cancellation
             </h2>
@@ -180,7 +180,7 @@ export default function CancellationPolicy() {
           </section>
 
           {/* ── No-Show ────────────────────────────────────────────────────── */}
-          <section className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-5">
+          <section className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 dark:bg-gray-800 p-5">
             <h2 className="text-sm font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1">
               Passenger No-Show
             </h2>
@@ -219,7 +219,7 @@ export default function CancellationPolicy() {
           </section>
 
           {/* ── Driver Rules ───────────────────────────────────────────────── */}
-          <section className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-5">
+          <section className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 dark:bg-gray-800 p-5">
             <h2 className="text-sm font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1">
               Driver Rules
             </h2>

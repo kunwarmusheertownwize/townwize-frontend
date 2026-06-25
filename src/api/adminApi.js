@@ -51,6 +51,10 @@ export const assignRideDriver = (rideId, driverId) =>
         method: "PATCH",
         body: JSON.stringify({ driverId }),
     });
+export const openRideDispute = (rideId, body) =>
+    call(`/admin/rides/${rideId}/dispute`, { method: "PATCH", body: JSON.stringify(body || {}) });
+export const resolveRideDispute = (rideId, body) =>
+    call(`/admin/rides/${rideId}/resolve-dispute`, { method: "PATCH", body: JSON.stringify(body || {}) });
 
 export const fetchSupportTickets = (params) => {
     const q = new URLSearchParams(params || {}).toString();
@@ -102,6 +106,8 @@ export const updateZonePriority = (zoneId, priority) =>
     call(`/admin/zones/${zoneId}/priority`, { method: "PATCH", body: JSON.stringify({ priority }) });
 export const deleteZone = (zoneId) =>
     call(`/admin/zones/${zoneId}`, { method: "DELETE" });
+export const checkZoneOverlap = (body) =>
+    call("/admin/zones/check-overlap", { method: "POST", body: JSON.stringify(body || {}) });
 
 export const fetchNotifications = (params) => {
     const q = new URLSearchParams(params || {}).toString();
@@ -143,10 +149,14 @@ export const fetchPassengerRides = (userId, params) => {
 export const presignDocumentUrl = (url) =>
     call(`/admin/documents/presign?url=${encodeURIComponent(url)}`);
 
-// Case — link ride
 export const linkCaseRide = (caseId, rideId) =>
     call(`/admin/cases/${caseId}/link-ride`, { method: "PATCH", body: JSON.stringify({ rideId }) });
 
-// Case — escalate
 export const escalateCase = (caseId, body) =>
     call(`/admin/cases/${caseId}/escalate`, { method: "PATCH", body: JSON.stringify(body || {}) });
+
+export const fetchRideDemandHeatmap = (days = 7) =>
+    call(`/admin/analytics/ride-demand-heatmap?days=${days}`);
+
+export const fetchDriverActiveHours = () =>
+    call("/admin/analytics/driver-active-hours");

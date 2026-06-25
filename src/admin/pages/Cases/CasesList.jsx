@@ -93,7 +93,7 @@ export default function CasesList() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-xl font-semibold">Verification Cases</h1>
+      <h1 className="dark:text-white text-xl font-semibold">Verification Cases</h1>
       <div className="bg-white dark:bg-townwize-primary rounded-xl border border-gray-200 dark:border-gray-700 p-4">
         <div className="flex flex-col md:flex-row gap-3">
           <input
@@ -103,7 +103,7 @@ export default function CasesList() {
               setQuery(e.target.value);
             }}
             placeholder="Search case id or applicant"
-            className="w-full md:w-96 border rounded-md px-3 py-2 text-sm"
+            className="w-full md:w-96 border rounded-md px-3 py-2 text-sm dark:bg-gray-800 dark:text-white dark:border-gray-600"
           />
           <select
             value={entityType}
@@ -111,7 +111,7 @@ export default function CasesList() {
               setPage(1);
               setEntityType(e.target.value);
             }}
-            className="border rounded-md px-3 py-2 text-sm"
+            className="border rounded-md px-3 py-2 text-sm dark:bg-gray-800 dark:text-white dark:border-gray-600"
           >
             <option value="all">All Entities</option>
             <option value="passenger">Passenger</option>
@@ -123,7 +123,7 @@ export default function CasesList() {
               setPage(1);
               setStatus(e.target.value);
             }}
-            className="border rounded-md px-3 py-2 text-sm"
+            className="border rounded-md px-3 py-2 text-sm dark:bg-gray-800 dark:text-white dark:border-gray-600"
           >
             <option value="all">All Statuses</option>
             <option value="open">Open</option>
@@ -219,7 +219,7 @@ export default function CasesList() {
               items.map((row, idx) => (
                 <tr
                   key={row._id || row.id || idx}
-                  className="cursor-pointer border-t border-gray-100 dark:border-gray-700 hover:bg-gray-50"
+                  className="cursor-pointer border-t border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800"
                   onClick={() => setSelectedId(row.caseId || row._id)}
                 >
                   <td className="px-4 py-3 break-all">{row.caseId || row._id || "-"}</td>

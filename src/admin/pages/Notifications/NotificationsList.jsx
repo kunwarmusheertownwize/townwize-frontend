@@ -96,22 +96,22 @@ export default function NotificationsList() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-xl font-semibold">Notifications</h1>
+      <h1 className="dark:text-white text-xl font-semibold">Notifications</h1>
 
-      {message ? <div className="rounded-md border border-green-300 bg-green-50 px-3 py-2 text-sm text-green-700">{message}</div> : null}
-      {error ? <div className="rounded-md border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div> : null}
+      {message ? <div className="rounded-md border border-green-300 bg-green-50 px-3 py-2 text-sm text-green-700 dark:bg-gray-800 dark:text-white dark:border-gray-600">{message}</div> : null}
+      {error ? <div className="rounded-md border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-gray-800 dark:text-white dark:border-gray-600">{error}</div> : null}
 
-      <div className="bg-white dark:bg-townwize-primary rounded-xl border border-gray-200 dark:border-gray-700 p-4 space-y-3">
-        <h2 className="text-sm font-semibold">Create Notification</h2>
+      <div className="bg-white dark:bg-gray-900 dark:bg-townwize-primary rounded-xl border border-gray-200 dark:border-gray-700 p-4 space-y-3">
+        <h2 className="dark:text-white text-sm font-semibold">Create Notification</h2>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-          <select className="border rounded-md px-3 py-2 text-sm" value={draft.channel} onChange={(e) => setDraft((p) => ({ ...p, channel: e.target.value }))}>
+          <select className="border rounded-md px-3 py-2 text-sm dark:bg-gray-800 dark:text-white dark:border-gray-600" value={draft.channel} onChange={(e) => setDraft((p) => ({ ...p, channel: e.target.value }))}>
             <option value="in_app">In-App</option>
             <option value="push">Push</option>
             <option value="email">Email</option>
             <option value="sms">SMS</option>
             <option value="whatsapp">WhatsApp</option>
           </select>
-          <select className="border rounded-md px-3 py-2 text-sm" value={draft.audienceType} onChange={(e) => setDraft((p) => ({ ...p, audienceType: e.target.value }))}>
+          <select className="border rounded-md px-3 py-2 text-sm dark:bg-gray-800 dark:text-white dark:border-gray-600" value={draft.audienceType} onChange={(e) => setDraft((p) => ({ ...p, audienceType: e.target.value }))}>
             <option value="all">All Users</option>
             <option value="passenger">Passengers</option>
             <option value="driver">Drivers</option>
@@ -119,7 +119,7 @@ export default function NotificationsList() {
             <option value="user">Single User</option>
           </select>
           <input
-            className="border rounded-md px-3 py-2 text-sm"
+            className="border rounded-md px-3 py-2 text-sm dark:bg-gray-800 dark:text-white dark:border-gray-600"
             placeholder={draft.audienceType === "user" ? "User email or ID" : "Optional audience value"}
             value={draft.audienceValue}
             onChange={(e) => setDraft((p) => ({ ...p, audienceValue: e.target.value }))}
@@ -130,14 +130,14 @@ export default function NotificationsList() {
           </label>
         </div>
         <input
-          className="w-full border rounded-md px-3 py-2 text-sm"
+          className="w-full border rounded-md px-3 py-2 text-sm dark:bg-gray-800 dark:text-white dark:border-gray-600"
           placeholder="Subject"
           value={draft.subject}
           onChange={(e) => setDraft((p) => ({ ...p, subject: e.target.value }))}
         />
         <textarea
           rows={3}
-          className="w-full border rounded-md px-3 py-2 text-sm"
+          className="w-full border rounded-md px-3 py-2 text-sm dark:bg-gray-800 dark:text-white dark:border-gray-600"
           placeholder="Message body"
           value={draft.body}
           onChange={(e) => setDraft((p) => ({ ...p, body: e.target.value }))}
@@ -151,7 +151,7 @@ export default function NotificationsList() {
         </button>
       </div>
 
-      <div className="bg-white dark:bg-townwize-primary rounded-xl border border-gray-200 dark:border-gray-700 p-4">
+      <div className="bg-white dark:bg-gray-900 dark:bg-townwize-primary rounded-xl border border-gray-200 dark:border-gray-700 p-4">
         <div className="flex flex-col md:flex-row gap-3">
           <input
             value={query}
@@ -160,7 +160,7 @@ export default function NotificationsList() {
               setQuery(e.target.value);
             }}
             placeholder="Search by recipient, subject, status"
-            className="w-full md:w-96 border rounded-md px-3 py-2 text-sm"
+            className="w-full md:w-96 border rounded-md px-3 py-2 text-sm dark:bg-gray-800 dark:text-white dark:border-gray-600"
           />
           <select
             value={channel}
@@ -168,7 +168,7 @@ export default function NotificationsList() {
               setPage(1);
               setChannel(e.target.value);
             }}
-            className="border rounded-md px-3 py-2 text-sm"
+            className="border rounded-md px-3 py-2 text-sm dark:bg-gray-800 dark:text-white dark:border-gray-600"
           >
             <option value="all">All Channels</option>
             <option value="in_app">In-App</option>
@@ -183,7 +183,7 @@ export default function NotificationsList() {
               setPage(1);
               setAudienceType(e.target.value);
             }}
-            className="border rounded-md px-3 py-2 text-sm"
+            className="border rounded-md px-3 py-2 text-sm dark:bg-gray-800 dark:text-white dark:border-gray-600"
           >
             <option value="all">All Audience</option>
             <option value="passenger">Passengers</option>
@@ -197,7 +197,7 @@ export default function NotificationsList() {
               setPage(1);
               setStatus(e.target.value);
             }}
-            className="border rounded-md px-3 py-2 text-sm"
+            className="border rounded-md px-3 py-2 text-sm dark:bg-gray-800 dark:text-white dark:border-gray-600"
           >
             <option value="all">All Statuses</option>
             <option value="DRAFT">Draft</option>
@@ -211,9 +211,9 @@ export default function NotificationsList() {
         </div>
       </div>
 
-      <div className="overflow-x-auto bg-white dark:bg-townwize-primary rounded-xl border border-gray-200 dark:border-gray-700">
+      <div className="overflow-x-auto bg-white dark:bg-gray-900 dark:bg-townwize-primary rounded-xl border border-gray-200 dark:border-gray-700">
         <table className="w-full text-sm">
-          <thead className="bg-gray-50 dark:bg-townwize-primaryDark">
+          <thead className="bg-gray-50 dark:bg-gray-800 dark:bg-townwize-primaryDark">
             <tr>
               <th className="px-4 py-3 text-left">Channel</th>
               <th className="px-4 py-3 text-left">Subject</th>
@@ -226,7 +226,7 @@ export default function NotificationsList() {
           <tbody>
             {loading ? (
               <tr>
-                <td className="px-4 py-10 text-center text-gray-500" colSpan={6}>
+                <td className="px-4 py-10 text-center text-gray-500 dark:text-gray-400" colSpan={6}>
                   Loading notifications...
                 </td>
               </tr>
@@ -242,11 +242,11 @@ export default function NotificationsList() {
                   <td className="px-4 py-3">{row.channel || "-"}</td>
                   <td className="px-4 py-3 max-w-[280px] whitespace-normal break-words">
                     <div className="font-medium">{row.subject || "-"}</div>
-                    <div className="text-xs text-gray-500">{row.body || ""}</div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400">{row.body || ""}</div>
                   </td>
                   <td className="px-4 py-3">
                     <div>{row.audienceType || "user"}</div>
-                    <div className="text-xs text-gray-500">{row.audienceValue || row.to || "-"}</div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400">{row.audienceValue || row.to || "-"}</div>
                   </td>
                   <td className="px-4 py-3">
                     <StatusBadge status={row.status || "-"} />

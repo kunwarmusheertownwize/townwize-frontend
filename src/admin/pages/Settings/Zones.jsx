@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
+  checkZoneOverlap,
   createZone,
   deleteZone,
+  fetchRideDemandHeatmap,
   fetchZoneById,
   fetchZones,
   updateZone,
@@ -132,6 +134,14 @@ export default function Zones() {
   const [locationBusy, setLocationBusy] = useState(false);
   const [saving, setSaving] = useState(false);
   const [editingId, setEditingId] = useState("");
+
+  // Overlap warning modal
+  const [overlapWarning, setOverlapWarning] = useState(null); // null | { overlaps: [{zoneId, zoneName}], pendingPayload, pendingIsEditing }
+
+  // Demand heatmap
+  const [heatmapEnabled, setHeatmapEnabled] = useState(false);
+  const [heatmapLoading, setHeatmapLoading] = useState(false);
+  const heatmapLayerRef = useRef(null);
 
   const mapRef = useRef(null);
   const mapNodeRef = useRef(null);
@@ -609,20 +619,50 @@ export default function Zones() {
     clearAllDrawnOverlays();
   };
 
-  const onSave = async () => {
-    const geometry = currentGeometry();
-    if (!geometry) {
-      setError(form.type === "circle" ? "Draw a circle zone first." : "Draw a polygon zone first.");
+  const toggleHeatmap = async () => {
+    if (heatmapEnabled) {
+      // Remove heatmap layer
+      if (heatmapLayerRef.current) {
+        heatmapLayerRef.current.setMap(null);
+        heatmapLayerRef.current = null;
+      }
+      setHeatmapEnabled(false);
       return;
     }
+    if (!mapRef.current || !window.google?.maps) {
+      setError("Map is not ready. Try again in a moment.");
+      return;
+    }
+    setHeatmapLoading(true);
+    try {
+      const res = await fetchRideDemandHeatmap(7);
+      const points = (res?.data?.data || []).map(
+        (p) => new window.google.maps.LatLng(p.lat, p.lng)
+      );
+      if (heatmapLayerRef.current) heatmapLayerRef.current.setMap(null);
+      heatmapLayerRef.current = new window.google.maps.visualization.HeatmapLayer({
+        data: points,
+        map: mapRef.current,
+        radius: 40,
+        opacity: 0.7,
+      });
+      setHeatmapEnabled(true);
+    } catch (e) {
+      setError(e?.message || "Failed to load heatmap data");
+    } finally {
+      setHeatmapLoading(false);
+    }
+  };
+
+  const doSave = async (payload, editing) => {
     setSaving(true);
     setError("");
     setMessage("");
     try {
-      const payload = buildZonePayload(form, geometry);
-      if (isEditing) {
-        delete payload.code;
-        await updateZone(editingId, payload);
+      if (editing) {
+        const p = { ...payload };
+        delete p.code;
+        await updateZone(editingId, p);
         setMessage("Zone updated.");
       } else {
         await createZone(payload);
@@ -635,6 +675,42 @@ export default function Zones() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const onSave = async () => {
+    const geometry = currentGeometry();
+    if (!geometry) {
+      setError(form.type === "circle" ? "Draw a circle zone first." : "Draw a polygon zone first.");
+      return;
+    }
+    const payload = buildZonePayload(form, geometry);
+    setError("");
+    setMessage("");
+
+    // Check for overlaps before saving
+    try {
+      const res = await checkZoneOverlap({
+        geometry,
+        type: form.type,
+        ...(isEditing ? { excludeZoneId: editingId } : {}),
+      });
+      const overlaps = res?.data?.overlaps || [];
+      if (overlaps.length > 0) {
+        setOverlapWarning({ overlaps, pendingPayload: payload, pendingIsEditing: isEditing });
+        return;
+      }
+    } catch {
+      // If overlap check fails, proceed with save
+    }
+
+    await doSave(payload, isEditing);
+  };
+
+  const onOverlapConfirm = async () => {
+    if (!overlapWarning) return;
+    const { pendingPayload, pendingIsEditing } = overlapWarning;
+    setOverlapWarning(null);
+    await doSave(pendingPayload, pendingIsEditing);
   };
 
   const onEdit = async (zone) => {
@@ -892,13 +968,13 @@ export default function Zones() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-xl font-semibold">Service Zones</h1>
+      <h1 className="dark:text-white text-xl font-semibold">Service Zones</h1>
 
-      {message ? <div className="rounded-md border border-green-300 bg-green-50 px-3 py-2 text-sm text-green-700">{message}</div> : null}
-      {error ? <div className="rounded-md border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div> : null}
+      {message ? <div className="rounded-md border border-green-300 bg-green-50 px-3 py-2 text-sm text-green-700 dark:bg-gray-800 dark:text-white dark:border-gray-600">{message}</div> : null}
+      {error ? <div className="rounded-md border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-gray-800 dark:text-white dark:border-gray-600">{error}</div> : null}
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
-        <div className="xl:col-span-2 bg-white rounded-xl border border-gray-200 p-3">
+        <div className="xl:col-span-2 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-3">
           <div className="flex flex-wrap gap-2 mb-3">
             <div ref={searchBoxRef} className="min-w-[240px] flex-1" />
             <button className="px-3 py-2 rounded-md border text-sm" onClick={onUseMyLocation}>
@@ -913,6 +989,13 @@ export default function Zones() {
             <button className="px-3 py-2 rounded-md border text-sm" onClick={clearAllDrawnOverlays}>
               Clear Shape
             </button>
+            <button
+              className={`px-3 py-2 rounded-md border text-sm font-medium transition ${heatmapEnabled ? "bg-townwize-accent text-white border-townwize-accent" : "border-gray-200 dark:border-gray-600 dark:text-gray-300"}`}
+              onClick={toggleHeatmap}
+              disabled={heatmapLoading}
+            >
+              {heatmapLoading ? "Loading..." : heatmapEnabled ? "Hide Heatmap" : "Demand Heatmap"}
+            </button>
           </div>
           <div
             className={`relative w-full h-[440px] overflow-hidden rounded-lg border border-gray-200 ${isPolygonDrawing ? "cursor-crosshair" : ""}`}
@@ -923,25 +1006,25 @@ export default function Zones() {
           </div>
         </div>
 
-        <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-3">
+        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-4 space-y-3">
           <div className="grid grid-cols-1 gap-3">
             <input
-              className="border rounded-md px-3 py-2 text-sm"
+              className="border rounded-md px-3 py-2 text-sm dark:bg-gray-800 dark:text-white dark:border-gray-600"
               placeholder="Code"
               value={form.code}
               disabled={isEditing}
               onChange={(e) => setForm((p) => ({ ...p, code: e.target.value }))}
             />
             <input
-              className="border rounded-md px-3 py-2 text-sm"
+              className="border rounded-md px-3 py-2 text-sm dark:bg-gray-800 dark:text-white dark:border-gray-600"
               placeholder="Zone name"
               value={form.name}
               onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
             />
             <div>
-              <label className="block text-xs text-gray-500 mb-1">Zone Category</label>
+              <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Zone Category</label>
               <select
-                className="w-full border rounded-md px-3 py-2 text-sm"
+                className="w-full border rounded-md px-3 py-2 text-sm dark:bg-gray-800 dark:text-white dark:border-gray-600"
                 value={form.category}
                 onChange={(e) => setForm((p) => ({ ...p, category: e.target.value }))}
               >
@@ -956,25 +1039,25 @@ export default function Zones() {
               </p>
             </div>
             <div className="grid grid-cols-2 gap-2">
-              <select className="border rounded-md px-3 py-2 text-sm" value={form.type} onChange={(e) => setForm((p) => ({ ...p, type: e.target.value }))}>
+              <select className="border rounded-md px-3 py-2 text-sm dark:bg-gray-800 dark:text-white dark:border-gray-600" value={form.type} onChange={(e) => setForm((p) => ({ ...p, type: e.target.value }))}>
                 <option value="polygon">Polygon</option>
                 <option value="circle">Circle</option>
               </select>
               <input
                 type="number"
-                className="border rounded-md px-3 py-2 text-sm"
+                className="border rounded-md px-3 py-2 text-sm dark:bg-gray-800 dark:text-white dark:border-gray-600"
                 value={form.priority}
                 onChange={(e) => setForm((p) => ({ ...p, priority: e.target.value }))}
               />
             </div>
             {form.type === "circle" ? (
               <div className="grid grid-cols-2 gap-2 items-center">
-                <label className="text-sm text-gray-600">Radius (km)</label>
+                <label className="text-sm text-gray-600 dark:text-gray-400">Radius (km)</label>
                 <input
                   type="number"
                   min="0.1"
                   step="0.1"
-                  className="border rounded-md px-3 py-2 text-sm"
+                  className="border rounded-md px-3 py-2 text-sm dark:bg-gray-800 dark:text-white dark:border-gray-600"
                   value={form.radiusKm}
                   onChange={(e) => setForm((p) => ({ ...p, radiusKm: e.target.value }))}
                 />
@@ -983,7 +1066,7 @@ export default function Zones() {
             {form.type === "polygon" ? (
               <div className="space-y-2">
                 <textarea
-                  className="w-full border rounded-md px-3 py-2 text-sm min-h-[110px]"
+                  className="w-full border rounded-md px-3 py-2 text-sm min-h-[110px] dark:bg-gray-800 dark:text-white dark:border-gray-600"
                   placeholder={"Polygon points, one per line:\n24.860700, 67.001100\n24.861500, 67.012000"}
                   value={polygonText}
                   onChange={(e) => setPolygonText(e.target.value)}
@@ -1023,21 +1106,21 @@ export default function Zones() {
               {saving ? "Saving..." : isEditing ? "Update Zone" : "Create Zone"}
             </button>
             <button className="px-3 py-2 rounded-md border text-sm" onClick={resetForm}>Reset</button>
-            {isEditing && selectedZone ? <span className="text-xs text-gray-500">Editing: {selectedZone.code}</span> : null}
+            {isEditing && selectedZone ? <span className="text-xs text-gray-500 dark:text-gray-400">Editing: {selectedZone.code}</span> : null}
           </div>
         </div>
       </div>
 
-      <div className="bg-white rounded-xl border border-gray-200 p-4">
+      <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
         <div className="flex flex-col md:flex-row gap-3">
           <input
-            className="w-full md:w-96 border rounded-md px-3 py-2 text-sm"
+            className="w-full md:w-96 border rounded-md px-3 py-2 text-sm dark:bg-gray-800 dark:text-white dark:border-gray-600"
             placeholder="Search by code or name"
             value={query}
             onChange={(e) => { setPage(1); setQuery(e.target.value); }}
           />
           <select
-            className="border rounded-md px-3 py-2 text-sm"
+            className="border rounded-md px-3 py-2 text-sm dark:bg-gray-800 dark:text-white dark:border-gray-600"
             value={status}
             onChange={(e) => { setPage(1); setStatus(e.target.value); }}
           >
@@ -1048,9 +1131,9 @@ export default function Zones() {
         </div>
       </div>
 
-      <div className="overflow-x-auto bg-white rounded-xl border border-gray-200">
+      <div className="overflow-x-auto bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700">
         <table className="w-full text-sm">
-          <thead className="bg-gray-50">
+          <thead className="bg-gray-50 dark:bg-gray-800">
             <tr>
               <th className="px-4 py-3 text-left">Code</th>
               <th className="px-4 py-3 text-left">Name</th>
@@ -1064,12 +1147,12 @@ export default function Zones() {
           </thead>
           <tbody>
             {loading ? (
-              <tr><td className="px-4 py-10 text-center text-gray-500" colSpan={8}>Loading zones...</td></tr>
+              <tr><td className="px-4 py-10 text-center text-gray-500 dark:text-gray-400" colSpan={8}>Loading zones...</td></tr>
             ) : items.length === 0 ? (
-              <tr><td className="px-4 py-8 text-center text-gray-500" colSpan={8}>No zones found.</td></tr>
+              <tr><td className="px-4 py-8 text-center text-gray-500 dark:text-gray-400" colSpan={8}>No zones found.</td></tr>
             ) : (
               items.map((z) => (
-                <tr key={z._id} className="border-t border-gray-100">
+                <tr key={z._id} className="border-t border-gray-100 dark:border-gray-700">
                   <td className="px-4 py-3">{z.code || "-"}</td>
                   <td className="px-4 py-3">{z.name || "-"}</td>
                   <td className="px-4 py-3">
@@ -1109,6 +1192,38 @@ export default function Zones() {
           <button className="px-3 py-1 border rounded disabled:opacity-50" disabled={page >= meta.totalPages} onClick={() => setPage((p) => p + 1)}>Next</button>
         </div>
       </div>
+
+      {/* ── Overlap Warning Modal ──────────────────────────────────────── */}
+      {overlapWarning && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-sm rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 p-5 space-y-4 shadow-xl">
+            <h3 className="font-semibold text-amber-700 dark:text-amber-400">Zone Overlap Detected</h3>
+            <p className="text-sm text-gray-700 dark:text-gray-300">
+              This zone overlaps with:
+            </p>
+            <ul className="list-disc list-inside text-sm text-gray-800 dark:text-gray-200 space-y-1">
+              {overlapWarning.overlaps.map((o) => (
+                <li key={o.zoneId}>{o.zoneName}</li>
+              ))}
+            </ul>
+            <p className="text-xs text-gray-500 dark:text-gray-400">Do you want to save anyway?</p>
+            <div className="flex gap-2 justify-end">
+              <button
+                className="rounded-md border border-gray-200 dark:border-gray-600 px-3 py-1.5 text-sm font-medium dark:text-gray-300"
+                onClick={() => setOverlapWarning(null)}
+              >
+                Cancel
+              </button>
+              <button
+                className="rounded-md bg-amber-600 hover:bg-amber-700 px-3 py-1.5 text-sm font-medium text-white"
+                onClick={onOverlapConfirm}
+              >
+                Save Anyway
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

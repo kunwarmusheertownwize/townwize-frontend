@@ -99,11 +99,11 @@ export default function RidesList() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-xl font-semibold">Rides</h1>
+      <h1 className="dark:text-white text-xl font-semibold">Rides</h1>
       <div className="bg-white dark:bg-townwize-primary rounded-xl border border-gray-200 dark:border-gray-700 p-4">
         <div className="flex flex-col md:flex-row gap-3">
           <input
-            className="w-full md:w-80 border rounded-md px-3 py-2 text-sm"
+            className="w-full md:w-80 border rounded-md px-3 py-2 text-sm dark:bg-gray-800 dark:text-white dark:border-gray-600"
             placeholder="Search rides"
             value={query}
             onChange={(e) => {
@@ -112,7 +112,7 @@ export default function RidesList() {
             }}
           />
           <select
-            className="border rounded-md px-3 py-2 text-sm"
+            className="border rounded-md px-3 py-2 text-sm dark:bg-gray-800 dark:text-white dark:border-gray-600"
             value={status}
             onChange={(e) => {
               setPage(1);
@@ -217,7 +217,7 @@ export default function RidesList() {
               items.map((r) => (
                 <tr
                   key={r._id}
-                  className="cursor-pointer border-t border-gray-100 dark:border-gray-700 hover:bg-gray-50"
+                  className="cursor-pointer border-t border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800"
                   onClick={() => setSelectedId(r._id)}
                 >
                   <td className="px-4 py-3 break-all">{r.rideId || r._id}</td>

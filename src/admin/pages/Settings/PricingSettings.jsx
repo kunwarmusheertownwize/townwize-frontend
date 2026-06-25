@@ -91,7 +91,7 @@ function Card({ title, desc, accent = "gray", tag, children }) {
   };
   return (
     <div className={`bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 border-l-4 ${borders[accent]} overflow-hidden`}>
-      <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between gap-3">
+      <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-700 dark:border-gray-800 flex items-center justify-between gap-3">
         <div>
           <h3 className="text-sm font-bold text-gray-900 dark:text-white">{title}</h3>
           {desc && <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{desc}</p>}
@@ -142,9 +142,9 @@ function Grid({ cols = 2, children }) {
 function Divider({ label }) {
   return (
     <div className="flex items-center gap-3 py-1">
-      <div className="h-px flex-1 bg-gray-100 dark:bg-gray-800" />
+      <div className="h-px flex-1 bg-gray-100 dark:bg-gray-700 dark:bg-gray-800" />
       <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{label}</span>
-      <div className="h-px flex-1 bg-gray-100 dark:bg-gray-800" />
+      <div className="h-px flex-1 bg-gray-100 dark:bg-gray-700 dark:bg-gray-800" />
     </div>
   );
 }
@@ -168,13 +168,13 @@ function FarePreviewPanel({ profile, open, onToggle }) {
         className="ml-auto mb-1 flex items-center gap-2 px-3.5 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold shadow-lg transition"
       >
         <span>{open ? "▾ Fare Preview" : "▸ Fare Preview"}</span>
-        {!open && <span className="px-1.5 py-0.5 rounded-full bg-white/20 text-[10px]">live</span>}
+        {!open && <span className="px-1.5 py-0.5 rounded-full bg-white dark:bg-gray-900/20 text-[10px]">live</span>}
       </button>
 
       {open && (
         <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-xl overflow-hidden">
           {/* Inputs */}
-          <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-800 grid grid-cols-2 gap-2">
+          <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700 dark:border-gray-800 grid grid-cols-2 gap-2">
             <div>
               <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wide block mb-1">Distance</label>
               <div className="flex items-center gap-1">
@@ -224,17 +224,17 @@ function FarePreviewPanel({ profile, open, onToggle }) {
           </div>
 
           {/* Result */}
-          <div className="border-t border-gray-100 dark:border-gray-800 px-4 py-3 space-y-1.5">
+          <div className="border-t border-gray-100 dark:border-gray-700 dark:border-gray-800 px-4 py-3 space-y-1.5">
             <div className="flex justify-between font-bold text-sm">
-              <span className="text-gray-700 dark:text-gray-200">Passenger pays</span>
+              <span className="text-gray-700 dark:text-gray-300 dark:text-gray-200">Passenger pays</span>
               <span className="text-blue-600 dark:text-blue-400">PKR {p.total}</span>
             </div>
             <div className="flex justify-between text-xs font-medium">
-              <span className="text-gray-500">Driver earns</span>
+              <span className="text-gray-500 dark:text-gray-400">Driver earns</span>
               <span className="text-green-600 dark:text-green-400">PKR {p.driverEarning.toFixed(0)}</span>
             </div>
             <div className="flex justify-between text-xs font-medium">
-              <span className="text-gray-500">Townwize earns</span>
+              <span className="text-gray-500 dark:text-gray-400">Townwize earns</span>
               <span className="text-orange-500">PKR {p.townwize.toFixed(0)}</span>
             </div>
           </div>
@@ -484,12 +484,12 @@ function TabDispatch({ profile, onChange }) {
       <Card title="Dispatch Simulator" desc="Preview which drivers would receive a dispatch for a given pickup" accent="indigo">
         <Grid cols={2}>
           <div>
-            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5 block">Pickup Latitude</label>
+            <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5 block">Pickup Latitude</label>
             <input type="number" value={simLat} onChange={(e) => setSimLat(e.target.value)} placeholder="25.042722"
               className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-townwize-primary" />
           </div>
           <div>
-            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5 block">Pickup Longitude</label>
+            <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5 block">Pickup Longitude</label>
             <input type="number" value={simLng} onChange={(e) => setSimLng(e.target.value)} placeholder="67.343652"
               className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-townwize-primary" />
           </div>
@@ -506,14 +506,14 @@ function TabDispatch({ profile, onChange }) {
                 ["Verified", simData?.counts?.eligibleVerified], ["Busy", simData?.counts?.busyActiveRide],
                 ["Ready", simData?.counts?.dispatchReady]].map(([label, val]) => (
                 <div key={label} className="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 p-2.5 text-center">
-                  <p className="text-[10px] text-gray-500">{label}</p>
+                  <p className="text-[10px] text-gray-500 dark:text-gray-400">{label}</p>
                   <p className="text-lg font-bold text-gray-900 dark:text-white">{val ?? 0}</p>
                 </div>
               ))}
             </div>
             <div className="rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
               <table className="w-full text-sm">
-                <thead className="bg-gray-50 dark:bg-gray-800 text-[10px] uppercase tracking-wide text-gray-500">
+                <thead className="bg-gray-50 dark:bg-gray-800 text-[10px] uppercase tracking-wide text-gray-500 dark:text-gray-400">
                   <tr>
                     <th className="px-4 py-2 text-left font-semibold">Driver</th>
                     <th className="px-4 py-2 text-left font-semibold">Car Type</th>
@@ -522,10 +522,10 @@ function TabDispatch({ profile, onChange }) {
                 </thead>
                 <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
                   {(simData?.rankedCandidates || []).slice(0, 10).map((c) => (
-                    <tr key={c.driverId} className="hover:bg-gray-50 dark:hover:bg-gray-800/40">
-                      <td className="px-4 py-2 font-mono text-xs text-gray-600 dark:text-gray-300">{c.driverId}</td>
+                    <tr key={c.driverId} className="hover:bg-gray-50 dark:hover:bg-gray-800 dark:bg-gray-800 dark:hover:bg-gray-800/40">
+                      <td className="px-4 py-2 font-mono text-xs text-gray-600 dark:text-gray-400 dark:text-gray-300">{c.driverId}</td>
                       <td className="px-4 py-2 capitalize">{c.carType}</td>
-                      <td className="px-4 py-2 text-gray-500">{c.pickupDistanceKm ?? "—"} km</td>
+                      <td className="px-4 py-2 text-gray-500 dark:text-gray-400">{c.pickupDistanceKm ?? "—"} km</td>
                     </tr>
                   ))}
                   {!(simData?.rankedCandidates?.length) && (
@@ -695,7 +695,7 @@ export default function PricingSettings() {
       </div>
 
       {/* Tab bar */}
-      <div className="flex gap-1 mb-5 bg-gray-100 dark:bg-gray-800 p-1 rounded-2xl overflow-x-auto no-scrollbar">
+      <div className="flex gap-1 mb-5 bg-gray-100 dark:bg-gray-700 dark:bg-gray-800 p-1 rounded-2xl overflow-x-auto no-scrollbar">
         {TABS.map((tab) => {
           const n = tabChanges[tab.id] || 0;
           const active = activeTab === tab.id;

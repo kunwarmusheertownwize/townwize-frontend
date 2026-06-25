@@ -81,7 +81,7 @@ export default function TicketDetailPanel({ ticket, onUpdated }) {
       {error ? <div className="rounded border border-red-200 bg-red-50 px-3 py-2 text-red-700">{error}</div> : null}
       {ok ? <div className="rounded border border-green-200 bg-green-50 px-3 py-2 text-green-700">{ok}</div> : null}
 
-      <div className="rounded-xl border border-gray-200 p-3">
+      <div className="rounded-xl border border-gray-200 dark:border-gray-700 p-3">
         <div className="mb-1 flex items-center justify-between">
           <strong>{ticket.ticketNo || ticket._id}</strong>
           <StatusBadge status={ticket.status || "-"} />
@@ -91,14 +91,14 @@ export default function TicketDetailPanel({ ticket, onUpdated }) {
         <div>Priority: {ticket.priority || "normal"}</div>
         <div>Requester: {ticket.requesterEmail || "Unknown"}</div>
         <div>Assigned: {ticket.assigneeEmail || "Unassigned"}</div>
-        <div className="mt-1 text-gray-600">Updated: {ticket.updatedAt ? new Date(ticket.updatedAt).toLocaleString() : "-"}</div>
+        <div className="mt-1 text-gray-600 dark:text-gray-400">Updated: {ticket.updatedAt ? new Date(ticket.updatedAt).toLocaleString() : "-"}</div>
       </div>
 
-      <div className="rounded-xl border border-gray-200 p-3 space-y-3">
+      <div className="rounded-xl border border-gray-200 dark:border-gray-700 p-3 space-y-3">
         <h4 className="font-semibold">Actions</h4>
         <div className="grid grid-cols-1 gap-3">
           <div>
-            <label className="mb-1 block text-xs text-gray-500">Status</label>
+            <label className="mb-1 block text-xs text-gray-500 dark:text-gray-400">Status</label>
             <select className="w-full rounded border px-3 py-2" value={status} onChange={(e) => setStatus(e.target.value)}>
               {STATUS_OPTIONS.map((s) => (
                 <option key={s} value={s}>
@@ -108,7 +108,7 @@ export default function TicketDetailPanel({ ticket, onUpdated }) {
             </select>
           </div>
           <div>
-            <label className="mb-1 block text-xs text-gray-500">Priority</label>
+            <label className="mb-1 block text-xs text-gray-500 dark:text-gray-400">Priority</label>
             <select className="w-full rounded border px-3 py-2" value={priority} onChange={(e) => setPriority(e.target.value)}>
               {PRIORITY_OPTIONS.map((p) => (
                 <option key={p} value={p}>
@@ -118,7 +118,7 @@ export default function TicketDetailPanel({ ticket, onUpdated }) {
             </select>
           </div>
           <div>
-            <label className="mb-1 block text-xs text-gray-500">Assign To (admin user id, blank = unassign)</label>
+            <label className="mb-1 block text-xs text-gray-500 dark:text-gray-400">Assign To (admin user id, blank = unassign)</label>
             <input
               className="w-full rounded border px-3 py-2"
               placeholder="Mongo user id"
@@ -128,7 +128,7 @@ export default function TicketDetailPanel({ ticket, onUpdated }) {
           </div>
           {status === "resolved" ? (
             <div>
-              <label className="mb-1 block text-xs text-gray-500">Resolution note</label>
+              <label className="mb-1 block text-xs text-gray-500 dark:text-gray-400">Resolution note</label>
               <textarea
                 className="w-full rounded border px-3 py-2"
                 rows={2}
@@ -138,7 +138,7 @@ export default function TicketDetailPanel({ ticket, onUpdated }) {
             </div>
           ) : null}
           <div>
-            <label className="mb-1 block text-xs text-gray-500">Internal note</label>
+            <label className="mb-1 block text-xs text-gray-500 dark:text-gray-400">Internal note</label>
             <textarea className="w-full rounded border px-3 py-2" rows={2} value={note} onChange={(e) => setNote(e.target.value)} />
           </div>
         </div>
@@ -151,15 +151,15 @@ export default function TicketDetailPanel({ ticket, onUpdated }) {
         </button>
       </div>
 
-      <div className="rounded-xl border border-gray-200 p-3 space-y-3">
+      <div className="rounded-xl border border-gray-200 dark:border-gray-700 p-3 space-y-3">
         <h4 className="font-semibold">Conversation</h4>
-        <div className="max-h-56 space-y-2 overflow-y-auto rounded border bg-gray-50 p-2">
+        <div className="max-h-56 space-y-2 overflow-y-auto rounded border bg-gray-50 dark:bg-gray-800 p-2">
           {(ticket.replies || []).length === 0 ? (
-            <div className="text-gray-500">No replies yet.</div>
+            <div className="text-gray-500 dark:text-gray-400">No replies yet.</div>
           ) : (
             ticket.replies.map((r, idx) => (
-              <div key={`${r.createdAt || ""}-${idx}`} className="rounded border border-gray-200 bg-white p-2">
-                <div className="text-xs text-gray-500">
+              <div key={`${r.createdAt || ""}-${idx}`} className="rounded border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-2">
+                <div className="text-xs text-gray-500 dark:text-gray-400">
                   {(r.authorEmail || "unknown")} - {r.createdAt ? new Date(r.createdAt).toLocaleString() : "-"}
                 </div>
                 <div className="break-words">{r.message}</div>
@@ -183,18 +183,18 @@ export default function TicketDetailPanel({ ticket, onUpdated }) {
         </button>
       </div>
 
-      <div className="rounded-xl border border-gray-200 p-3">
+      <div className="rounded-xl border border-gray-200 dark:border-gray-700 p-3">
         <h4 className="mb-2 font-semibold">History</h4>
         <div className="max-h-56 space-y-2 overflow-y-auto">
           {(ticket.history || []).length === 0 ? (
-            <div className="text-gray-500">No history yet.</div>
+            <div className="text-gray-500 dark:text-gray-400">No history yet.</div>
           ) : (
             ticket.history
               .slice()
               .reverse()
               .map((h, idx) => (
-                <div key={`${h.at || ""}-${idx}`} className="rounded border border-gray-200 p-2">
-                  <div className="text-xs text-gray-500">
+                <div key={`${h.at || ""}-${idx}`} className="rounded border border-gray-200 dark:border-gray-700 p-2">
+                  <div className="text-xs text-gray-500 dark:text-gray-400">
                     {h.type} - {h.actorEmail || "system"} - {h.at ? new Date(h.at).toLocaleString() : "-"}
                   </div>
                   <div className="break-words">{h.message || "-"}</div>

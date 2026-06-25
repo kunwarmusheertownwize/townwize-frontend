@@ -99,19 +99,19 @@ export default function AuditLogs() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-xl font-semibold">Audit Logs</h1>
+      <h1 className="dark:text-white text-xl font-semibold">Audit Logs</h1>
 
-      {error ? <div className="rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div> : null}
+      {error ? <div className="rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-gray-800 dark:text-white dark:border-gray-600">{error}</div> : null}
 
-      <div className="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-townwize-primary">
+      <div className="rounded-xl border border-gray-200 bg-white dark:bg-gray-900 p-4 dark:border-gray-700 dark:bg-townwize-primary">
         <div className="grid grid-cols-1 gap-3 md:grid-cols-6">
           <input
             value={query}
             onChange={applyTextFilter(setQuery)}
             placeholder="Search event/entity/actor"
-            className="rounded-md border px-3 py-2 text-sm md:col-span-2"
+            className="rounded-md border px-3 py-2 text-sm md:col-span-2 dark:bg-gray-800 dark:text-white dark:border-gray-600"
           />
-          <select value={moduleFilter} onChange={applyTextFilter(setModuleFilter)} className="rounded-md border px-3 py-2 text-sm">
+          <select value={moduleFilter} onChange={applyTextFilter(setModuleFilter)} className="rounded-md border px-3 py-2 text-sm dark:bg-gray-800 dark:text-white dark:border-gray-600">
             <option value="all">All Modules</option>
             {availableModules.map((m) => (
               <option key={m} value={m}>
@@ -119,7 +119,7 @@ export default function AuditLogs() {
               </option>
             ))}
           </select>
-          <select value={eventFilter} onChange={applyTextFilter(setEventFilter)} className="rounded-md border px-3 py-2 text-sm">
+          <select value={eventFilter} onChange={applyTextFilter(setEventFilter)} className="rounded-md border px-3 py-2 text-sm dark:bg-gray-800 dark:text-white dark:border-gray-600">
             <option value="all">All Events</option>
             {availableEvents.map((e) => (
               <option key={e} value={e}>
@@ -127,15 +127,15 @@ export default function AuditLogs() {
               </option>
             ))}
           </select>
-          <input type="date" value={fromDate} onChange={applyTextFilter(setFromDate)} className="rounded-md border px-3 py-2 text-sm" />
-          <input type="date" value={toDate} onChange={applyTextFilter(setToDate)} className="rounded-md border px-3 py-2 text-sm" />
+          <input type="date" value={fromDate} onChange={applyTextFilter(setFromDate)} className="rounded-md border px-3 py-2 text-sm dark:bg-gray-800 dark:text-white dark:border-gray-600" />
+          <input type="date" value={toDate} onChange={applyTextFilter(setToDate)} className="rounded-md border px-3 py-2 text-sm dark:bg-gray-800 dark:text-white dark:border-gray-600" />
         </div>
       </div>
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
-        <div className="xl:col-span-2 overflow-x-auto rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-townwize-primary">
+        <div className="xl:col-span-2 overflow-x-auto rounded-xl border border-gray-200 bg-white dark:bg-gray-900 dark:border-gray-700 dark:bg-townwize-primary">
           <table className="w-full text-sm">
-            <thead className="bg-gray-50 dark:bg-townwize-primaryDark">
+            <thead className="bg-gray-50 dark:bg-gray-800 dark:bg-townwize-primaryDark">
               <tr>
                 <th className="px-4 py-3 text-left">Timestamp</th>
                 <th className="px-4 py-3 text-left">Module</th>
@@ -147,7 +147,7 @@ export default function AuditLogs() {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={5} className="px-4 py-10 text-center text-gray-500">
+                  <td colSpan={5} className="px-4 py-10 text-center text-gray-500 dark:text-gray-400">
                     Loading audit logs...
                   </td>
                 </tr>
@@ -170,7 +170,7 @@ export default function AuditLogs() {
                       <td className="px-4 py-3">{row.module || "-"}</td>
                       <td className="px-4 py-3">
                         {row.entityType || "-"}
-                        {row.entityId ? <div className="text-xs text-gray-500">{row.entityId}</div> : null}
+                        {row.entityId ? <div className="text-xs text-gray-500 dark:text-gray-400">{row.entityId}</div> : null}
                       </td>
                       <td className="px-4 py-3">{prettyEvent(row.event)}</td>
                       <td className="px-4 py-3">{row.actorEmail || "-"}</td>
@@ -182,14 +182,14 @@ export default function AuditLogs() {
           </table>
         </div>
 
-        <div className="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-townwize-primary">
-          <h2 className="text-sm font-semibold">Audit Detail</h2>
+        <div className="rounded-xl border border-gray-200 bg-white dark:bg-gray-900 p-4 dark:border-gray-700 dark:bg-townwize-primary">
+          <h2 className="dark:text-white text-sm font-semibold">Audit Detail</h2>
           {!selectedId ? (
-            <p className="mt-3 text-sm text-gray-500">Select a row to inspect details.</p>
+            <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">Select a row to inspect details.</p>
           ) : detailLoading ? (
-            <p className="mt-3 text-sm text-gray-500">Loading detail...</p>
+            <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">Loading detail...</p>
           ) : !selectedItem ? (
-            <p className="mt-3 text-sm text-gray-500">Detail not available.</p>
+            <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">Detail not available.</p>
           ) : (
             <div className="mt-3 space-y-2 text-sm">
               <div><span className="font-semibold">Time:</span> {selectedItem.createdAt ? new Date(selectedItem.createdAt).toLocaleString() : "-"}</div>
@@ -199,9 +199,9 @@ export default function AuditLogs() {
               <div><span className="font-semibold">Actor:</span> {selectedItem.actorEmail || "-"}</div>
               <div className="pt-2">
                 <div className="mb-1 font-semibold">Payload</div>
-                <pre className="max-h-[360px] overflow-auto rounded border bg-gray-50 p-2 text-xs leading-5">{JSON.stringify(selectedItem.payload || {}, null, 2)}</pre>
+                <pre className="max-h-[360px] overflow-auto rounded border bg-gray-50 dark:bg-gray-800 p-2 text-xs leading-5">{JSON.stringify(selectedItem.payload || {}, null, 2)}</pre>
               </div>
-              {selectedIndex >= 0 ? <div className="text-xs text-gray-500">Row position on current page: {selectedIndex + 1}</div> : null}
+              {selectedIndex >= 0 ? <div className="text-xs text-gray-500 dark:text-gray-400">Row position on current page: {selectedIndex + 1}</div> : null}
             </div>
           )}
         </div>

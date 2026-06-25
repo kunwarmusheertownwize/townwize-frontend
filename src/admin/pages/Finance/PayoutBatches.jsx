@@ -80,7 +80,7 @@ export default function PayoutBatches() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold">Payout Batches</h1>
+        <h1 className="dark:text-white text-xl font-semibold">Payout Batches</h1>
         <button
           className="rounded-md bg-townwize-primary px-3 py-2 text-sm text-white disabled:opacity-50"
           disabled={busy}
@@ -90,12 +90,12 @@ export default function PayoutBatches() {
         </button>
       </div>
 
-      {message ? <div className="rounded border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-700">{message}</div> : null}
-      {error ? <div className="rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div> : null}
+      {message ? <div className="rounded border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-700 dark:bg-gray-800 dark:text-white dark:border-gray-600">{message}</div> : null}
+      {error ? <div className="rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-gray-800 dark:text-white dark:border-gray-600">{error}</div> : null}
 
-      <div className="overflow-x-auto rounded-xl border bg-white">
+      <div className="overflow-x-auto rounded-xl border bg-white dark:bg-gray-900">
         <table className="w-full text-sm">
-          <thead className="bg-gray-50">
+          <thead className="bg-gray-50 dark:bg-gray-800">
             <tr>
               <th className="px-4 py-3 text-left">Batch ID</th>
               <th className="px-4 py-3 text-left">Period</th>
@@ -114,7 +114,7 @@ export default function PayoutBatches() {
           <tbody>
             {loading ? (
               <tr>
-                <td className="px-4 py-10 text-center text-gray-500" colSpan={12}>
+                <td className="px-4 py-10 text-center text-gray-500 dark:text-gray-400" colSpan={12}>
                   Loading...
                 </td>
               </tr>
@@ -167,7 +167,7 @@ export default function PayoutBatches() {
                           ))}
                         </select>
                       ) : (
-                        <span className="text-xs text-gray-500">No actions</span>
+                        <span className="text-xs text-gray-500 dark:text-gray-400">No actions</span>
                       )}
                     </td>
                   </tr>
