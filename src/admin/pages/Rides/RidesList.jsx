@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { fetchRideDetail, fetchRides } from "../../../api/adminApi";
 import StatusBadge from "../../components/common/StatusBadge";
 import EmptyState from "../../components/common/EmptyState";
+import Pagination from "../../components/common/Pagination";
 import SidePanel from "../../components/panels/SidePanel";
 import RideDetailPanel from "./RideDetailPanel";
 
@@ -237,17 +238,7 @@ export default function RidesList() {
 
       <div className="flex items-center justify-between text-sm">
         <span>Total: {meta.total}</span>
-        <div className="flex items-center gap-2">
-          <button className="px-3 py-1 border rounded disabled:opacity-50" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
-            Prev
-          </button>
-          <span>
-            Page {meta.page} / {meta.totalPages}
-          </span>
-          <button className="px-3 py-1 border rounded disabled:opacity-50" disabled={page >= meta.totalPages} onClick={() => setPage((p) => p + 1)}>
-            Next
-          </button>
-        </div>
+        <Pagination page={page} totalPages={meta.totalPages} onPage={setPage} />
       </div>
 
       <SidePanel open={!!selectedId} onClose={() => setSelectedId(null)} title={`Ride ${selectedId || ""}`}>

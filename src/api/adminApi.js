@@ -128,6 +128,10 @@ export const unsuspendPassenger = (userId) =>
     call(`/admin/passengers/${userId}/unsuspend`, { method: "PATCH", body: JSON.stringify({}) });
 export const banPassenger = (userId, reason) =>
     call(`/admin/passengers/${userId}/ban`, { method: "PATCH", body: JSON.stringify({ reason }) });
+export const fetchPassengerRides = (userId, params) => {
+    const q = new URLSearchParams(params || {}).toString();
+    return call(`/admin/passengers/${userId}/rides${q ? `?${q}` : ""}`);
+};
 
 export const presignDocumentUrl = (url) =>
     call(`/admin/documents/presign?url=${encodeURIComponent(url)}`);

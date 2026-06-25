@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { fetchCaseDetail, fetchCases } from "../../../api/adminApi";
 import EmptyState from "../../components/common/EmptyState";
+import Pagination from "../../components/common/Pagination";
 import StatusBadge from "../../components/common/StatusBadge";
 import SidePanel from "../../components/panels/SidePanel";
 import CaseDetailPanel from "./CaseDetailPanel";
@@ -89,9 +90,6 @@ export default function CasesList() {
       // no-op
     }
   };
-
-  const canPrev = page > 1;
-  const canNext = page < meta.totalPages;
 
   return (
     <div className="space-y-4">
@@ -241,17 +239,7 @@ export default function CasesList() {
       </div>
       <div className="flex items-center justify-between text-sm">
         <span>Total: {meta.total}</span>
-        <div className="flex items-center gap-2">
-          <button className="px-3 py-1 border rounded disabled:opacity-50" disabled={!canPrev} onClick={() => setPage((p) => p - 1)}>
-            Prev
-          </button>
-          <span>
-            Page {meta.page} / {meta.totalPages}
-          </span>
-          <button className="px-3 py-1 border rounded disabled:opacity-50" disabled={!canNext} onClick={() => setPage((p) => p + 1)}>
-            Next
-          </button>
-        </div>
+        <Pagination page={page} totalPages={meta.totalPages} onPage={setPage} />
       </div>
 
       <SidePanel open={!!selectedId} onClose={() => setSelectedId(null)} title={`Case ${selectedId || ""}`}>

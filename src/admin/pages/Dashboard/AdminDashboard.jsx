@@ -41,6 +41,30 @@ function buildDailyChart(rides) {
   return slots;
 }
 
+function buildRevenueChart(rides) {
+  const today = new Date();
+  const slots = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(today);
+    d.setDate(today.getDate() - (6 - i));
+    return { label: DAYS[d.getDay()], date: d.toISOString().slice(0, 10), revenue: 0 };
+  });
+  const keyMap = new Map(slots.map((s) => [s.date, s]));
+  rides.forEach((r) => {
+    if (!r.createdAt || r.status !== "COMPLETED") return;
+    const key = new Date(r.createdAt).toISOString().slice(0, 10);
+    const slot = keyMap.get(key);
+    if (!slot) return;
+    const final = r.fare?.final ?? r.fareAdjustment?.finalFare ?? r.fareEstimate ?? 0;
+    slot.revenue += Number(final) || 0;
+  });
+  return slots;
+}
+
+const fmtPkr = (n) => {
+  if (n >= 1000) return `${(n / 1000).toFixed(1).replace(/\.0$/, "")}k`;
+  return String(Math.round(n));
+};
+
 function RidesChart({ slots, loading }) {
   const max = Math.max(...slots.map((s) => s.completed + s.cancelled), 1);
   if (loading) {
@@ -57,7 +81,6 @@ function RidesChart({ slots, loading }) {
       {slots.map((s, i) => {
         const total = s.completed + s.cancelled;
         const totalPct = Math.max(4, Math.round((total / max) * 100));
-        const cancelPct = total ? Math.round((s.cancelled / total) * 100) : 0;
         const isToday = i === 6;
         return (
           <div key={s.date} className="flex-1 flex flex-col items-center gap-1.5">
@@ -72,6 +95,51 @@ function RidesChart({ slots, loading }) {
           </div>
         );
       })}
+    </div>
+  );
+}
+
+function RevenueChart({ slots, loading }) {
+  const max = Math.max(...slots.map((s) => s.revenue), 1);
+  if (loading) {
+    return (
+      <div className="flex items-end gap-2 h-28 animate-pulse">
+        {Array.from({ length: 7 }).map((_, i) => (
+          <div key={i} className="flex-1 rounded-t-sm bg-gray-100 dark:bg-gray-700" style={{ height: `${25 + (i * 11) % 70}%` }} />
+        ))}
+      </div>
+    );
+  }
+  return (
+    <div className="flex gap-2">
+      {/* Y-axis labels */}
+      <div className="flex flex-col justify-between text-[9px] text-gray-400 pb-5 text-right w-6 shrink-0">
+        <span>{fmtPkr(max)}</span>
+        <span>{fmtPkr(max / 2)}</span>
+        <span>0</span>
+      </div>
+      <div className="flex-1 flex items-end gap-1.5 h-28">
+        {slots.map((s, i) => {
+          const pct = Math.max(s.revenue > 0 ? 4 : 0, Math.round((s.revenue / max) * 100));
+          const isToday = i === 6;
+          return (
+            <div key={s.date} className="flex-1 flex flex-col items-center gap-1.5">
+              <div
+                className="w-full rounded-t-sm"
+                style={{
+                  height: `${pct}%`,
+                  background: isToday ? "#17BEBB" : "#5eead4",
+                  minHeight: s.revenue > 0 ? "4px" : "0",
+                }}
+                title={`${s.label}: PKR ${s.revenue.toLocaleString()}`}
+              />
+              <span className={`text-[9px] font-semibold ${isToday ? "text-townwize-primary dark:text-townwize-accent" : "text-gray-400"}`}>
+                {s.label}
+              </span>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -113,6 +181,10 @@ export default function AdminDashboard() {
     const d = new Date(); d.setDate(d.getDate() - (6 - i));
     return { label: DAYS[d.getDay()], date: "", completed: 0, cancelled: 0 };
   }));
+  const [revenueSlots, setRevenueSlots] = useState(Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(); d.setDate(d.getDate() - (6 - i));
+    return { label: DAYS[d.getDay()], date: "", revenue: 0 };
+  }));
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -150,6 +222,7 @@ export default function AdminDashboard() {
           cancelledTrips: Number(financeRes?.data?.summary?.cancelledTrips || 0),
         });
         setSlots(buildDailyChart(rides));
+        setRevenueSlots(buildRevenueChart(rides));
       } catch (e) {
         if (!mounted) return;
         setError(e.message || "Failed to load dashboard");
@@ -255,7 +328,7 @@ export default function AdminDashboard() {
         <KPI label="Cancelled Trips" value={data.cancelledTrips}         loading={loading} warn={data.cancelledTrips > data.completedTrips * 0.2} />
       </div>
 
-      {/* ── 7-day chart + completion rate ─────────────────────────────────── */}
+      {/* ── 7-day rides chart + completion rate ───────────────────────────── */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="md:col-span-2 rounded-xl border bg-white dark:bg-townwize-primaryDark dark:border-gray-700 p-4">
           <div className="flex items-center justify-between mb-3">
@@ -276,6 +349,15 @@ export default function AdminDashboard() {
             <span className="font-semibold text-red-500">{data.cancelledTrips}</span> cancelled
           </div>
         </div>
+      </div>
+
+      {/* ── Revenue trend chart ───────────────────────────────────────────── */}
+      <div className="rounded-xl border bg-white dark:bg-townwize-primaryDark dark:border-gray-700 p-4">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-200">Revenue (last 7 days)</h3>
+          <span className="text-[10px] text-gray-400">PKR · completed rides only</span>
+        </div>
+        <RevenueChart slots={revenueSlots} loading={loading} />
       </div>
     </div>
   );
