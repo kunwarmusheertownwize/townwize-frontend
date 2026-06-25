@@ -6,6 +6,47 @@ import {
   updateRideStatus,
 } from "../../../api/adminApi";
 
+const MAPS_KEY = import.meta.env.VITE_GOOGLE_MAPS_KEY || "";
+
+function RouteMapCard({ pickup, dropoff }) {
+  const mapsUrl = `https://www.google.com/maps/dir/?api=1&origin=${pickup.lat},${pickup.lng}&destination=${dropoff.lat},${dropoff.lng}&travelmode=driving`;
+  const staticSrc = MAPS_KEY
+    ? `https://maps.googleapis.com/maps/api/staticmap?size=480x180&maptype=roadmap&markers=color:green%7Clabel:A%7C${pickup.lat},${pickup.lng}&markers=color:red%7Clabel:B%7C${dropoff.lat},${dropoff.lng}&path=color:0x023645cc%7Cweight:3%7C${pickup.lat},${pickup.lng}%7C${dropoff.lat},${dropoff.lng}&key=${MAPS_KEY}`
+    : null;
+
+  return (
+    <div className="rounded-xl border border-gray-200 p-3">
+      <div className="flex items-center justify-between mb-2">
+        <h4 className="font-semibold">Route Map</h4>
+        <a
+          href={mapsUrl}
+          target="_blank"
+          rel="noreferrer"
+          className="text-xs font-semibold text-townwize-accent underline underline-offset-2"
+        >
+          Open in Google Maps ↗
+        </a>
+      </div>
+      {staticSrc ? (
+        <img
+          src={staticSrc}
+          alt="Route map"
+          className="w-full rounded-lg object-cover"
+          style={{ maxHeight: 180 }}
+          onError={(e) => { e.currentTarget.style.display = "none"; }}
+        />
+      ) : (
+        <div className="rounded-lg bg-gray-50 border border-dashed border-gray-200 px-4 py-5 text-center text-xs text-gray-400">
+          <div className="mb-1 text-lg">🗺️</div>
+          <div>Pickup: {pickup.lat?.toFixed(5)}, {pickup.lng?.toFixed(5)}</div>
+          <div>Dropoff: {dropoff.lat?.toFixed(5)}, {dropoff.lng?.toFixed(5)}</div>
+          <div className="mt-2 text-[10px] text-gray-300">Set VITE_GOOGLE_MAPS_KEY to show map thumbnail</div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 const NEXT_BY_STATUS = {
   REQUESTED: ["DRIVER_ASSIGNED", "CANCELLED"],
   DRIVER_ASSIGNED: ["EN_ROUTE", "CANCELLED"],
@@ -145,6 +186,10 @@ export default function RideDetailPanel({ ride, onUpdated }) {
         <div>Type: {ride.rideType || "-"}</div>
         <div>Car Class: {ride.carType || "economy"}</div>
       </div>
+
+      {(ride.pickup?.lat && ride.dropoff?.lat) ? (
+        <RouteMapCard pickup={ride.pickup} dropoff={ride.dropoff} />
+      ) : null}
 
       {(ride.finalFareBreakdown || ride.estimatedFareBreakdown) ? (
         <div className="rounded-xl border border-gray-200 p-3">
