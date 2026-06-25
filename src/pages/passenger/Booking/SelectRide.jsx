@@ -589,12 +589,19 @@ const SelectRide = () => {
       }
     );
   }, [reverseGeocode, updateMapMarker, coreMapInstanceRef, coreMapsReadyRef]);
-  const saveRecentPickup = (address) => {
+  const saveRecentPickup = (address, coords) => {
     if (!address?.trim()) return;
     try {
-      const stored = JSON.parse(localStorage.getItem("tw_recent_pickups") || "[]");
-      const updated = [address, ...stored.filter((a) => a !== address)].slice(0, 5);
-      localStorage.setItem("tw_recent_pickups", JSON.stringify(updated));
+      const stored = JSON.parse(localStorage.getItem("_tw_recent_pickups") || "[]");
+      const entry = {
+        address: address.trim(),
+        lat: coords?.lat ?? null,
+        lng: coords?.lng ?? null,
+        savedAt: new Date().toISOString(),
+      };
+      // De-duplicate by address string, keep most recent first, limit 5
+      const deduped = stored.filter((e) => e.address !== entry.address);
+      localStorage.setItem("_tw_recent_pickups", JSON.stringify([entry, ...deduped].slice(0, 5)));
     } catch {}
   };
 
@@ -641,7 +648,7 @@ const dropoffCoords = dropoffMarkerRef.current
   ? getLatLng(dropoffMarkerRef.current.position)
   : effectiveState?.dropoffCoords || null;
 
-saveRecentPickup(pickup);
+saveRecentPickup(pickup, pickupCoords);
 navigate("/passenger/trip-summary", {
   replace: true,
   state: {
