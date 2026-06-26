@@ -160,3 +160,9 @@ export const fetchRideDemandHeatmap = (days = 7) =>
 
 export const fetchDriverActiveHours = () =>
     call("/admin/analytics/driver-active-hours");
+
+// Toll Plaza management
+export const fetchTollPlazas = () => call("/admin/pricing/tolls");
+export const createTollPlaza = (body) => call("/admin/pricing/tolls", { method: "POST", body: JSON.stringify(body) });
+export const updateTollPlaza = (id, body) => call(`/admin/pricing/tolls/${id}`, { method: "PATCH", body: JSON.stringify(body) });
+export const deleteTollPlaza = (id) => call(`/admin/pricing/tolls/${id}`, { method: "DELETE" });

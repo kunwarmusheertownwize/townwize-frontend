@@ -1,5 +1,7 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { authFetch } from "../../../utils/authFetch";
+import { fetchTollPlazas, createTollPlaza, updateTollPlaza, deleteTollPlaza } from "../../../api/adminApi";
+import { loadGoogleMaps } from "../../../utils/googleMapsLoader";
 
 // ─── Utilities ───────────────────────────────────────────────────────────────
 
@@ -259,12 +261,13 @@ function PvRow({ label, value, sub, note }) {
 // ─── Tab Definitions ─────────────────────────────────────────────────────────
 
 const TABS = [
-  { id: "fares",     label: "Fares",     icon: "PKR" },
-  { id: "revenue",   label: "Revenue",   icon: "%" },
-  { id: "operations",label: "Operations",icon: "⏱" },
-  { id: "pooling",   label: "Pooling",   icon: "⇄" },
-  { id: "dispatch",  label: "Dispatch",  icon: "📡" },
-  { id: "referral",  label: "Referral",  icon: "🎁" },
+  { id: "fares",     label: "Fares",       icon: "PKR" },
+  { id: "revenue",   label: "Revenue",     icon: "%" },
+  { id: "operations",label: "Operations",  icon: "⏱" },
+  { id: "pooling",   label: "Pooling",     icon: "⇄" },
+  { id: "dispatch",  label: "Dispatch",    icon: "📡" },
+  { id: "referral",  label: "Referral",    icon: "🎁" },
+  { id: "tolls",     label: "Toll Plazas", icon: "🛣" },
 ];
 
 // ─── Tab Content ─────────────────────────────────────────────────────────────
@@ -576,6 +579,440 @@ function TabReferral({ profile, onChange }) {
   );
 }
 
+// ─── Toll Plazas Tab ─────────────────────────────────────────────────────────
+
+const EMPTY_PLAZA = { name: "", lat: "", lng: "", cashRate: "", mTagRate: "", radius: 150, active: true, notes: "" };
+
+function TollPlazaModal({ plaza, onSave, onClose }) {
+  const [form, setForm] = useState(plaza ? { ...plaza } : { ...EMPTY_PLAZA });
+  const formRef = useRef(form);
+  formRef.current = form;
+  const [pinMode, setPinMode] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState("");
+  const searchRef = useRef(null);
+  const mapInstanceRef = useRef(null);
+  const markerRef = useRef(null);
+  const autocompleteRef = useRef(null);
+
+  const set = (k, v) => setForm((p) => ({ ...p, [k]: v }));
+
+  // Places Autocomplete — load Maps first (admin panel doesn't load it by default)
+  useEffect(() => {
+    if (pinMode) return;
+    let cancelled = false;
+    const init = async () => {
+      if (autocompleteRef.current) return;
+      try {
+        await loadGoogleMaps();
+        // Wait one tick for the input to be in the DOM after render
+        await new Promise((r) => setTimeout(r, 30));
+        if (cancelled || !searchRef.current) return;
+        const { Autocomplete } = await window.google.maps.importLibrary("places");
+        if (cancelled || autocompleteRef.current) return;
+        autocompleteRef.current = new Autocomplete(searchRef.current, {
+          fields: ["name", "geometry"],
+        });
+        autocompleteRef.current.addListener("place_changed", () => {
+          const place = autocompleteRef.current.getPlace();
+          if (!place?.geometry?.location) return;
+          const lat = place.geometry.location.lat();
+          const lng = place.geometry.location.lng();
+          setForm((p) => ({ ...p, lat: lat.toFixed(6), lng: lng.toFixed(6) }));
+        });
+      } catch {
+        // silently skip if Maps unavailable
+      }
+    };
+    init();
+    return () => { cancelled = true; };
+  }, [pinMode]);
+
+  // Pin-drop map — callback ref so map initialises as soon as the div is mounted
+  const mapCallbackRef = useCallback((node) => {
+    if (!node || mapInstanceRef.current) return;
+    const init = async () => {
+      try {
+        await loadGoogleMaps();
+        const { Map } = await window.google.maps.importLibrary("maps");
+        const f = formRef.current;
+        const center = f.lat && f.lng
+          ? { lat: Number(f.lat), lng: Number(f.lng) }
+          : { lat: 24.8607, lng: 67.0011 };
+        const map = new Map(node, {
+          center,
+          zoom: 13,
+          mapTypeControl: false,
+          streetViewControl: false,
+          fullscreenControl: false,
+        });
+        mapInstanceRef.current = map;
+
+        const placeMarker = (latLng) => {
+          if (markerRef.current) {
+            markerRef.current.setPosition(latLng);
+          } else {
+            markerRef.current = new window.google.maps.Marker({
+              position: latLng,
+              map,
+              draggable: true,
+            });
+            markerRef.current.addListener("dragend", (ev) => {
+              setForm((p) => ({ ...p, lat: ev.latLng.lat().toFixed(6), lng: ev.latLng.lng().toFixed(6) }));
+            });
+          }
+          setForm((p) => ({ ...p, lat: latLng.lat().toFixed(6), lng: latLng.lng().toFixed(6) }));
+        };
+
+        map.addListener("click", (e) => placeMarker(e.latLng));
+
+        // If coords already set, show existing marker
+        if (f.lat && f.lng) {
+          markerRef.current = new window.google.maps.Marker({ position: center, map, draggable: true });
+          markerRef.current.addListener("dragend", (ev) => {
+            setForm((p) => ({ ...p, lat: ev.latLng.lat().toFixed(6), lng: ev.latLng.lng().toFixed(6) }));
+          });
+        }
+      } catch {
+        // Maps not ready
+      }
+    };
+    init();
+  }, []);
+
+  const handleSave = async () => {
+    if (!form.name.trim()) { setErr("Name is required."); return; }
+    if (!form.lat || !form.lng) { setErr("Location is required — use search or pin drop."); return; }
+    if (form.cashRate === "" || form.mTagRate === "") { setErr("Both cash and M-Tag rates are required."); return; }
+    setSaving(true);
+    setErr("");
+    try {
+      await onSave({
+        name: form.name.trim(),
+        lat: Number(form.lat),
+        lng: Number(form.lng),
+        cashRate: Number(form.cashRate),
+        mTagRate: Number(form.mTagRate),
+        radius: Number(form.radius) || 150,
+        active: form.active !== false,
+        notes: String(form.notes || "").trim(),
+      });
+    } catch (e) {
+      setErr(e?.message || "Failed to save");
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/50 p-4 overflow-y-auto">
+      <div className="w-full max-w-lg rounded-2xl bg-white dark:bg-gray-900 p-6 shadow-2xl my-8">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-base font-bold text-gray-900 dark:text-white">
+            {plaza ? "Edit Toll Plaza" : "Add Toll Plaza"}
+          </h3>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 text-xl leading-none">&times;</button>
+        </div>
+
+        <div className="space-y-4">
+          <div>
+            <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">Plaza Name (your label)</label>
+            <input
+              value={form.name}
+              onChange={(e) => set("name", e.target.value)}
+              className="w-full rounded-lg border dark:border-gray-600 dark:bg-gray-800 dark:text-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-townwize-primary"
+              placeholder="e.g. BTK Exit Toll"
+            />
+          </div>
+
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-xs font-semibold text-gray-600 dark:text-gray-400">Location</label>
+              <button
+                type="button"
+                onClick={() => { mapInstanceRef.current = null; markerRef.current = null; autocompleteRef.current = null; setPinMode((v) => !v); }}
+                className="text-xs font-semibold text-townwize-primary hover:underline"
+              >
+                {pinMode ? "Switch to Search" : "Switch to Pin Drop"}
+              </button>
+            </div>
+
+            {!pinMode ? (
+              <input
+                ref={searchRef}
+                defaultValue=""
+                placeholder="Search toll location..."
+                className="w-full rounded-lg border dark:border-gray-600 dark:bg-gray-800 dark:text-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-townwize-primary"
+              />
+            ) : (
+              <div ref={mapCallbackRef} className="w-full h-52 rounded-lg border dark:border-gray-600 bg-gray-100" style={{ minHeight: "208px" }} />
+            )}
+
+            {form.lat && form.lng && (
+              <p className="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+                📍 {Number(form.lat).toFixed(5)}, {Number(form.lng).toFixed(5)}
+              </p>
+            )}
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">Cash Rate (PKR)</label>
+              <input
+                type="number" min="0"
+                value={form.cashRate}
+                onChange={(e) => set("cashRate", e.target.value)}
+                className="w-full rounded-lg border dark:border-gray-600 dark:bg-gray-800 dark:text-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-townwize-primary"
+                placeholder="150"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">M-Tag Rate (PKR)</label>
+              <input
+                type="number" min="0"
+                value={form.mTagRate}
+                onChange={(e) => set("mTagRate", e.target.value)}
+                className="w-full rounded-lg border dark:border-gray-600 dark:bg-gray-800 dark:text-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-townwize-primary"
+                placeholder="50"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">
+              Detection Radius (meters)
+              <span className="ml-1 font-normal text-gray-400">— how close a route must pass to trigger this toll</span>
+            </label>
+            <input
+              type="number" min="50" max="1000"
+              value={form.radius}
+              onChange={(e) => set("radius", e.target.value)}
+              className="w-full rounded-lg border dark:border-gray-600 dark:bg-gray-800 dark:text-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-townwize-primary"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">Notes (optional)</label>
+            <textarea
+              rows={2}
+              value={form.notes}
+              onChange={(e) => set("notes", e.target.value)}
+              className="w-full rounded-lg border dark:border-gray-600 dark:bg-gray-800 dark:text-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-townwize-primary"
+              placeholder="e.g. Applies on M9 northbound entry only"
+            />
+          </div>
+
+          {plaza && (
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={form.active !== false}
+                onChange={(e) => set("active", e.target.checked)}
+                className="h-4 w-4 accent-townwize-primary"
+              />
+              <span className="text-sm text-gray-700 dark:text-gray-300">Active (uncheck to deactivate without deleting)</span>
+            </label>
+          )}
+
+          {err && <p className="text-xs text-red-600">{err}</p>}
+
+          <div className="flex gap-3 pt-1">
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className="flex-1 rounded-lg bg-townwize-primary text-white px-4 py-2.5 text-sm font-bold disabled:opacity-50 hover:bg-townwize-primaryDark"
+            >
+              {saving ? "Saving..." : plaza ? "Save Changes" : "Add Plaza"}
+            </button>
+            <button onClick={onClose} disabled={saving} className="rounded-lg border dark:border-gray-600 px-4 py-2.5 text-sm font-semibold text-gray-700 dark:text-gray-300">
+              Cancel
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function TabTolls() {
+  const [plazas, setPlazas] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [editing, setEditing] = useState(null); // null = closed, {} = new, plaza = edit
+  const [deleting, setDeleting] = useState(null);
+  const [err, setErr] = useState("");
+  const [ok, setOk] = useState("");
+
+  const flash = (msg, isErr = false) => {
+    if (isErr) { setErr(msg); setTimeout(() => setErr(""), 4000); }
+    else { setOk(msg); setTimeout(() => setOk(""), 4000); }
+  };
+
+  const load = async () => {
+    setLoading(true);
+    try {
+      const json = await fetchTollPlazas();
+      setPlazas(json?.data || []);
+    } catch (e) {
+      flash(e?.message || "Failed to load toll plazas", true);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { load(); }, []);
+
+  const handleSave = async (formData) => {
+    if (editing?._id) {
+      await updateTollPlaza(editing._id, formData);
+      flash("Plaza updated.");
+    } else {
+      await createTollPlaza(formData);
+      flash("Plaza added.");
+    }
+    setEditing(null);
+    await load();
+  };
+
+  const handleToggleActive = async (plaza) => {
+    try {
+      await updateTollPlaza(plaza._id, { active: !plaza.active });
+      setPlazas((p) => p.map((x) => x._id === plaza._id ? { ...x, active: !x.active } : x));
+    } catch (e) {
+      flash(e?.message || "Failed to update", true);
+    }
+  };
+
+  const handleDelete = async (id) => {
+    try {
+      await deleteTollPlaza(id);
+      setDeleting(null);
+      setPlazas((p) => p.filter((x) => x._id !== id));
+      flash("Plaza deleted.");
+    } catch (e) {
+      flash(e?.message || "Failed to delete", true);
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      {editing !== null && (
+        <TollPlazaModal
+          plaza={editing?._id ? editing : null}
+          onSave={handleSave}
+          onClose={() => setEditing(null)}
+        />
+      )}
+      {deleting && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-sm rounded-2xl bg-white dark:bg-gray-900 p-6 shadow-xl">
+            <h3 className="font-bold text-gray-900 dark:text-white mb-2">Delete Toll Plaza?</h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+              <strong>{deleting.name}</strong> will be permanently deleted.
+            </p>
+            <div className="flex gap-3">
+              <button onClick={() => handleDelete(deleting._id)} className="flex-1 rounded-lg bg-red-600 text-white px-4 py-2 text-sm font-bold hover:bg-red-700">
+                Delete
+              </button>
+              <button onClick={() => setDeleting(null)} className="flex-1 rounded-lg border dark:border-gray-600 px-4 py-2 text-sm font-semibold text-gray-700 dark:text-gray-300">
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {err && <div className="rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 px-4 py-3 text-sm text-red-700 dark:text-red-400">{err}</div>}
+      {ok && <div className="rounded-xl bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 px-4 py-3 text-sm text-green-700 dark:text-green-400">{ok}</div>}
+
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            {plazas.length} plaza{plazas.length !== 1 ? "s" : ""} · {plazas.filter((p) => p.active).length} active
+          </p>
+          <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+            Passenger fares always quote at cash rate. M-Tag rate is applied to the driver's actual cost if they have M-Tag enabled.
+          </p>
+        </div>
+        <button
+          onClick={() => setEditing({})}
+          className="shrink-0 rounded-xl bg-townwize-primary text-white px-4 py-2 text-sm font-bold hover:bg-townwize-primaryDark"
+        >
+          + Add Plaza
+        </button>
+      </div>
+
+      {loading ? (
+        <div className="rounded-xl border border-gray-200 dark:border-gray-700 p-8 text-center text-sm text-gray-400">Loading...</div>
+      ) : plazas.length === 0 ? (
+        <div className="rounded-xl border border-dashed border-gray-300 dark:border-gray-600 p-10 text-center">
+          <p className="text-sm font-semibold text-gray-500 dark:text-gray-400">No toll plazas yet</p>
+          <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Add plazas for BTK exit, Lyari Expressway, Malir Expressway, Airport, etc.</p>
+        </div>
+      ) : (
+        <div className="overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-700">
+          <table className="w-full text-sm min-w-[700px]">
+            <thead className="bg-gray-50 dark:bg-gray-800 text-left">
+              <tr>
+                <th className="px-4 py-3 font-semibold text-gray-600 dark:text-gray-400">Name</th>
+                <th className="px-4 py-3 font-semibold text-gray-600 dark:text-gray-400">Coordinates</th>
+                <th className="px-4 py-3 font-semibold text-gray-600 dark:text-gray-400">Cash Rate</th>
+                <th className="px-4 py-3 font-semibold text-gray-600 dark:text-gray-400">M-Tag Rate</th>
+                <th className="px-4 py-3 font-semibold text-gray-600 dark:text-gray-400">Radius</th>
+                <th className="px-4 py-3 font-semibold text-gray-600 dark:text-gray-400">Status</th>
+                <th className="px-4 py-3 font-semibold text-gray-600 dark:text-gray-400">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {plazas.map((p) => (
+                <tr key={p._id} className="border-t border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                  <td className="px-4 py-3">
+                    <div className="font-semibold text-gray-900 dark:text-white">{p.name}</div>
+                    {p.notes && <div className="text-xs text-gray-400 mt-0.5">{p.notes}</div>}
+                  </td>
+                  <td className="px-4 py-3 text-xs text-gray-500 dark:text-gray-400 font-mono">
+                    {Number(p.lat).toFixed(5)}, {Number(p.lng).toFixed(5)}
+                  </td>
+                  <td className="px-4 py-3 font-semibold text-gray-800 dark:text-gray-200">PKR {p.cashRate}</td>
+                  <td className="px-4 py-3 text-gray-600 dark:text-gray-400">PKR {p.mTagRate}</td>
+                  <td className="px-4 py-3 text-gray-500 dark:text-gray-400">{p.radius}m</td>
+                  <td className="px-4 py-3">
+                    <button
+                      onClick={() => handleToggleActive(p)}
+                      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold transition ${
+                        p.active
+                          ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 hover:bg-green-200"
+                          : "bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400 hover:bg-gray-200"
+                      }`}
+                    >
+                      <span className={`h-1.5 w-1.5 rounded-full ${p.active ? "bg-green-500" : "bg-gray-400"}`} />
+                      {p.active ? "Active" : "Inactive"}
+                    </button>
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => setEditing(p)}
+                        className="text-xs text-townwize-primary hover:underline font-semibold"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => setDeleting(p)}
+                        className="text-xs text-red-500 hover:underline font-semibold"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Main Page ───────────────────────────────────────────────────────────────
 
 export default function PricingSettings() {
@@ -666,6 +1103,7 @@ export default function PricingSettings() {
       case "pooling":    return <TabPooling {...props} />;
       case "dispatch":   return <TabDispatch {...props} />;
       case "referral":   return <TabReferral {...props} />;
+      case "tolls":      return <TabTolls />;
       default:           return null;
     }
   };

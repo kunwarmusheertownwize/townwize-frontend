@@ -407,6 +407,7 @@ export default function DriversList() {
           >
             <option value="all">All Statuses</option>
             <option value="open">Open</option>
+            <option value="resubmitted">Re-submitted</option>
             <option value="approved">Approved</option>
             <option value="rejected">Rejected</option>
             <option value="closed">Closed</option>
@@ -462,7 +463,14 @@ export default function DriversList() {
                   <td className="px-4 py-3 break-words">{it.name || "-"}</td>
                   <td className="px-4 py-3 break-words">{it.phone || "-"}</td>
                   <td className="px-4 py-3">
-                    <StatusBadge status={it.status || "-"} />
+                    <div className="flex flex-col gap-1">
+                      <StatusBadge status={it.status || "-"} />
+                      {(it.status === "resubmitted" || it.resubmittedAt) && (
+                        <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800">
+                          Re-submitted
+                        </span>
+                      )}
+                    </div>
                   </td>
                   <td className="px-4 py-3 break-words">{it.priority || "-"}</td>
                   <td className="px-4 py-3 break-words">{it.assigneeEmail || "Unassigned"}</td>

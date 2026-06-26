@@ -84,6 +84,22 @@ export default function VehicleDetailsStep({ setVehicleProgress, setLicenseFront
         </div>
       </div>
 
+      <div className="rounded-lg border border-gray-100 dark:border-gray-700 p-4">
+        <label className="flex items-start gap-3 cursor-pointer">
+          <input
+            type="checkbox"
+            {...register("hasMTag")}
+            className="mt-0.5 h-4 w-4 accent-townwize-primary cursor-pointer"
+          />
+          <div>
+            <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">I have an M-Tag</span>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+              M-Tag holders pay a lower toll rate. If selected, the system will automatically apply M-Tag rates when calculating toll charges on your rides.
+            </p>
+          </div>
+        </label>
+      </div>
+
       <div className="rounded-lg border border-gray-100 dark:border-gray-700 p-4 space-y-4">
         <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">Vehicle Documents</p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

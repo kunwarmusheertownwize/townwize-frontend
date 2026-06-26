@@ -67,7 +67,7 @@ const defaultValues = {
   btkAddress: "", residencyType: "", cnicNumber: "",
   vehicleType: "Car", carType: "economy",
   vehicleMake: "", vehicleModel: "", vehicleYear: "", vehicleSeats: "4",
-  vehicleNumber: "", vehicleColor: "",
+  vehicleNumber: "", vehicleColor: "", hasMTag: false,
   btkProofFile: null, btkIdFront: null, btkIdBack: null,
   vehicleReg: null, licenseFront: null, licenseBack: null,
   vehiclePhotoFront: null, vehiclePhotoRear: null, vehiclePhotoLeft: null, vehiclePhotoRight: null,
@@ -322,6 +322,7 @@ export default function Register() {
         formData.append("vehicleSeats", values.vehicleSeats || "4");
         formData.append("vehicleNumber",values.vehicleNumber|| "");
         formData.append("vehicleColor", values.vehicleColor || "");
+        formData.append("hasMTag",      values.hasMTag ? "true" : "false");
         formData.append("cnicNumber",   values.cnicNumber   || "");
         if (values.btkProofFile) formData.append("residencyProof", values.btkProofFile);
         if (values.btkIdFront)  formData.append("btkIdFront", values.btkIdFront);

@@ -13,7 +13,6 @@ import api from "../../../services/api";
 // Components- pages\passenger\Booking\components
 import RouteLoaderOverlay from "./components/RouteLoaderOverlay";
 import MapSelectionOverlay from "./components/MapSelectionOverlay";
-import RideTypeCard from "./components/RideTypeCard";
 
 //import { memo } from "react";
 import {
@@ -21,11 +20,11 @@ import {
   FaRoute,
   FaCarSide,
   FaUsers,
-  FaClock,
   FaPlus,
   FaTimes,
   FaDotCircle,
   FaCrosshairs,
+  FaArrowLeft,
 } from "react-icons/fa";
 
 // 🧩 Auth Context
@@ -65,6 +64,10 @@ const SelectRide = () => {
   // ✅ Step 5: Restore persisted ride state early (before useLocation clears)
   const lastRideState = JSON.parse(sessionStorage.getItem("selectRideStatePersist") || "{}");
   const { state: routeStateRaw } = useLocation();
+
+  // Bottom sheet snap state — "half" (72vh, map visible) | "full" (93vh, sheet dominates)
+  const [sheetSnap, setSheetSnap] = useState("half");
+  const sheetDragStartY = useRef(null);
   const state = routeStateRaw && Object.keys(routeStateRaw).length ? routeStateRaw : lastRideState;
 
   //const { state } = useLocation();
@@ -122,7 +125,7 @@ const SelectRide = () => {
 
 
   const getRecentPickups = () => {
-    try { return JSON.parse(localStorage.getItem("tw_recent_pickups") || "[]"); } catch { return []; }
+    try { return JSON.parse(localStorage.getItem("_tw_recent_pickups") || "[]"); } catch { return []; }
   };
 
   // restore from sessionStorage on refresh
@@ -155,6 +158,10 @@ const SelectRide = () => {
   const [fare, setFare] = useState(0);
   const [quoteLoading, setQuoteLoading] = useState(false);
   const [quoteError, setQuoteError] = useState("");
+  const [activeTolls, setActiveTolls] = useState([]);
+  const [tollAmount, setTollAmount] = useState(0);
+  const [tollNames, setTollNames] = useState([]);
+  const [previewFares, setPreviewFares] = useState({ privateEconomy: 0, rideTogether: 0 });
   const [availability, setAvailability] = useState({
     loading: false,
     matchingDrivers: null,
@@ -243,6 +250,7 @@ const SelectRide = () => {
     stopMarkerRef,
     dropoffMarkerRef,
     updateMapMarker,
+    clearMarker,
   } = useMarkers({
     mapInstanceRef: coreMapInstanceRef,
     reverseGeocode,
@@ -250,7 +258,7 @@ const SelectRide = () => {
   });
 
   // --- NEW HOOKS: Route Engine ---
-  const { requestRoute, isCalculatingRoute, etaText, distanceKm } = useRouteEngine({
+  const { requestRoute, isCalculatingRoute, etaText, etaValue, distanceKm, routePath } = useRouteEngine({
     mapInstanceRef: coreMapInstanceRef,
     pickupMarkerRef,
     stopMarkerRef,
@@ -259,10 +267,12 @@ const SelectRide = () => {
   // Route readiness check
   const effectiveDistanceKm = Number(distanceKm || effectiveState?.distanceKm || 0);
   const effectiveEtaText = etaText || effectiveState?.eta || "";
-  const effectiveEtaMinutes = Math.round(
-    Number(effectiveState?.etaMinutes) ||
-      (effectiveDistanceKm > 0 ? (effectiveDistanceKm / 30) * 60 : 0)
-  );
+  const effectiveEtaMinutes = etaValue
+    ? Math.round(etaValue / 60)
+    : Math.round(
+        Number(effectiveState?.etaMinutes) ||
+        (effectiveDistanceKm > 0 ? (effectiveDistanceKm / 30) * 60 : 0)
+      );
   const routeReady = pickup.trim() && dropoff.trim() && effectiveDistanceKm > 0;
   // Suggestions
   const [pickupSuggestions, setPickupSuggestions] = useState([]);
@@ -270,6 +280,13 @@ const SelectRide = () => {
   const [dropoffSuggestions, setDropoffSuggestions] = useState([]);
   // Searching state
   const [searching, setSearching] = useState(false);
+  const deriveClassFare = useCallback((backendFare, fromKey, toKey) => {
+    const PLATFORM_FEE = 20;
+    const fromMult = CAR_CLASSES.find((c) => c.key === fromKey)?.multiplier || 1;
+    const toMult = CAR_CLASSES.find((c) => c.key === toKey)?.multiplier || 1;
+    return Math.round(((backendFare - PLATFORM_FEE) / fromMult) * toMult + PLATFORM_FEE);
+  }, []);
+
   const getLocalFallbackFare = useCallback((type, carClass, km, minutes = 0) => {
     if (!type || km <= 0) return 0;
     const privateRide = type === "Private Ride";
@@ -320,6 +337,7 @@ const SelectRide = () => {
         distanceKm: effectiveDistanceKm,
         etaMinutes: etaMinutesForQuote,
         requestedFare: fallbackFare,
+        tollAmount,
       })
       .then((res) => {
         if (!mounted) return;
@@ -351,16 +369,76 @@ const SelectRide = () => {
     getLocalFallbackFare,
   ]);
 
+  // Pre-fetch both ride type fares as soon as route is ready so unselected cards show backend prices
+  useEffect(() => {
+    if (!routeReady || effectiveDistanceKm <= 0 || !user) return;
+    let mounted = true;
+
+    const fbPrivate = getLocalFallbackFare("Private Ride", "economy", effectiveDistanceKm, effectiveEtaMinutes);
+    const fbTogether = getLocalFallbackFare("RideTogether", "economy", effectiveDistanceKm, effectiveEtaMinutes);
+
+    Promise.all([
+      api.post("/rides/quote", { rideType: "Private Ride", carType: "economy", distanceKm: effectiveDistanceKm, etaMinutes: effectiveEtaMinutes, requestedFare: fbPrivate })
+        .then((r) => { const d = r?.data?.data || {}; return Number(d.finalFare ?? d.fareEstimate ?? fbPrivate); })
+        .catch(() => fbPrivate),
+      api.post("/rides/quote", { rideType: "RideTogether", carType: "economy", distanceKm: effectiveDistanceKm, etaMinutes: effectiveEtaMinutes, requestedFare: fbTogether })
+        .then((r) => { const d = r?.data?.data || {}; return Number(d.finalFare ?? d.fareEstimate ?? fbTogether); })
+        .catch(() => fbTogether),
+    ]).then(([privateEconomy, rideTogether]) => {
+      if (mounted) setPreviewFares({ privateEconomy, rideTogether });
+    });
+
+    return () => { mounted = false; };
+  }, [routeReady, effectiveDistanceKm, effectiveEtaMinutes, user, getLocalFallbackFare]);
+
+  // Fetch active toll plazas once on mount
+  useEffect(() => {
+    api.get("/admin/pricing/tolls/active")
+      .then((res) => setActiveTolls(res?.data?.data || []))
+      .catch(() => {});
+  }, []);
+
+  // Detect tolls on active route polyline whenever the path changes
+  useEffect(() => {
+    if (!routePath?.length || !activeTolls.length) {
+      setTollAmount(0);
+      setTollNames([]);
+      return;
+    }
+    let total = 0;
+    const names = [];
+    for (const toll of activeTolls) {
+      const r = toll.radius || 150;
+      const cosLat = Math.cos((toll.lat * Math.PI) / 180);
+      const hit = routePath.some((pt) => {
+        const dy = (pt.lat - toll.lat) * 111000;
+        const dx = (pt.lng - toll.lng) * 111000 * cosLat;
+        return Math.sqrt(dy * dy + dx * dx) <= r;
+      });
+      if (hit) {
+        total += Number(toll.cashRate || 0);
+        names.push(toll.name);
+      }
+    }
+    setTollAmount(total);
+    setTollNames(names);
+  }, [routePath, activeTolls]);
+
   const getPreviewFare = useCallback(
     (type) => {
       if (!type || effectiveDistanceKm <= 0) return 0;
-      if (selectedType === type) return Number(fare || 0);
-      return getLocalFallbackFare(
+      const fallback = getLocalFallbackFare(
         type,
         type === "Private Ride" ? selectedCarType || "economy" : "economy",
         effectiveDistanceKm,
         effectiveEtaMinutes
       );
+      // Selected: use backend fare if loaded, else fallback
+      if (selectedType === type) return Number(fare) > 0 ? Number(fare) : fallback;
+      // Unselected: use pre-fetched backend preview so the fare doesn't jump on selection
+      if (type === "Private Ride") return previewFares.privateEconomy || fallback;
+      if (type === "RideTogether") return previewFares.rideTogether || fallback;
+      return fallback;
     },
     [
       effectiveDistanceKm,
@@ -369,6 +447,7 @@ const SelectRide = () => {
       getLocalFallbackFare,
       selectedCarType,
       selectedType,
+      previewFares,
     ]
   );
 
@@ -648,12 +727,17 @@ const dropoffCoords = dropoffMarkerRef.current
   ? getLatLng(dropoffMarkerRef.current.position)
   : effectiveState?.dropoffCoords || null;
 
+const stopCoords = hasStop && stopMarkerRef.current
+  ? getLatLng(stopMarkerRef.current.position)
+  : null;
+
 saveRecentPickup(pickup, pickupCoords);
 navigate("/passenger/trip-summary", {
   replace: true,
   state: {
     pickup,
     stop: hasStop ? stop : null,
+    stopCoords,
     dropoff,
 
     // ✅ REQUIRED COORDINATES
@@ -669,6 +753,8 @@ navigate("/passenger/trip-summary", {
     rideType: selectedType,
     carType: selectedType === "Private Ride" ? selectedCarType : "economy",
     fare,
+    tollAmount,
+    tollNames,
   },
 });
 
@@ -701,10 +787,10 @@ navigate("/passenger/trip-summary", {
       }
       const placesService = new google.maps.places.PlacesService(coreMapInstanceRef.current);
       placesService.getDetails(
-        { placeId: p.placeId, fields: ["formatted_address", "geometry"] },
+        { placeId: p.placeId, fields: ["name", "formatted_address", "geometry"] },
         (place, status) => {
           if (status === google.maps.places.PlacesServiceStatus.OK) {
-            setPickup(place.formatted_address);
+            setPickup(place.name || place.formatted_address);
             if (coreMapsReadyRef.current && coreMapInstanceRef.current) {
               updateMapMarker(place.geometry.location, "pickup");
             } else {
@@ -733,7 +819,7 @@ navigate("/passenger/trip-summary", {
     label: "Stop",
     value: stop,
     onChange: setStop,
-    onClear: () => setStop(""),
+    onClear: () => { setStop(""); clearMarker("stop"); },
     onGPS: () => handleGPS(setStop, "stop"),
     onMap: () => setSelectingFor("stop"),
     suggestions: stopSuggestions,
@@ -741,23 +827,22 @@ navigate("/passenger/trip-summary", {
     onSelect: (p) => {
       const placesService = new google.maps.places.PlacesService(coreMapInstanceRef.current);
       placesService.getDetails(
-        { placeId: p.placeId, fields: ["formatted_address", "geometry"] },
+        { placeId: p.placeId, fields: ["name", "formatted_address", "geometry"] },
         (place, status) => {
           if (status === google.maps.places.PlacesServiceStatus.OK) {
-            setStop(place.formatted_address);
+            setStop(place.name || place.formatted_address);
             if (coreMapsReadyRef.current && coreMapInstanceRef.current) {
               updateMapMarker(place.geometry.location, "stop");
             } else {
               console.warn("Map not ready → stop marker skipped");
             }
-
           }
         }
       );
       setStopSuggestions([]);
     },
     icon: <FaDotCircle className="text-blue-500 text-lg mr-3" />,
-  }), [stop, stopSuggestions, handleGPS, updateMapMarker, coreMapInstanceRef, coreMapsReadyRef]);
+  }), [stop, stopSuggestions, handleGPS, updateMapMarker, clearMarker, coreMapInstanceRef, coreMapsReadyRef]);
 
   const dropoffProps = useMemo(() => ({
     label: "Dropoff Location",
@@ -771,10 +856,10 @@ navigate("/passenger/trip-summary", {
     onSelect: (p) => {
       const placesService = new google.maps.places.PlacesService(coreMapInstanceRef.current);
       placesService.getDetails(
-        { placeId: p.placeId, fields: ["formatted_address", "geometry"] },
+        { placeId: p.placeId, fields: ["name", "formatted_address", "geometry"] },
         (place, status) => {
           if (status === google.maps.places.PlacesServiceStatus.OK) {
-            setDropoff(place.formatted_address);
+            setDropoff(place.name || place.formatted_address);
             if (coreMapsReadyRef.current && coreMapInstanceRef.current) {
               updateMapMarker(place.geometry.location, "dropoff");
             } else {
@@ -837,18 +922,61 @@ navigate("/passenger/trip-summary", {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [effectiveState?.pickup, effectiveState?.dropoff]);
 
+  // 🗺 Address chips on map — show truncated pickup/dropoff labels at marker positions
+  const locationChipRefsRef = useRef({ pickup: null, dropoff: null });
+  useEffect(() => {
+    if (!coreMapsReadyRef.current || !coreMapInstanceRef.current || !window.google?.maps) return;
+
+    const clearChips = () => {
+      if (locationChipRefsRef.current.pickup) { locationChipRefsRef.current.pickup.map = null; locationChipRefsRef.current.pickup = null; }
+      if (locationChipRefsRef.current.dropoff) { locationChipRefsRef.current.dropoff.map = null; locationChipRefsRef.current.dropoff = null; }
+    };
+    clearChips();
+
+    const placeChip = async (position, label, accentColor, offsetX = 18, offsetY = -38) => {
+      const { AdvancedMarkerElement } = await google.maps.importLibrary("marker");
+      const el = document.createElement("div");
+      el.style.cssText = [
+        "background:#ffffff",
+        "color:#111827",
+        "padding:3px 9px 3px 7px",
+        "border-radius:10px",
+        `border-left:3px solid ${accentColor}`,
+        "font-size:11px",
+        "font-weight:600",
+        "font-family:sans-serif",
+        "box-shadow:0 2px 8px rgba(0,0,0,0.18)",
+        "white-space:nowrap",
+        "max-width:160px",
+        "overflow:hidden",
+        "text-overflow:ellipsis",
+        "pointer-events:none",
+        `transform:translate(${offsetX}px,${offsetY}px)`,
+      ].join(";");
+      el.textContent = label.split(",")[0].trim();
+      return new AdvancedMarkerElement({ position, map: coreMapInstanceRef.current, content: el, zIndex: 15 });
+    };
+
+    const pickupPos = pickupMarkerRef.current?.position;
+    const dropoffPos = dropoffMarkerRef.current?.position;
+    if (pickup && pickupPos) placeChip(pickupPos, pickup, "#2d88e0").then((m) => { locationChipRefsRef.current.pickup = m; });
+    if (dropoff && dropoffPos) placeChip(dropoffPos, dropoff, "#E53935").then((m) => { locationChipRefsRef.current.dropoff = m; });
+
+    return clearChips;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pickup, dropoff, markerVersion]);
+
   // 🧭 Auto-draw route when markers change
   useEffect(() => {
     if (!pickupMarkerRef.current || !dropoffMarkerRef.current) return;
     requestRoute();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pickup, stop, dropoff, markerVersion]);
+  }, [pickup, dropoff, markerVersion]);
 
   return (
     <>
       <div
-        className={`grid grid-cols-1 md:grid-cols-[420px_1fr] gap-6 items-start mb-6 ${!user && showAuthModal ? "blur-sm pointer-events-none select-none" : ""
-          }`}
+        className={`relative h-[100dvh] overflow-hidden md:h-auto md:overflow-visible md:grid md:grid-cols-[420px_1fr] md:gap-6 md:items-start md:mb-6 ${!user && showAuthModal ? "blur-sm pointer-events-none select-none" : ""}`}
         onClick={() => {
           setPickupSuggestions([]);
           setDropoffSuggestions([]);
@@ -856,8 +984,29 @@ navigate("/passenger/trip-summary", {
         }}
       >
 
-        {/* Left Panel - Form */}
-        <div className="bg-white dark:bg-townwize-primaryDark shadow-xl rounded-2xl px-5 py-6 space-y-5 w-full md:max-w-[420px] mx-auto md:mx-0">
+        {/* Form — bottom sheet on mobile, left column on desktop */}
+        <div
+          className="absolute bottom-0 left-0 right-0 z-10 bg-white dark:bg-townwize-primaryDark rounded-t-2xl shadow-2xl flex flex-col h-[92vh] overflow-hidden md:static md:order-1 md:rounded-2xl md:shadow-xl md:w-full md:max-w-[420px] md:mx-0 md:h-auto md:overflow-visible"
+          style={window.innerWidth < 768 ? {
+            transform: sheetSnap === "full" ? "translateY(0)" : "translateY(32vh)",
+            transition: "transform 400ms cubic-bezier(0.32, 0.72, 0, 1)",
+          } : undefined}
+        >
+          {/* Drag handle — swipe up to expand, down to collapse */}
+          <div
+            className="md:hidden flex justify-center pt-3 pb-2 shrink-0 cursor-grab active:cursor-grabbing"
+            onTouchStart={(e) => { sheetDragStartY.current = e.touches[0].clientY; }}
+            onTouchEnd={(e) => {
+              const delta = e.changedTouches[0].clientY - (sheetDragStartY.current ?? e.changedTouches[0].clientY);
+              if (delta < -40) setSheetSnap("full");
+              else if (delta > 40) setSheetSnap("half");
+              sheetDragStartY.current = null;
+            }}
+          >
+            <div className="w-10 h-1.5 bg-gray-300 dark:bg-gray-600 rounded-full" />
+          </div>
+          {/* Scrollable content */}
+          <div className="flex-1 overflow-y-auto px-5 pb-6 pt-0 md:py-6 space-y-4">
           {/* Pickup */}
           <div onClick={(e) => e.stopPropagation()}>
             <LocationField {...pickupProps} fetchSuggestions={fetchSuggestions} />
@@ -876,7 +1025,7 @@ navigate("/passenger/trip-summary", {
 
               <button
                 type="button"
-                onClick={() => setHasStop(false)}
+                onClick={() => { setHasStop(false); setStop(""); clearMarker("stop"); }}
                 className="text-red-500 text-xs flex items-center gap-1 hover:underline"
               >
                 <FaTimes /> Remove stop
@@ -900,280 +1049,225 @@ navigate("/passenger/trip-summary", {
             <LocationField {...dropoffProps} fetchSuggestions={fetchSuggestions} />
           </div>
 
-          {/* Ride type cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
-            <RideTypeCard
-              title="Private Ride"
-              icon={<FaCarSide />}
-              selected={selectedType === "Private Ride"}
-              disabled={!routeReady}
-              onSelect={() => {
-                if (!routeReady) return;
-                setSelectedType("Private Ride");
-                if (!selectedCarType) setSelectedCarType("economy");
-              }}
-            >
-              {/* Fare + ETA */}
-              <span>
-                {effectiveDistanceKm > 0 ? (
-                  `${getPreviewFare("Private Ride")} PKR`
-                ) : (
-                  <span className="inline-block tw-shimmer h-4 w-14 rounded-md"></span>
-                )}
-                • <FaClock className="inline" />{" "}
-                {isCalculatingRoute ? (
-                  <span className="inline-block tw-shimmer h-4 w-12 rounded-md"></span>
-                ) : (
-                  etaText || "—"
-                )}
-              </span>
-
-              {/* Distance */}
-              <div className="text-xs text-gray-200 dark:text-gray-300 mt-1">
-                {isCalculatingRoute ? (
-                  <span className="inline-block tw-shimmer h-3 w-10 rounded-md"></span>
-                ) : effectiveDistanceKm > 0 ? (
-                  `${effectiveDistanceKm.toFixed(1)} km`
-                ) : (
-                  "—"
-                )}
+          {/* ── Out-of-zone banner ── */}
+          {routeReady && serviceAreaBlocked && !zoneCheck.loading && (
+            <div className="flex items-start gap-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-xl px-4 py-3">
+              <span className="text-amber-500 text-base shrink-0 mt-0.5">⚠️</span>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-amber-800 dark:text-amber-300">Outside Townwize coverage</p>
+                <p className="text-xs text-amber-700 dark:text-amber-400 mt-0.5 leading-relaxed">
+                  Townwize currently operates within Bahria Town Karachi. We're expanding soon!
+                </p>
               </div>
-            </RideTypeCard>
+            </div>
+          )}
 
-            <RideTypeCard
-              title="RideTogether"
-              icon={<FaUsers />}
-              badge={
-                <span className="ml-1.5 inline-flex items-center gap-1 text-[10px] font-bold text-townwize-accent bg-white/20 px-2 py-0.5 rounded-full leading-none">
-                  Share &amp; Save
-                </span>
-              }
-              selected={selectedType === "RideTogether"}
-              disabled={!routeReady}
-              onSelect={() => {
-                if (!routeReady) return;
-                setSelectedType("RideTogether");
-              }}
-            >
-              {/* Fare + ETA */}
-              <span>
-                {effectiveDistanceKm > 0 ? (
-                  `${getPreviewFare("RideTogether")} PKR`
-                ) : (
-                  <span className="inline-block tw-shimmer h-4 w-14 rounded-md"></span>
-                )}
-                • <FaClock className="inline" />{" "}
-                {isCalculatingRoute ? (
-                  <span className="inline-block tw-shimmer h-4 w-12 rounded-md"></span>
-                ) : (
-                  etaText || "—"
-                )}
-              </span>
+          {/* ── Section label ── */}
+          <p className="text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest pt-1">
+            Choose ride type
+          </p>
 
-              {/* Split fare hint */}
-              {effectiveDistanceKm > 0 && (
-                <div className="text-[11px] text-gray-200 dark:text-gray-300 mt-0.5">
-                  Est. ~PKR {Math.round(getPreviewFare("RideTogether") / 2)}/rider
+          {/* ── Private Ride card ── */}
+          <div
+            onClick={() => {
+              if (!routeReady) return;
+              setSelectedType("Private Ride");
+              if (!selectedCarType) setSelectedCarType("economy");
+            }}
+            className={`rounded-2xl border-2 transition-all duration-200 ${
+              !routeReady
+                ? "opacity-50 cursor-not-allowed border-gray-200 dark:border-gray-700"
+                : selectedType === "Private Ride"
+                  ? "border-townwize-primary ring-2 ring-townwize-primary/10 cursor-pointer"
+                  : "border-gray-200 dark:border-gray-700 hover:border-townwize-primary/40 cursor-pointer"
+            }`}
+          >
+            <div className="p-4">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="h-11 w-11 rounded-xl bg-townwize-primary/10 dark:bg-townwize-primary/20 flex items-center justify-center shrink-0">
+                    <FaCarSide className="text-townwize-primary dark:text-townwize-accent text-xl" />
+                  </div>
+                  <div>
+                    <p className="font-bold text-gray-900 dark:text-white text-sm">Private Ride</p>
+                    <p className="text-xs text-gray-400 mt-0.5">Your car, just for you</p>
+                  </div>
                 </div>
-              )}
-
-              {/* Distance */}
-              <div className="text-xs text-gray-200 dark:text-gray-300 mt-1">
-                {isCalculatingRoute ? (
-                  <span className="inline-block tw-shimmer h-3 w-10 rounded-md"></span>
-                ) : effectiveDistanceKm > 0 ? (
-                  `${effectiveDistanceKm.toFixed(1)} km`
-                ) : (
-                  "—"
-                )}
-              </div>
-
-              {/* Share & save badge */}
-              {effectiveDistanceKm > 0 && (
-                <div className="mt-1.5 inline-flex items-center gap-1 text-[10px] font-semibold text-yellow-300 bg-white/10 px-2 py-0.5 rounded-full">
-                  <FaUsers size={9} /> Split fare · pay less
-                </div>
-              )}
-            </RideTypeCard>
-
-          </div>
-
-          {selectedType === "Private Ride" ? (
-            <div className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-3">
-              <div className="mb-3 flex items-center justify-between gap-3">
-                <div>
-                  <p className="text-sm font-semibold text-townwize-primary dark:text-townwize-accent">
-                    Choose car class
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    Match the ride to your comfort and group size.
-                  </p>
+                <div className="text-right shrink-0">
+                  {effectiveDistanceKm > 0 ? (
+                    <>
+                      <p className="font-extrabold text-townwize-primary dark:text-townwize-accent text-base leading-tight">
+                        {quoteLoading && selectedType === "Private Ride"
+                          ? <span className="inline-block tw-shimmer h-5 w-16 rounded-md" />
+                          : `${getPreviewFare("Private Ride").toLocaleString()} PKR`
+                        }
+                      </p>
+                      <p className="text-[11px] text-gray-400">{etaText || "—"} · {effectiveDistanceKm.toFixed(1)} km</p>
+                    </>
+                  ) : (
+                    <p className="text-xs text-gray-400">Enter route</p>
+                  )}
                 </div>
               </div>
-              <div className="grid grid-cols-1 gap-2">
-                {CAR_CLASSES.map((item) => {
-                  const active = selectedCarType === item.key;
-                  return (
+
+              {/* Car class pills — inline, only when selected */}
+              {selectedType === "Private Ride" && (
+                <div className="mt-3 grid grid-cols-3 gap-1.5" onClick={(e) => e.stopPropagation()}>
+                  {CAR_CLASSES.map((c) => (
                     <button
-                      key={item.key}
+                      key={c.key}
                       type="button"
-                      onClick={() => setSelectedCarType(item.key)}
-                      className={`rounded-xl border px-4 py-3 text-left transition ${
-                        active
-                          ? "border-townwize-primary bg-white shadow-sm"
-                          : "border-gray-200 bg-white hover:border-townwize-primary/50"
+                      onClick={() => setSelectedCarType(c.key)}
+                      className={`py-2 rounded-xl text-xs font-semibold transition-all border ${
+                        selectedCarType === c.key
+                          ? "bg-townwize-primary dark:bg-townwize-accent text-white dark:text-townwize-primary border-townwize-primary dark:border-townwize-accent shadow-sm"
+                          : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-600 hover:border-townwize-primary/40"
                       }`}
                     >
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <p className="font-semibold text-townwize-primary">{item.title}</p>
-                          <p className="text-xs text-gray-500">{item.description}</p>
-                        </div>
-                        <div className="text-right text-sm font-semibold">
-                          {active
-                            ? quoteLoading
-                              ? "Calculating..."
-                              : fare
-                                ? `${Number(fare).toLocaleString()} PKR`
-                                : "-"
-                            : "Select"}
-                        </div>
-                      </div>
+                      <span className="block">{c.title}</span>
+                      {effectiveDistanceKm > 0 && (
+                        <span className={`block text-[10px] mt-0.5 font-normal ${
+                          selectedCarType === c.key ? "text-white/80 dark:text-townwize-primary/70" : "text-gray-400"
+                        }`}>
+                          {(Number(fare) > 0
+                            ? selectedCarType === c.key
+                              ? Number(fare)
+                              : deriveClassFare(Number(fare), selectedCarType, c.key)
+                            : getLocalFallbackFare("Private Ride", c.key, effectiveDistanceKm, effectiveEtaMinutes)
+                          ).toLocaleString()} PKR
+                        </span>
+                      )}
                     </button>
-                  );
-                })}
-              </div>
-              {quoteError ? (
-                <p className="mt-2 text-xs text-amber-700">{quoteError}</p>
-              ) : null}
+                  ))}
+                </div>
+              )}
+              {quoteError && selectedType === "Private Ride" && (
+                <p className="mt-2 text-[11px] text-amber-600">{quoteError}</p>
+              )}
             </div>
-          ) : null}
+          </div>
 
-          {selectedType && routeReady ? (
-            <div className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-sm font-semibold text-townwize-primary dark:text-townwize-accent">
-                    Nearby Wizers
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    We will look for available Wizers near your pickup.
-                  </p>
-                </div>
-                <span
-                  className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                    availability.loading
-                      ? "bg-gray-100 text-gray-600"
-                      : Number(availability.matchingDrivers || 0) > 0
-                        ? "bg-green-100 text-green-700"
-                        : "bg-amber-100 text-amber-700"
-                  }`}
-                >
-                  {availability.loading
-                    ? "Checking"
-                    : Number(availability.matchingDrivers || 0) > 0
-                      ? "Available"
-                      : "Limited"}
-                </span>
-              </div>
-
-              <div className="mt-3 grid grid-cols-3 gap-2 text-xs">
-                <div className="rounded-xl bg-gray-50 dark:bg-gray-800 px-3 py-2">
-                  <p className="text-gray-500">Ready</p>
-                  <p className="mt-1 font-bold text-townwize-primary dark:text-white">
-                    {availability.loading || availability.matchingDrivers == null
-                      ? "-"
-                      : availability.matchingDrivers}
-                  </p>
-                </div>
-                <div className="rounded-xl bg-gray-50 dark:bg-gray-800 px-3 py-2">
-                  <p className="text-gray-500">Nearest</p>
-                  <p className="mt-1 font-bold text-townwize-primary dark:text-white">
-                    {availability.nearestDistanceKm == null
-                      ? "-"
-                      : `${Number(availability.nearestDistanceKm).toFixed(1)} km`}
-                  </p>
-                </div>
-                <div className="rounded-xl bg-gray-50 dark:bg-gray-800 px-3 py-2">
-                  <p className="text-gray-500">Pickup ETA</p>
-                  <p className="mt-1 font-bold text-townwize-primary dark:text-white">
-                    {availability.estimatedPickupMinutes == null
-                      ? "-"
-                      : `${availability.estimatedPickupMinutes} min`}
-                  </p>
-                </div>
-              </div>
-
-              {availability.message ? (
-                <p className="mt-2 text-xs text-amber-700">{availability.message}</p>
-              ) : null}
-            </div>
-          ) : null}
-
-          {routeReady ? (
-            <div
-              className={`rounded-2xl border p-4 ${
-                zoneCheck.loading
-                  ? "border-gray-200 bg-white"
-                  : serviceAreaReady
-                    ? "border-green-200 bg-green-50"
-                    : "border-red-200 bg-red-50"
-              }`}
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p
-                    className={`text-sm font-semibold ${
-                      serviceAreaReady ? "text-green-800" : serviceAreaBlocked ? "text-red-800" : "text-townwize-primary"
-                    }`}
-                  >
-                    Service area
-                  </p>
-                  <p className="mt-1 text-xs text-gray-600">
-                    {zoneCheck.loading
-                      ? "Checking whether this trip is available."
-                      : serviceAreaReady
-                        ? "Pickup and dropoff are inside active Townwize coverage."
-                        : zoneCheck.message || "This route is outside our active service area."}
-                  </p>
-                </div>
-                <span
-                  className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                    zoneCheck.loading
-                      ? "bg-gray-100 text-gray-600"
-                      : serviceAreaReady
-                        ? "bg-green-100 text-green-700"
-                        : "bg-red-100 text-red-700"
-                  }`}
-                >
-                  {zoneCheck.loading ? "Checking" : serviceAreaReady ? "Available" : "Unavailable"}
-                </span>
-              </div>
-              {!zoneCheck.loading && !serviceAreaReady ? (
-                <div className="mt-3 grid grid-cols-1 gap-2 text-xs sm:grid-cols-2">
-                  <div className="rounded-xl border border-red-100 bg-white px-3 py-2">
-                    <p className="font-semibold text-gray-700">Pickup</p>
-                    <p className={zoneCheck.pickupEligible ? "text-green-700" : "text-red-700"}>
-                      {zoneCheck.pickupEligible
-                        ? `Covered${zoneCheck.pickupZoneName ? ` (${zoneCheck.pickupZoneName})` : ""}`
-                        : "Outside active coverage"}
-                    </p>
+          {/* ── RideTogether card ── */}
+          <div
+            onClick={() => {
+              if (!routeReady) return;
+              setSelectedType("RideTogether");
+            }}
+            className={`rounded-2xl border-2 transition-all duration-200 ${
+              !routeReady
+                ? "opacity-50 cursor-not-allowed border-gray-200 dark:border-gray-700"
+                : selectedType === "RideTogether"
+                  ? "border-townwize-accent ring-2 ring-townwize-accent/10 cursor-pointer"
+                  : "border-gray-200 dark:border-gray-700 hover:border-townwize-accent/40 cursor-pointer"
+            }`}
+          >
+            <div className="p-4">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="h-11 w-11 rounded-xl bg-townwize-accent/10 flex items-center justify-center shrink-0">
+                    <FaUsers className="text-townwize-accent text-xl" />
                   </div>
-                  <div className="rounded-xl border border-red-100 bg-white px-3 py-2">
-                    <p className="font-semibold text-gray-700">Dropoff</p>
-                    <p className={zoneCheck.dropoffEligible ? "text-green-700" : "text-red-700"}>
-                      {zoneCheck.dropoffEligible
-                        ? `Covered${zoneCheck.dropoffZoneName ? ` (${zoneCheck.dropoffZoneName})` : ""}`
-                        : "Outside active coverage"}
-                    </p>
+                  <div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="font-bold text-gray-900 dark:text-white text-sm">RideTogether</p>
+                      <span className="text-[10px] font-bold text-white bg-townwize-accent px-2 py-0.5 rounded-full leading-none">
+                        Share &amp; Save
+                      </span>
+                    </div>
+                    <p className="text-xs text-gray-400 mt-0.5">Share the ride · split the fare</p>
                   </div>
                 </div>
-              ) : null}
+                <div className="text-right shrink-0">
+                  {effectiveDistanceKm > 0 ? (
+                    <>
+                      <p className="font-extrabold text-townwize-accent text-base leading-tight">
+                        ~{Math.round(getPreviewFare("RideTogether") / 2).toLocaleString()} PKR
+                      </p>
+                      <p className="text-[11px] text-gray-400">per rider</p>
+                    </>
+                  ) : (
+                    <p className="text-xs text-gray-400">Enter route</p>
+                  )}
+                </div>
+              </div>
+              {effectiveDistanceKm > 0 && (
+                <div className="mt-2 flex items-center gap-2 flex-wrap">
+                  <span className="text-[11px] text-gray-400">
+                    Full fare {getPreviewFare("RideTogether").toLocaleString()} PKR
+                  </span>
+                  <span className="text-[11px] font-semibold text-green-600 dark:text-green-400">
+                    · you save ~{Math.round(getPreviewFare("RideTogether") / 2).toLocaleString()} PKR
+                  </span>
+                </div>
+              )}
             </div>
-          ) : null}
+          </div>
 
-          {/* Search Button */}
-          <div className="relative w-full mt-5">
+          {/* ── Availability — single compact line ── */}
+          {selectedType && routeReady && (
+            <div className="flex items-start gap-2 px-1">
+              {availability.loading ? (
+                <>
+                  <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-amber-400 animate-pulse" />
+                  <span className="text-xs text-gray-500">Finding Wizars nearby…</span>
+                </>
+              ) : Number(availability.matchingDrivers || 0) > 0 ? (
+                <>
+                  <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-green-500" />
+                  <span className="text-xs text-gray-600 dark:text-gray-300">
+                    {availability.matchingDrivers} Wizar{availability.matchingDrivers !== 1 ? "s" : ""} nearby
+                    {availability.estimatedPickupMinutes != null
+                      ? ` · ETA ~${availability.estimatedPickupMinutes} min`
+                      : ""}
+                  </span>
+                </>
+              ) : (
+                <>
+                  <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-amber-400" />
+                  <span className="text-xs text-amber-700 dark:text-amber-400">
+                    No Wizars online right now — we'll match you as soon as one goes live
+                  </span>
+                </>
+              )}
+            </div>
+          )}
+
+          {/* ── Service zone — quiet green confirmation only ── */}
+          {routeReady && serviceAreaReady && (
+            <div className="flex items-center gap-2 px-1">
+              <span className="h-2 w-2 shrink-0 rounded-full bg-green-500" />
+              <span className="text-xs text-green-700 dark:text-green-400">Inside active Townwize coverage</span>
+            </div>
+          )}
+          {routeReady && zoneCheck.loading && (
+            <div className="flex items-center gap-2 px-1">
+              <span className="h-2 w-2 shrink-0 rounded-full bg-gray-400 animate-pulse" />
+              <span className="text-xs text-gray-500">Checking service coverage…</span>
+            </div>
+          )}
+
+          {/* ── Toll line ── */}
+          {routeReady && tollAmount > 0 && (
+            <div className="flex items-start gap-2.5 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 px-3.5 py-2.5">
+              <span className="text-base shrink-0 mt-0.5">🛣</span>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-xs font-semibold text-amber-800 dark:text-amber-300">
+                    Toll{tollNames.length > 1 ? "s" : ""}: {tollNames.join(", ")}
+                  </p>
+                  <p className="text-xs font-bold text-amber-800 dark:text-amber-300 shrink-0">
+                    +PKR {tollAmount.toLocaleString()}
+                  </p>
+                </div>
+                <p className="text-[10px] text-amber-600 dark:text-amber-400 mt-0.5">
+                  Included in your fare · cash rate quoted
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* ── Book CTA ── */}
+          <div className="relative w-full pt-1">
             <button
               onClick={handleContinue}
               disabled={
@@ -1186,46 +1280,56 @@ navigate("/passenger/trip-summary", {
                 !serviceAreaReady ||
                 (selectedType === "Private Ride" && !selectedCarType)
               }
-              className={`w-full py-3 rounded-xl font-semibold overflow-hidden shadow-md relative ${pickup && dropoff && selectedType
-                ? "text-white"
-                : "bg-gray-100 text-gray-400 cursor-not-allowed opacity-60"
-                }`}
+              className={`w-full py-3.5 rounded-xl font-bold text-sm overflow-hidden shadow-md relative transition-all ${
+                pickup && dropoff && selectedType && serviceAreaReady
+                  ? "text-white"
+                  : "bg-gray-100 dark:bg-gray-800 text-gray-400 cursor-not-allowed"
+              }`}
             >
-              {/* Animated fill when searching */}
               {pickup && dropoff && selectedType && (
                 <span
-                  className={`absolute inset-0 rounded-xl transition-all duration-500 ease-in-out ${searching
-                    ? "bg-gradient-to-r from-townwize-primary to-townwize-primaryDark animate-[pulse_1.2s_ease-in-out_infinite]"
-                    : "bg-townwize-primary hover:bg-townwize-primaryDark"
-                    }`}
-                ></span>
+                  className={`absolute inset-0 rounded-xl transition-all duration-500 ${
+                    searching
+                      ? "bg-gradient-to-r from-townwize-primary to-townwize-primaryDark animate-pulse"
+                      : "bg-townwize-primary dark:bg-townwize-accent hover:opacity-90"
+                  }`}
+                />
               )}
-
-              <span className="relative z-10">
+              <span className={`relative z-10 ${pickup && dropoff && selectedType ? "dark:text-townwize-primary" : ""}`}>
                 {quoteLoading
-                  ? "Calculating fare..."
+                  ? "Calculating fare…"
                   : searching
-                    ? "Preparing Summary..."
-                    : "Search"}
+                    ? "Preparing…"
+                    : !selectedType
+                      ? "Select a ride type"
+                      : selectedType === "Private Ride" && !selectedCarType
+                        ? "Select a car class above"
+                        : `Book ${selectedType === "RideTogether" ? "RideTogether" : "Private Ride"} →`
+                }
               </span>
             </button>
           </div>
-        </div>
+          </div>{/* end scrollable content */}
+        </div>{/* end sheet */}
 
-        {/* Right Panel - Map */}
-        <div className="w-full h-[calc(100vh-160px)] rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden relative">
+        {/* Map — full screen on mobile, right column on desktop */}
+        <div className="absolute inset-0 md:static md:order-2 md:h-[calc(100vh-160px)] md:rounded-2xl md:shadow-lg md:border md:border-gray-200 dark:md:border-gray-700 md:overflow-hidden md:relative">
           <div ref={coreMapRef} className="w-full h-full" />
-
-
-          {/* STEP 3.2 — Route Calculating Overlay */}
           <RouteLoaderOverlay isVisible={isCalculatingRoute} />
-
           <MapSelectionOverlay
             selectingFor={selectingFor}
             onCancel={() => setSelectingFor(null)}
           />
-
         </div>
+
+        {/* Back button — floats over map, mobile only */}
+        <button
+          type="button"
+          onClick={() => navigate(routeStateRaw?.from || "/passenger/home")}
+          className="absolute top-4 left-4 z-20 md:hidden bg-white dark:bg-gray-800 rounded-full p-2.5 shadow-lg text-gray-700 dark:text-white active:scale-95 transition-transform"
+        >
+          <FaArrowLeft className="text-sm" />
+        </button>
       </div>
       {/* --- AUTH GATE MODAL --- */}
       {showAuthModal && (

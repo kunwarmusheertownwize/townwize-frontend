@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { AuthContext } from "./AuthContextBase";
 import { SplashScreen } from "@capacitor/splash-screen";
 import { isNative } from "../utils/platform";
+import { initFCM } from "../utils/fcm";
 
 export function AuthProvider({ children }) {
   const [auth, setAuth] = useState(null);
@@ -14,6 +15,8 @@ export function AuthProvider({ children }) {
     if (stored) {
       try {
         setAuth(JSON.parse(stored));
+        // Re-register FCM on page reload if user is already logged in
+        initFCM().catch(() => {});
       } catch {
         localStorage.removeItem("auth");
       }
@@ -38,12 +41,15 @@ export function AuthProvider({ children }) {
     if (payload?.accessToken)  localStorage.setItem("_tw_at", payload.accessToken);
     if (payload?.refreshToken) localStorage.setItem("_tw_rt", payload.refreshToken);
     setAuth(session);
+    // Register FCM token for push notifications (non-blocking)
+    initFCM().catch(() => {});
   };
 
   const logout = () => {
     localStorage.removeItem("auth");
     localStorage.removeItem("_tw_at");
     localStorage.removeItem("_tw_rt");
+    localStorage.removeItem("_tw_fcm_token");
     setAuth(null);
   };
 

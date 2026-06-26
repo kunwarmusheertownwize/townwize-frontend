@@ -71,6 +71,12 @@ const TripSummary = () => {
       xl: "XL",
     }[String(carType).toLowerCase()] || "Economy";
 
+  // Optional stop waypoint
+  const stop = state?.stop || null;
+  const stopCoords = state?.stopCoords || null;
+  const tollAmount = Number(state?.tollAmount || 0);
+  const tollNames = state?.tollNames || [];
+
   // REQUIRED backend fields (DO NOT DROP)
   const pickupCoords = state?.pickupCoords;
   const dropoffCoords = state?.dropoffCoords;
@@ -83,6 +89,7 @@ const TripSummary = () => {
   const fareBreakdownRows = quote?.fareBreakdown
     ? [
         { label: "Base Fare", value: quote.fareBreakdown.baseFare },
+        ...(tollAmount > 0 ? [{ label: `Toll${tollNames.length > 1 ? "s" : ""} (${tollNames.join(", ")})`, value: tollAmount }] : []),
         { label: "Distance Fare", value: quote.fareBreakdown.distanceFare },
         { label: "Time Fare", value: quote.fareBreakdown.timeFare },
         { label: "Platform Fee", value: quote.fareBreakdown.platformFee },
@@ -207,6 +214,7 @@ const TripSummary = () => {
             distanceKm,
             etaMinutes,
             requestedFare: Number(fare || 0),
+            tollAmount,
           }),
         });
 
@@ -375,11 +383,14 @@ const TripSummary = () => {
                     dropoff,
                     pickupCoords,
                     dropoffCoords,
+                    ...(stop && stopCoords ? { stop, stopCoords } : {}),
                     distanceKm,
                     etaMinutes,
                     rideType,
                     carType,
                     fareEstimate: Number(quote.finalFare || fare || 0),
+                    tollAmount,
+                    tollNames,
                   }),
                 }
               );

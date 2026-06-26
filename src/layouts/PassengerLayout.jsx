@@ -72,17 +72,23 @@ const PassengerLayout = () => {
     return <MobilePassengerLayout />;
   }
 
+  const isMapPage = location.pathname === "/passenger/select-ride";
+
   return (
     <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-townwize-primaryDark text-gray-900 dark:text-white">
-      <div className="passenger-layout-navbar">
-        <Navbar />
-      </div>
-      <main className="passenger-layout-main flex-grow w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      {!isMapPage && (
+        <div className="passenger-layout-navbar">
+          <Navbar />
+        </div>
+      )}
+      <main className={isMapPage ? "flex-grow" : "passenger-layout-main flex-grow w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6"}>
         <Outlet />
       </main>
-      <div className="passenger-layout-footer">
-        <Footer />
-      </div>
+      {!isMapPage && (
+        <div className="passenger-layout-footer">
+          <Footer />
+        </div>
+      )}
     </div>
   );
 };

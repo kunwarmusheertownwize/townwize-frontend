@@ -22,6 +22,7 @@ export default function useRouteEngine({
     const [etaText, setEtaText] = useState("");
     const [etaValue, setEtaValue] = useState(null);
     const [distanceKm, setDistanceKm] = useState(0);
+    const [routePath, setRoutePath] = useState(null);
 
     // -------------------------------
     //  ANIMATED ROUTE (Townwize style)
@@ -170,7 +171,15 @@ export default function useRouteEngine({
             },
             (result, status) => {
                 if (status !== "OK" || !result) {
-                    toast.error(`Route error: ${status}`);
+                    const routeErrors = {
+                        ZERO_RESULTS: "No route found between these locations.",
+                        NOT_FOUND: "One of the locations couldn't be found on the map.",
+                        MAX_WAYPOINTS_EXCEEDED: "Too many stops — please remove one.",
+                        INVALID_REQUEST: "Route request is invalid. Please re-enter your locations.",
+                        REQUEST_DENIED: "Route service is currently unavailable.",
+                        OVER_DAILY_LIMIT: "Route service is temporarily unavailable. Please try again.",
+                    };
+                    toast.error(routeErrors[status] || "Couldn't calculate route. Please try again.");
                     setIsCalculatingRoute(false);
                     return;
                 }
@@ -180,21 +189,31 @@ export default function useRouteEngine({
                 // overview_path is already an array of LatLng — no decode needed
                 const allPaths = result.routes.map((r) => r.overview_path);
 
-                // activateRoute: animate route idx, draw all others as clickable blue alts
+                // Pre-compute duration+distance for every route once
+                const routeMetrics = result.routes.map((route) => {
+                    let secs = 0, meters = 0;
+                    route.legs.forEach((leg) => {
+                        secs += leg.duration.value;
+                        meters += leg.distance.value;
+                    });
+                    return { secs, meters };
+                });
+
                 const activateRoute = (idx) => {
                     altPolylinesRef.current.forEach((p) => p.setMap(null));
                     altPolylinesRef.current = [];
                     routeLabelMarkersRef.current.forEach((m) => { m.map = null; });
                     routeLabelMarkersRef.current = [];
 
+                    // Alternate polylines — gray so they don't fight map's own blues
                     allPaths.forEach((p, i) => {
                         if (i === idx) return;
                         const alt = new google.maps.Polyline({
                             path: p,
                             map: mapInstanceRef.current,
-                            strokeColor: "#60A5FA",
+                            strokeColor: "#9CA3AF",
                             strokeWeight: 4,
-                            strokeOpacity: 0.65,
+                            strokeOpacity: 0.7,
                             zIndex: 1,
                             clickable: true,
                         });
@@ -202,28 +221,54 @@ export default function useRouteEngine({
                         altPolylinesRef.current.push(alt);
                     });
 
-                    // Numbered bubbles at the midpoint of each route
+                    // Pill labels at midpoint — active shows trip duration, alternates show time delta
+                    const activeMetrics = routeMetrics[idx];
+                    const activeTotalSecs = activeMetrics.secs;
+                    const activeMins = Math.round(activeTotalSecs / 60);
+                    const activeH = Math.floor(activeMins / 60);
+                    const activeM = activeMins % 60;
+                    const activeDurationLabel = activeH > 0 ? `${activeH}h ${activeM}m` : `${activeM} min`;
+
                     allPaths.forEach((p, i) => {
                         if (!p.length) return;
                         const mid = p[Math.floor(p.length / 2)];
                         const isActive = i === idx;
 
+                        let labelText, bgColor, textColor, borderColor;
+                        if (isActive) {
+                            labelText = activeDurationLabel;
+                            bgColor = "#023645";
+                            textColor = "#ffffff";
+                            borderColor = "#ffffff";
+                        } else {
+                            const deltaSecs = routeMetrics[i].secs - activeMetrics.secs;
+                            const absSecs = Math.abs(deltaSecs);
+                            const sign = deltaSecs > 0 ? "+" : "−";
+                            if (absSecs >= 60) {
+                                labelText = `${sign}${Math.round(absSecs / 60)}m`;
+                            } else {
+                                const deltaKm = (routeMetrics[i].meters - activeMetrics.meters) / 1000;
+                                labelText = `${deltaKm >= 0 ? "+" : "−"}${Math.abs(deltaKm).toFixed(1)}km`;
+                            }
+                            bgColor = "#ffffff";
+                            textColor = deltaSecs > 0 ? "#DC2626" : "#16A34A";
+                            borderColor = "#9CA3AF";
+                        }
+
                         const el = document.createElement("div");
                         el.style.cssText = [
-                            "width:28px", "height:28px", "border-radius:50%",
-                            `background:${isActive ? "#03311C" : "#ffffff"}`,
-                            `color:${isActive ? "#ffffff" : "#60A5FA"}`,
-                            `border:2px solid ${isActive ? "#ffffff" : "#60A5FA"}`,
+                            "min-width:34px", "height:22px", "border-radius:11px", "padding:0 7px",
+                            `background:${bgColor}`, `color:${textColor}`, `border:2px solid ${borderColor}`,
                             "display:flex", "align-items:center", "justify-content:center",
-                            "font-weight:700", "font-size:13px", "font-family:sans-serif",
-                            "box-shadow:0 2px 8px rgba(0,0,0,0.30)",
-                            "cursor:pointer", "user-select:none",
+                            "font-weight:700", "font-size:11px", "font-family:sans-serif",
+                            "box-shadow:0 2px 8px rgba(0,0,0,0.25)",
+                            "cursor:pointer", "user-select:none", "white-space:nowrap",
                             "transition:transform 0.15s",
                         ].join(";");
-                        el.textContent = String(i + 1);
+                        el.textContent = labelText;
 
                         if (!isActive) {
-                            el.addEventListener("mouseenter", () => { el.style.transform = "scale(1.2)"; });
+                            el.addEventListener("mouseenter", () => { el.style.transform = "scale(1.15)"; });
                             el.addEventListener("mouseleave", () => { el.style.transform = "scale(1)"; });
                             el.addEventListener("click", () => activateRoute(i));
                         }
@@ -238,6 +283,7 @@ export default function useRouteEngine({
                     });
 
                     animateRouteOverlay(allPaths[idx]);
+                    setRoutePath(allPaths[idx].map((p) => ({ lat: p.lat(), lng: p.lng() })));
 
                     let totalSeconds = 0;
                     let totalMeters = 0;
@@ -245,12 +291,28 @@ export default function useRouteEngine({
                         totalSeconds += leg.duration.value;
                         totalMeters += leg.distance.value;
                     });
-                    setEtaText(result.routes[idx].legs.at(-1).duration.text);
+                    // Format total duration across all legs (not just the last leg)
+                    const totalMins = Math.round(totalSeconds / 60);
+                    const h = Math.floor(totalMins / 60);
+                    const m = totalMins % 60;
+                    const totalEtaText = h > 0
+                        ? m > 0 ? `${h} hr ${m} min` : `${h} hr`
+                        : `${totalMins} min`;
+                    setEtaText(totalEtaText);
                     setEtaValue(totalSeconds);
                     setDistanceKm(totalMeters / 1000);
                 };
 
                 activateRoute(0);
+
+                // Fit map to show the full route in the visible area above the bottom sheet
+                const routeBounds = new google.maps.LatLngBounds();
+                allPaths[0].forEach((p) => routeBounds.extend(p));
+                const isMobile = window.innerWidth < 768;
+                const bottomPad = isMobile ? Math.round(window.innerHeight * 0.74) : 40;
+                mapInstanceRef.current.fitBounds(routeBounds, {
+                    top: 80, right: 30, bottom: bottomPad, left: 30,
+                });
 
                 if (routeTimerRef.current) clearTimeout(routeTimerRef.current);
                 setTimeout(() => setIsCalculatingRoute(false), 100);
@@ -276,5 +338,6 @@ export default function useRouteEngine({
         etaText,
         etaValue,
         distanceKm,
+        routePath,
     };
 }

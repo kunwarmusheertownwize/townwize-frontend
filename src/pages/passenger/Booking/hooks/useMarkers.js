@@ -1,18 +1,26 @@
 /* global google */
 import { useRef, useCallback } from "react";
 
+// One keyframe per color — injected once, never duplicated
+const injectedPulseColors = new Set();
+function ensurePulseKeyframe(color) {
+  if (injectedPulseColors.has(color)) return;
+  const animName = `pulse-${color.replace("#", "")}`;
+  const s = document.createElement("style");
+  s.textContent = `@keyframes ${animName}{0%{box-shadow:0 0 3px 2px ${color}44}50%{box-shadow:0 0 12px 6px ${color}AA}100%{box-shadow:0 0 3px 2px ${color}44}}`;
+  document.head.appendChild(s);
+  injectedPulseColors.add(color);
+}
+
 export default function useMarkers({ mapInstanceRef, reverseGeocode, onMarkerUpdated }) {
   const pickupMarkerRef = useRef(null);
   const stopMarkerRef = useRef(null);
   const dropoffMarkerRef = useRef(null);
 
-  // --- Create a clean DOM marker ---
-  /**
-  * Creates a custom marker DOM element with a pulsating, color-matched shadow.
-  * @param {string} color - The base color for the marker (e.g., '#007bff', 'red').
-  * @returns {HTMLElement} The wrapper element containing the marker.
-  */
   const buildMarkerDOM = (color) => {
+    ensurePulseKeyframe(color);
+    const animName = `pulse-${color.replace("#", "")}`;
+
     // --- 1. Marker Wrapper ---
     const wrapper = document.createElement("div");
     wrapper.style.width = "32px";
@@ -27,38 +35,8 @@ export default function useMarkers({ mapInstanceRef, reverseGeocode, onMarkerUpd
     outer.style.width = "15px";
     outer.style.height = "15px";
     outer.style.borderRadius = "100%";
-
-    // The background is a transparent version of the color to add depth
     outer.style.backgroundColor = `${color}33`;
-
-    // --- 3. Dynamic Keyframe Injection ---
-
-    // Generate a unique animation name for this marker
-    const animName = `pulse-${Math.random().toString(36).substring(2, 9)}`;
-
-    // Inject the style with the custom color for the box-shadow
-    const styleSheet = document.createElement("style");
-    styleSheet.type = "text/css";
-    styleSheet.innerText = `
-        @keyframes ${animName} {
-            0% {
-                /* Start: Small, less opaque shadow */
-                box-shadow: 0 0 3px 2px ${color}44;
-            }
-            50% {
-                /* Peak: Larger, brighter shadow (The glow effect) */
-                box-shadow: 0 0 12px 6px ${color}AA;
-            }
-            100% {
-                /* End: Back to start */
-                box-shadow: 0 0 3px 2px ${color}44;
-            }
-        }
-    `;
-    document.head.appendChild(styleSheet);
-
-    // Apply the dynamic animation to the outer element
-    outer.style.animation = `${animName} 2s infinite alternate`; // 2s duration, loop forever, back and forth
+    outer.style.animation = `${animName} 2s infinite alternate`;
 
     // --- 4. Inner Element (The Solid Dot) ---
     const inner = document.createElement("div");
@@ -149,10 +127,23 @@ export default function useMarkers({ mapInstanceRef, reverseGeocode, onMarkerUpd
     [mapInstanceRef, reverseGeocode, onMarkerUpdated]
   );
 
+  const clearMarker = useCallback((type) => {
+    const ref =
+      type === "pickup" ? pickupMarkerRef
+      : type === "stop" ? stopMarkerRef
+      : dropoffMarkerRef;
+    if (ref.current) {
+      ref.current.map = null;
+      ref.current = null;
+    }
+    onMarkerUpdated?.();
+  }, [onMarkerUpdated]);
+
   return {
     pickupMarkerRef,
     stopMarkerRef,
     dropoffMarkerRef,
     updateMapMarker,
+    clearMarker,
   };
 }
