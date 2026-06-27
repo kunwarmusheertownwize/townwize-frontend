@@ -4,11 +4,11 @@ const Wallet = () => {
   return (
     <div className="space-y-4">
 
-      {/* Balance card */}
+      {/* Payment method card */}
       <div className="rounded-2xl bg-gradient-to-br from-townwize-primary to-townwize-primaryDark p-6 text-white">
         <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-white/50 mb-1">Townwize Wallet</p>
-        <p className="text-4xl font-black tracking-tight">PKR 0</p>
-        <p className="text-xs text-white/60 mt-1">Balance updated in real-time</p>
+        <p className="text-xl font-bold tracking-tight">Payment Method</p>
+        <p className="text-xs text-white/60 mt-1">Digital wallet activates when payments go live</p>
 
         {/* Payment method badge */}
         <div className="mt-5 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/15">

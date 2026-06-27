@@ -173,9 +173,7 @@ const Notifications = () => {
                 key={n._id}
                 type="button"
                 onClick={() => markOne(n)}
-                className={`w-full text-left rounded-2xl border-l-4 ${style.border} bg-white dark:bg-townwize-primaryDark px-4 py-3 shadow-sm transition hover:shadow-md ${
-                  n.read ? "opacity-70" : ""
-                }`}
+                className={`w-full text-left rounded-2xl border-l-4 ${style.border} bg-white dark:bg-townwize-primaryDark px-4 py-3 shadow-sm transition hover:shadow-md`}
               >
                 <div className="flex items-start gap-3">
                   <span className={`mt-1 h-2 w-2 shrink-0 rounded-full ${style.dot} ${n.read ? "opacity-0" : ""}`} />

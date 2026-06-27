@@ -19,6 +19,12 @@ const TripRequest = () => {
   const [rideId, setRideId] = useState(null);
   const [confirmCancel, setConfirmCancel] = useState(false);
   const [cancelling, setCancelling] = useState(false);
+  const [slowSearch, setSlowSearch] = useState(false);
+
+  useEffect(() => {
+    const t = setTimeout(() => setSlowSearch(true), 30000);
+    return () => clearTimeout(t);
+  }, []);
 
   // ── Native (Android/Capacitor) ──────────────────────────────────────────────
   // App.addListener intercepts the hardware back button at the Capacitor bridge
@@ -208,7 +214,9 @@ const TripRequest = () => {
       </h2>
 
       <p className="text-gray-600 dark:text-gray-300">
-        We're searching for nearby drivers. This usually takes a few seconds.
+        {slowSearch
+          ? "Still searching — this is taking longer than usual. Please keep waiting or cancel and try again."
+          : "We're searching for nearby drivers. This usually takes a few seconds."}
       </p>
 
       <div className="flex justify-center">

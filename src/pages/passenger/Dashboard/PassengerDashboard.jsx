@@ -11,8 +11,8 @@ const PassengerDashboard = () => {
 
   return (
     <div className="space-y-6 px-4 md:px-8 py-6">
-      {/* 🏁 Header */}
-      <div className="text-center md:text-left mb-4">
+      {/* Header */}
+      <div className="text-left mb-4">
         <h1 className="text-2xl font-bold text-townwize-primary dark:text-townwize-accent">
           Welcome back{user?.name ? `, ${user.name}` : ""}!
         </h1>
@@ -21,7 +21,7 @@ const PassengerDashboard = () => {
         </p>
       </div>
 
-      {/* 🧩 Dashboard Content Grid */}
+      {/* Dashboard Content Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Left Column */}
         <div className="space-y-6">

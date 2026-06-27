@@ -502,8 +502,7 @@ const Home = () => {
 
       <div ref={psContainerRef} style={{ display: "none" }} />
 
-      <div className=" mx-auto max-w-7xl px-4 md:px-8 grid grid-cols-1 md:grid-cols-[520px_1fr] gap-8 items-start mb-10
-">
+      <div className="mx-auto max-w-7xl px-4 md:px-8 grid grid-cols-1 lg:grid-cols-[minmax(0,520px)_1fr] gap-8 items-start mb-10">
 
         {/* Left: Hero Form */}
         <HeroForm
