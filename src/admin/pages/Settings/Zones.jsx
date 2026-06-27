@@ -621,7 +621,6 @@ export default function Zones() {
 
   const toggleHeatmap = async () => {
     if (heatmapEnabled) {
-      // Remove heatmap layer
       if (heatmapLayerRef.current) {
         heatmapLayerRef.current.setMap(null);
         heatmapLayerRef.current = null;
@@ -629,23 +628,82 @@ export default function Zones() {
       setHeatmapEnabled(false);
       return;
     }
-    if (!mapRef.current || !window.google?.maps) {
+    if (!mapRef.current) {
       setError("Map is not ready. Try again in a moment.");
       return;
     }
     setHeatmapLoading(true);
     try {
+      await loadGoogleMaps();
       const res = await fetchRideDemandHeatmap(7);
-      const points = (res?.data?.data || []).map(
-        (p) => new window.google.maps.LatLng(p.lat, p.lng)
-      );
+      const points = (res?.data?.data || []);
+      if (!points.length) {
+        setError("No ride data in the last 7 days to display.");
+        return;
+      }
+
+      // Custom canvas OverlayView — HeatmapLayer removed in Maps v3.65
+      const { OverlayView } = await window.google.maps.importLibrary("maps");
+
+      class CanvasHeatmap extends OverlayView {
+        constructor(pts) {
+          super();
+          this._pts = pts;
+          this._canvas = null;
+        }
+        onAdd() {
+          const canvas = document.createElement("canvas");
+          canvas.style.position = "absolute";
+          canvas.style.pointerEvents = "none";
+          this._canvas = canvas;
+          this.getPanes().overlayLayer.appendChild(canvas);
+        }
+        draw() {
+          const proj = this.getProjection();
+          if (!proj || !this._canvas) return;
+          const map = this.getMap();
+          const div = map.getDiv();
+          const W = div.offsetWidth;
+          const H = div.offsetHeight;
+          this._canvas.width  = W;
+          this._canvas.height = H;
+          this._canvas.style.width  = W + "px";
+          this._canvas.style.height = H + "px";
+          this._canvas.style.left = "0px";
+          this._canvas.style.top  = "0px";
+          const ctx = this._canvas.getContext("2d");
+          ctx.clearRect(0, 0, W, H);
+          const R = 35;
+          this._pts.forEach((p) => {
+            const px = proj.fromLatLngToDivPixel(
+              new window.google.maps.LatLng(p.lat, p.lng)
+            );
+            if (!px) return;
+            const grad = ctx.createRadialGradient(px.x, px.y, 0, px.x, px.y, R);
+            grad.addColorStop(0,   "rgba(255,50,0,0.55)");
+            grad.addColorStop(0.4, "rgba(255,160,0,0.30)");
+            grad.addColorStop(1,   "rgba(255,255,0,0.00)");
+            ctx.beginPath();
+            ctx.arc(px.x, px.y, R, 0, Math.PI * 2);
+            ctx.fillStyle = grad;
+            ctx.fill();
+          });
+        }
+        onRemove() {
+          if (this._canvas?.parentNode) this._canvas.parentNode.removeChild(this._canvas);
+          this._canvas = null;
+        }
+      }
+
       if (heatmapLayerRef.current) heatmapLayerRef.current.setMap(null);
-      heatmapLayerRef.current = new window.google.maps.visualization.HeatmapLayer({
-        data: points,
-        map: mapRef.current,
-        radius: 40,
-        opacity: 0.7,
-      });
+      heatmapLayerRef.current = new CanvasHeatmap(points);
+      heatmapLayerRef.current.setMap(mapRef.current);
+
+      // Redraw on map move/zoom
+      ["bounds_changed", "zoom_changed"].forEach((evt) =>
+        mapRef.current.addListener(evt, () => heatmapLayerRef.current?.draw())
+      );
+
       setHeatmapEnabled(true);
     } catch (e) {
       setError(e?.message || "Failed to load heatmap data");
