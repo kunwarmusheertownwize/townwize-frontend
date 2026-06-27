@@ -1,6 +1,18 @@
 import { useEffect, useState } from "react";
 import EmptyState from "../../components/common/EmptyState";
 import StatusBadge from "../../components/common/StatusBadge";
+
+const PRIORITY_CLS = {
+  low:      "bg-gray-100 text-gray-600",
+  normal:   "bg-blue-100 text-blue-700",
+  high:     "bg-orange-100 text-orange-700",
+  critical: "bg-red-100 text-red-700 font-bold",
+};
+const PriorityBadge = ({ priority = "normal" }) => (
+  <span className={`inline-block rounded-full px-2.5 py-0.5 text-xs capitalize ${PRIORITY_CLS[priority] || PRIORITY_CLS.normal}`}>
+    {priority}
+  </span>
+);
 import {
   createSupportTicket,
   fetchSupportTicketDetail,
@@ -266,7 +278,7 @@ export default function TicketsList() {
                   <td className="px-4 py-3">
                     <StatusBadge status={t.status || "-"} />
                   </td>
-                  <td className="px-4 py-3 break-words">{t.priority || "normal"}</td>
+                  <td className="px-4 py-3"><PriorityBadge priority={t.priority} /></td>
                   <td className="px-4 py-3 break-words">{t.category || "-"}</td>
                   <td className="px-4 py-3 break-words">{t.requesterEmail || "Unknown"}</td>
                   <td className="px-4 py-3 break-words">{t.updatedAt ? new Date(t.updatedAt).toLocaleString() : "-"}</td>

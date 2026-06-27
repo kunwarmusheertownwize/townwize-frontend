@@ -26,6 +26,11 @@ const captureReceiptAsBlob = async () => {
     scale: 2,
     useCORS: true,
     logging: false,
+    onclone: (clonedDoc) => {
+      // Remove Google Fonts links — they're cross-origin and taint the canvas,
+      // causing toBlob() to throw a SecurityError. Text falls back to system fonts.
+      clonedDoc.querySelectorAll('link[href*="fonts.googleapis.com"]').forEach((l) => l.remove());
+    },
   });
   return new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
 };

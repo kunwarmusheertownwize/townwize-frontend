@@ -8,7 +8,7 @@
 /* === Theme (Townwize) === */
 @theme {
   /* Brand Colors */
-  --color-townwize-primary: #023645;
+  --color-townwize-primary: #012c39;
   --color-townwize-primaryDark: #08110f;
   --color-townwize-accent: #17BEBB;
   --color-townwize-success: #00F57A;
@@ -18,7 +18,7 @@
   --color-townwize-bgDark: #1F2937;
 
   /* Text */
-  --color-townwize-textPrimary: #023645;
+  --color-townwize-textPrimary: #012c39;
   --color-townwize-textSecondary: #6B7280;
   --color-townwize-textContent: #f5f5f5;
 
@@ -166,7 +166,7 @@ a {
 .react-datepicker__current-month,
 .react-datepicker__month-read-view,
 .react-datepicker__year-read-view {
-  color: #103139 !important;
+  color: #012c39 !important;
   /* primary */
   font-weight: 600;
   font-size: 1rem;
@@ -734,6 +734,7 @@ a {
   body.trip-receipt-print-mode,
   body.trip-receipt-print-mode html {
     background: #fff !important;
+    font-family: Arial, Helvetica, sans-serif !important;
   }
 
   body.trip-receipt-print-mode .passenger-layout-main {
@@ -746,28 +747,78 @@ a {
   body.trip-receipt-print-mode .trip-receipt-page {
     max-width: none !important;
     margin: 0 !important;
-    padding: 18px !important;
+    padding: 24px 28px !important;
     border: 0 !important;
     border-radius: 0 !important;
     box-shadow: none !important;
     background: #fff !important;
-    color: #000 !important;
+    color: #111 !important;
   }
 
+  /* Headings */
+  body.trip-receipt-print-mode h2 {
+    font-size: 22pt !important;
+    font-weight: 800 !important;
+    color: #03311C !important;
+    margin-bottom: 2px !important;
+  }
+
+  /* Route / details shell */
   body.trip-receipt-print-mode .trip-receipt-shell {
+    display: grid !important;
     grid-template-columns: 1.7fr 1fr !important;
-    gap: 12px !important;
+    gap: 14px !important;
     align-items: stretch !important;
     page-break-inside: avoid !important;
   }
 
-  body.trip-receipt-print-mode .trip-receipt-highlight,
-  body.trip-receipt-print-mode .trip-receipt-summary {
+  /* Gray detail box → clean white with solid border */
+  body.trip-receipt-print-mode .trip-receipt-shell > div:first-child {
+    background: #f9fafb !important;
+    border: 1px solid #d1d5db !important;
+    border-radius: 8px !important;
+    padding: 14px !important;
+  }
+
+  /* Final fare box */
+  body.trip-receipt-print-mode .trip-receipt-highlight {
+    background: #03311C !important;
+    color: #fff !important;
+    border-radius: 8px !important;
+    padding: 16px !important;
+    print-color-adjust: exact !important;
+    -webkit-print-color-adjust: exact !important;
     page-break-inside: avoid !important;
     break-inside: avoid !important;
   }
 
+  /* Fare summary */
   body.trip-receipt-print-mode .trip-receipt-summary {
-    margin-top: 12px !important;
+    margin-top: 14px !important;
+    background: #f9fafb !important;
+    border: 1px solid #d1d5db !important;
+    border-radius: 8px !important;
+    padding: 14px !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  body.trip-receipt-print-mode .trip-receipt-summary h3 {
+    font-size: 11pt !important;
+    font-weight: 700 !important;
+    color: #03311C !important;
+    margin-bottom: 8px !important;
+  }
+
+  /* Footer rule */
+  body.trip-receipt-print-mode .trip-receipt-page::after {
+    content: "Townwize — Safe Rides in Bahria Town Karachi | townwize.com";
+    display: block !important;
+    margin-top: 24px !important;
+    padding-top: 10px !important;
+    border-top: 1px solid #e5e7eb !important;
+    font-size: 8pt !important;
+    color: #9ca3af !important;
+    text-align: center !important;
   }
 }

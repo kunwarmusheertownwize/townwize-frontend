@@ -2,6 +2,18 @@ import { useEffect, useMemo, useState } from "react";
 import StatusBadge from "../../components/common/StatusBadge";
 import { replySupportTicket, updateSupportTicket } from "../../../api/adminApi";
 
+const PRIORITY_CLS = {
+  low:      "bg-gray-100 text-gray-600",
+  normal:   "bg-blue-100 text-blue-700",
+  high:     "bg-orange-100 text-orange-700",
+  critical: "bg-red-100 text-red-700 font-bold",
+};
+const PriorityBadge = ({ priority = "normal" }) => (
+  <span className={`inline-block rounded-full px-2.5 py-0.5 text-xs capitalize ${PRIORITY_CLS[priority] || PRIORITY_CLS.normal}`}>
+    {priority}
+  </span>
+);
+
 const STATUS_OPTIONS = ["open", "in_progress", "escalated", "resolved", "closed"];
 const PRIORITY_OPTIONS = ["low", "normal", "high", "critical"];
 
@@ -140,12 +152,19 @@ export default function TicketDetailPanel({ ticket, onUpdated }) {
           <strong>{ticket.ticketNo || ticket._id}</strong>
           <StatusBadge status={ticket.status || "-"} />
         </div>
-        <div>Subject: {ticket.subject || "-"}</div>
-        <div>Category: {ticket.category || "-"}</div>
-        <div>Priority: {ticket.priority || "normal"}</div>
-        <div>Requester: {ticket.requesterEmail || "Unknown"}</div>
-        <div>Assigned: {ticket.assigneeEmail || "Unassigned"}</div>
-        <div className="mt-1 text-gray-600 dark:text-gray-400">Updated: {ticket.updatedAt ? new Date(ticket.updatedAt).toLocaleString() : "-"}</div>
+        <div className="mt-2 space-y-1 text-sm text-gray-700 dark:text-gray-300">
+          <div><span className="text-xs text-gray-400 mr-1">Subject:</span>{ticket.subject || "-"}</div>
+          <div><span className="text-xs text-gray-400 mr-1">Category:</span>{ticket.category || "-"}</div>
+          <div className="flex items-center gap-2"><span className="text-xs text-gray-400">Priority:</span><PriorityBadge priority={ticket.priority} /></div>
+          <div><span className="text-xs text-gray-400 mr-1">Requester:</span>{ticket.requesterEmail || "Unknown"}</div>
+          <div><span className="text-xs text-gray-400 mr-1">Assigned to:</span>{ticket.assigneeEmail || <span className="text-gray-400 italic">Unassigned</span>}</div>
+          {ticket.status === "escalated" && (
+            <div className="mt-2 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 px-3 py-2 text-xs text-amber-800 dark:text-amber-300">
+              ⚠ This ticket has been escalated. Assign it to a supervisor and update the status to <strong>in_progress</strong> to begin resolution.
+            </div>
+          )}
+        </div>
+        <div className="mt-2 text-xs text-gray-400">Updated: {ticket.updatedAt ? new Date(ticket.updatedAt).toLocaleString() : "-"}</div>
       </div>
 
       <div className="rounded-xl border border-gray-200 dark:border-gray-700 p-3 space-y-3">
@@ -172,13 +191,19 @@ export default function TicketDetailPanel({ ticket, onUpdated }) {
             </select>
           </div>
           <div>
-            <label className="mb-1 block text-xs text-gray-500 dark:text-gray-400">Assignee (admin user ID — leave blank to unassign)</label>
+            <label className="mb-1 block text-xs text-gray-500 dark:text-gray-400">
+              Assign to admin
+              <span className="ml-1 text-gray-400">(paste admin user ID from Admin Users page)</span>
+            </label>
             <input
-              className="w-full rounded border dark:border-gray-600 dark:bg-gray-800 dark:text-white px-3 py-2 text-sm"
-              placeholder="Admin user ID"
+              className="w-full rounded border dark:border-gray-600 dark:bg-gray-800 dark:text-white px-3 py-2 text-sm font-mono"
+              placeholder="e.g. 6a30199325..."
               value={assigneeId}
               onChange={(e) => setAssigneeId(e.target.value)}
             />
+            {ticket.assigneeEmail && (
+              <p className="mt-1 text-xs text-green-600 dark:text-green-400">Currently: {ticket.assigneeEmail}</p>
+            )}
           </div>
           {ticket.status !== "escalated" && (
             <button
