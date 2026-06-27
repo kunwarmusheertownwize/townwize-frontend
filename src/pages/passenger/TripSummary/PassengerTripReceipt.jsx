@@ -17,83 +17,62 @@ const buildShareText = (ride, fare) => {
   ].join("\n");
 };
 
-const ShareButton = ({ ride, fare, className = "" }) => {
-  const [copied, setCopied]       = useState(false);
-  const [showMenu, setShowMenu]   = useState(false);
-  const hasNativeShare = typeof navigator !== "undefined" && !!navigator.share;
+const captureReceiptAsBlob = async () => {
+  const el = document.querySelector(".trip-receipt-page");
+  if (!el) return null;
+  const html2canvas = (await import("html2canvas")).default;
+  const canvas = await html2canvas(el, {
+    backgroundColor: "#ffffff",
+    scale: 2,
+    useCORS: true,
+    logging: false,
+  });
+  return new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
+};
 
-  const text = buildShareText(ride, fare);
-  const waUrl = `https://wa.me/?text=${encodeURIComponent(text)}`;
-  const tgUrl = `https://t.me/share/url?url=${encodeURIComponent("https://townwize.com")}&text=${encodeURIComponent(text)}`;
+const ShareButton = ({ ride, className = "" }) => {
+  const [sharing, setSharing] = useState(false);
+  const [done, setDone]       = useState("");
 
-  const copyToClipboard = async () => {
+  const handleShare = async () => {
+    if (sharing) return;
+    setSharing(true);
+    setDone("");
     try {
-      await navigator.clipboard.writeText(text);
-      setCopied(true);
-      setTimeout(() => { setCopied(false); setShowMenu(false); }, 2000);
-    } catch {}
+      const blob = await captureReceiptAsBlob();
+      if (!blob) { setSharing(false); return; }
+      const file = new File([blob], `townwize-receipt-${ride?._id || "receipt"}.png`, { type: "image/png" });
+
+      if (navigator.share && navigator.canShare?.({ files: [file] })) {
+        // Mobile — native OS share sheet (WhatsApp, Telegram, etc.)
+        await navigator.share({ title: "Townwize Trip Receipt", files: [file] });
+      } else {
+        // Desktop — download the image
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = file.name;
+        a.click();
+        URL.revokeObjectURL(url);
+        setDone("Downloaded!");
+        setTimeout(() => setDone(""), 2500);
+      }
+    } catch {
+      // user cancelled share or permission denied
+    } finally {
+      setSharing(false);
+    }
   };
 
-  const handleNativeShare = async () => {
-    try {
-      await navigator.share({ title: "Townwize Trip Receipt", text });
-    } catch {}
-  };
-
-  // Mobile: use native OS share sheet (shows WhatsApp, Telegram, etc. automatically)
-  if (hasNativeShare) {
-    return (
-      <button
-        type="button"
-        onClick={handleNativeShare}
-        className={`rounded-lg border border-townwize-primary px-3 py-1.5 text-xs font-semibold text-townwize-primary ${className}`}
-      >
-        Share
-      </button>
-    );
-  }
-
-  // Desktop: show explicit options
   return (
-    <div className={`relative ${className}`}>
-      <button
-        type="button"
-        onClick={() => setShowMenu((v) => !v)}
-        className="rounded-lg border border-townwize-primary px-3 py-1.5 text-xs font-semibold text-townwize-primary"
-      >
-        Share
-      </button>
-      {showMenu && (
-        <div className="absolute right-0 mt-1 z-10 w-44 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg overflow-hidden">
-          <a
-            href={waUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={() => setShowMenu(false)}
-            className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700"
-          >
-            <span className="text-green-500 text-base">💬</span> WhatsApp
-          </a>
-          <a
-            href={tgUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={() => setShowMenu(false)}
-            className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700"
-          >
-            <span className="text-blue-500 text-base">✈️</span> Telegram
-          </a>
-          <button
-            type="button"
-            onClick={copyToClipboard}
-            className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700"
-          >
-            <span className="text-gray-400 text-base">📋</span>
-            {copied ? "Copied!" : "Copy text"}
-          </button>
-        </div>
-      )}
-    </div>
+    <button
+      type="button"
+      onClick={handleShare}
+      disabled={sharing}
+      className={`rounded-lg border border-townwize-primary px-3 py-1.5 text-xs font-semibold text-townwize-primary disabled:opacity-60 ${className}`}
+    >
+      {sharing ? "Preparing…" : done || "Share Receipt"}
+    </button>
   );
 };
 
@@ -453,7 +432,7 @@ export default function PassengerTripReceipt() {
             </div>
 
             {!loading && !error && (
-              <ShareButton ride={ride} fare={fare} className="w-full text-center" />
+              <ShareButton ride={ride} className="w-full text-center" />
             )}
             <button
               className="w-full rounded-xl bg-townwize-primary py-4 text-white font-semibold"
@@ -474,8 +453,8 @@ export default function PassengerTripReceipt() {
 
       {/* Print-only branding header */}
       <div className="hidden print:flex items-center justify-between pb-4 border-b border-gray-300 mb-2">
-        <div>
-          <p className="text-xl font-extrabold text-townwize-primary tracking-tight">TOWNWIZE</p>
+        <div className="flex items-center gap-3">
+          <img src="/images/logo-dark.png" alt="Townwize" className="h-9 w-auto" />
           <p className="text-xs text-gray-500">www.townwize.com · support@townwize.com</p>
         </div>
         <p className="text-xs text-gray-400">Official Trip Receipt</p>
@@ -498,7 +477,7 @@ export default function PassengerTripReceipt() {
           >
             Print
           </button>
-          {!loading && !error && <ShareButton ride={ride} fare={fare} />}
+          {!loading && !error && <ShareButton ride={ride} />}
         </div>
       </div>
 
