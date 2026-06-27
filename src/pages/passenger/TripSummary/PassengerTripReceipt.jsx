@@ -18,35 +18,82 @@ const buildShareText = (ride, fare) => {
 };
 
 const ShareButton = ({ ride, fare, className = "" }) => {
-  const [copied, setCopied] = useState(false);
+  const [copied, setCopied]       = useState(false);
+  const [showMenu, setShowMenu]   = useState(false);
+  const hasNativeShare = typeof navigator !== "undefined" && !!navigator.share;
 
-  const handleShare = async () => {
-    const text = buildShareText(ride, fare);
-    if (navigator.share) {
-      try {
-        await navigator.share({ title: "Townwize Trip Receipt", text });
-        return;
-      } catch {
-        // user cancelled or share failed — fall through to clipboard
-      }
-    }
+  const text = buildShareText(ride, fare);
+  const waUrl = `https://wa.me/?text=${encodeURIComponent(text)}`;
+  const tgUrl = `https://t.me/share/url?url=${encodeURIComponent("https://townwize.com")}&text=${encodeURIComponent(text)}`;
+
+  const copyToClipboard = async () => {
     try {
       await navigator.clipboard.writeText(text);
       setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      // clipboard not available
-    }
+      setTimeout(() => { setCopied(false); setShowMenu(false); }, 2000);
+    } catch {}
   };
 
+  const handleNativeShare = async () => {
+    try {
+      await navigator.share({ title: "Townwize Trip Receipt", text });
+    } catch {}
+  };
+
+  // Mobile: use native OS share sheet (shows WhatsApp, Telegram, etc. automatically)
+  if (hasNativeShare) {
+    return (
+      <button
+        type="button"
+        onClick={handleNativeShare}
+        className={`rounded-lg border border-townwize-primary px-3 py-1.5 text-xs font-semibold text-townwize-primary ${className}`}
+      >
+        Share
+      </button>
+    );
+  }
+
+  // Desktop: show explicit options
   return (
-    <button
-      type="button"
-      onClick={handleShare}
-      className={`rounded-lg border border-townwize-primary px-3 py-1.5 text-xs font-semibold text-townwize-primary ${className}`}
-    >
-      {copied ? "Copied!" : "Share"}
-    </button>
+    <div className={`relative ${className}`}>
+      <button
+        type="button"
+        onClick={() => setShowMenu((v) => !v)}
+        className="rounded-lg border border-townwize-primary px-3 py-1.5 text-xs font-semibold text-townwize-primary"
+      >
+        Share
+      </button>
+      {showMenu && (
+        <div className="absolute right-0 mt-1 z-10 w-44 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg overflow-hidden">
+          <a
+            href={waUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={() => setShowMenu(false)}
+            className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700"
+          >
+            <span className="text-green-500 text-base">💬</span> WhatsApp
+          </a>
+          <a
+            href={tgUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={() => setShowMenu(false)}
+            className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700"
+          >
+            <span className="text-blue-500 text-base">✈️</span> Telegram
+          </a>
+          <button
+            type="button"
+            onClick={copyToClipboard}
+            className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700"
+          >
+            <span className="text-gray-400 text-base">📋</span>
+            {copied ? "Copied!" : "Copy text"}
+          </button>
+        </div>
+      )}
+    </div>
   );
 };
 
@@ -424,6 +471,16 @@ export default function PassengerTripReceipt() {
     <>
     {showRating && <RatingModal rideId={rideId} onDone={() => setShowRating(false)} />}
     <div className="trip-receipt-page max-w-5xl mx-auto mt-6 bg-white dark:bg-townwize-primaryDark p-6 md:p-8 rounded-2xl shadow-lg space-y-6 border border-gray-100 dark:border-gray-700">
+
+      {/* Print-only branding header */}
+      <div className="hidden print:flex items-center justify-between pb-4 border-b border-gray-300 mb-2">
+        <div>
+          <p className="text-xl font-extrabold text-townwize-primary tracking-tight">TOWNWIZE</p>
+          <p className="text-xs text-gray-500">www.townwize.com · support@townwize.com</p>
+        </div>
+        <p className="text-xs text-gray-400">Official Trip Receipt</p>
+      </div>
+
       <div className="flex items-start justify-between gap-4">
         <div>
           <h2 className="text-4xl font-extrabold text-townwize-primary leading-none">Trip Receipt</h2>

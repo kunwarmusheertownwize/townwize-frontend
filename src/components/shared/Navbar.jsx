@@ -465,7 +465,18 @@ const Navbar = () => {
                       {t("ride")}
                     </button>
 
-
+                    <button
+                      onClick={() => {
+                        handleNav("/passenger/scheduled-rides");
+                        closeMobileMenu();
+                      }}
+                      className={`w-full text-left px-3 py-3 rounded-lg transition cursor-pointer ${isActive("/passenger/scheduled-rides")
+                        ? "bg-gray-100 dark:bg-gray-700 font-semibold text-townwize-primary dark:text-townwize-accent"
+                        : "hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
+                        }`}
+                    >
+                      Scheduled Rides
+                    </button>
                   </>
                 )}
 
