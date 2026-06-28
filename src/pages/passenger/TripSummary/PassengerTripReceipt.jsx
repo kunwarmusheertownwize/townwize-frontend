@@ -27,16 +27,10 @@ const captureReceiptAsBlob = async () => {
     useCORS: true,
     logging: false,
     onclone: (clonedDoc) => {
-      // Remove ONLY Google Fonts links — html2canvas re-fetches every linked
-      // stylesheet; fonts.googleapis.com returns NS_ERROR_CORRUPTED_CONTENT
-      // cross-origin which aborts the entire capture. Keep out.css (same origin).
+      // Guard: strip any residual external font links from the clone.
       clonedDoc
         .querySelectorAll("link[href*='fonts.googleapis.com'], link[href*='fonts.gstatic.com']")
         .forEach((l) => l.remove());
-      // Force system fonts so no @font-face requests are made for Inter.
-      const s = clonedDoc.createElement("style");
-      s.textContent = "* { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif !important; }";
-      clonedDoc.head.appendChild(s);
     },
   });
   return new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
