@@ -21,13 +21,16 @@ const captureReceiptAsBlob = async () => {
   const el = document.querySelector(".trip-receipt-page");
   if (!el) return null;
   const html2canvas = (await import("html2canvas")).default;
+  // useCORS:false — skip XHR re-fetching of stylesheets/images entirely.
+  // All receipt content is same-origin text/styling; no external images are used.
   const canvas = await html2canvas(el, {
     backgroundColor: "#ffffff",
     scale: 2,
-    useCORS: true,
+    useCORS: false,
+    allowTaint: false,
     logging: false,
+    imageTimeout: 0,
     onclone: (clonedDoc) => {
-      // Guard: strip any residual external font links from the clone.
       clonedDoc
         .querySelectorAll("link[href*='fonts.googleapis.com'], link[href*='fonts.gstatic.com']")
         .forEach((l) => l.remove());
@@ -64,8 +67,11 @@ const ShareButton = ({ ride, className = "" }) => {
         setTimeout(() => setDone(""), 2500);
       }
     } catch (err) {
-      if (err?.name !== "AbortError") setDone("Failed — try again");
-      setTimeout(() => setDone(""), 2500);
+      if (err?.name !== "AbortError") {
+        console.error("[ShareReceipt]", err);
+        setDone(err?.message ? `Failed: ${err.message.slice(0, 40)}` : "Failed — try again");
+      }
+      setTimeout(() => setDone(""), 4000);
     } finally {
       setSharing(false);
     }
