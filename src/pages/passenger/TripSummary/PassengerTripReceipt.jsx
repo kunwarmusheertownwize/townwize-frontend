@@ -27,9 +27,16 @@ const captureReceiptAsBlob = async () => {
     useCORS: true,
     logging: false,
     onclone: (clonedDoc) => {
-      // Remove Google Fonts links — they're cross-origin and taint the canvas,
-      // causing toBlob() to throw a SecurityError. Text falls back to system fonts.
-      clonedDoc.querySelectorAll('link[href*="fonts.googleapis.com"]').forEach((l) => l.remove());
+      // Remove ONLY Google Fonts links — html2canvas re-fetches every linked
+      // stylesheet; fonts.googleapis.com returns NS_ERROR_CORRUPTED_CONTENT
+      // cross-origin which aborts the entire capture. Keep out.css (same origin).
+      clonedDoc
+        .querySelectorAll("link[href*='fonts.googleapis.com'], link[href*='fonts.gstatic.com']")
+        .forEach((l) => l.remove());
+      // Force system fonts so no @font-face requests are made for Inter.
+      const s = clonedDoc.createElement("style");
+      s.textContent = "* { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif !important; }";
+      clonedDoc.head.appendChild(s);
     },
   });
   return new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
@@ -62,8 +69,9 @@ const ShareButton = ({ ride, className = "" }) => {
         setDone("Downloaded!");
         setTimeout(() => setDone(""), 2500);
       }
-    } catch {
-      // user cancelled share or permission denied
+    } catch (err) {
+      if (err?.name !== "AbortError") setDone("Failed — try again");
+      setTimeout(() => setDone(""), 2500);
     } finally {
       setSharing(false);
     }
