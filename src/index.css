@@ -721,6 +721,11 @@ a {
   padding-bottom: var(--safe-bottom);
 }
 
+/* Hide footer on the receipt page even on screen (not just print) */
+body.trip-receipt-print-mode .passenger-layout-footer {
+  display: none !important;
+}
+
 @media print {
   body.trip-receipt-print-mode .passenger-layout-navbar,
   body.trip-receipt-print-mode .passenger-layout-footer,

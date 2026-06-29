@@ -21,23 +21,33 @@ const captureReceiptAsBlob = async () => {
   const el = document.querySelector(".trip-receipt-page");
   if (!el) return null;
   const { toPng } = await import("html-to-image");
-  // Pass the live element — html-to-image reads getComputedStyle() from it
-  // internally, so layout is fully computed (no blank-image issue from
-  // off-screen clones). width + style override expands it to 1000px so the
-  // two-column layout isn't clipped.
-  const dataUrl = await toPng(el, {
-    backgroundColor: "#ffffff",
-    pixelRatio: 2,
-    cacheBust: true,
-    width: 1000,
-    style: { maxWidth: "none", width: "1000px", overflow: "visible" },
-    filter: (node) => {
-      if (node.tagName === "LINK") return false;
-      return true;
-    },
-  });
-  const res = await fetch(dataUrl);
-  return res.blob();
+
+  // Temporarily expand to 1000px on the LIVE element so the browser reflows
+  // the inner grid before html-to-image calls getComputedStyle().
+  // The style option alone can't fix clipping because it only affects the
+  // outer wrapper clone — inner grid columns still have their narrower computed widths.
+  const prev = { maxWidth: el.style.maxWidth, width: el.style.width };
+  el.style.maxWidth = "none";
+  el.style.width = "1000px";
+  // Two rAF ticks = one full browser layout+paint cycle
+  await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+
+  try {
+    const dataUrl = await toPng(el, {
+      backgroundColor: "#ffffff",
+      pixelRatio: 2,
+      cacheBust: true,
+      filter: (node) => {
+        if (node.tagName === "LINK") return false;
+        return true;
+      },
+    });
+    const res = await fetch(dataUrl);
+    return res.blob();
+  } finally {
+    el.style.maxWidth = prev.maxWidth;
+    el.style.width = prev.width;
+  }
 };
 
 const ShareButton = ({ ride, className = "" }) => {
@@ -506,27 +516,27 @@ export default function PassengerTripReceipt() {
       {!loading && !error ? (
         <>
           <div className="trip-receipt-shell grid gap-4 md:grid-cols-[1fr_280px]">
-            <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 space-y-3">
+            <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700 space-y-3">
               <div>
-                <p className="text-xs uppercase tracking-wide text-gray-500">Pickup</p>
-                <p className="font-semibold">{toLocationText(ride?.pickup)}</p>
+                <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Pickup</p>
+                <p className="font-semibold dark:text-white">{toLocationText(ride?.pickup)}</p>
               </div>
               <div>
-                <p className="text-xs uppercase tracking-wide text-gray-500">Dropoff</p>
-                <p className="font-semibold">{toLocationText(ride?.dropoff)}</p>
+                <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Dropoff</p>
+                <p className="font-semibold dark:text-white">{toLocationText(ride?.dropoff)}</p>
               </div>
               <div className="grid gap-3 sm:grid-cols-3">
                 <div>
-                  <p className="text-xs uppercase tracking-wide text-gray-500">Status</p>
-                  <p className="font-semibold">{ride?.status || "-"}</p>
+                  <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Status</p>
+                  <p className="font-semibold dark:text-white">{ride?.status || "-"}</p>
                 </div>
                 <div>
-                  <p className="text-xs uppercase tracking-wide text-gray-500">Trip Result</p>
-                  <p className="font-semibold">{completionLabel(ride?.completionReason)}</p>
+                  <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Trip Result</p>
+                  <p className="font-semibold dark:text-white">{completionLabel(ride?.completionReason)}</p>
                 </div>
                 <div>
-                  <p className="text-xs uppercase tracking-wide text-gray-500">Actual Trip</p>
-                  <p className="font-semibold">{actualTripLabel}</p>
+                  <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Actual Trip</p>
+                  <p className="font-semibold dark:text-white">{actualTripLabel}</p>
                 </div>
               </div>
             </div>
@@ -549,9 +559,9 @@ export default function PassengerTripReceipt() {
             </div>
           </div>
 
-          <div className="trip-receipt-summary bg-gray-50 p-4 rounded-xl border border-gray-200">
-            <h3 className="text-xl font-bold text-townwize-primary mb-3">Fare Summary</h3>
-            <div className="space-y-1 text-sm">
+          <div className="trip-receipt-summary bg-gray-50 dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700">
+            <h3 className="text-xl font-bold text-townwize-primary dark:text-white mb-3">Fare Summary</h3>
+            <div className="space-y-1 text-sm dark:text-gray-200">
               <div className="flex justify-between"><span>Base Fare</span><span>{toMoney(fare.baseFare)}</span></div>
               <div className="flex justify-between"><span>Distance Fare</span><span>{toMoney(fare.distanceFare)}</span></div>
               <div className="flex justify-between"><span>Time Fare</span><span>{toMoney(fare.timeFare)}</span></div>
@@ -573,7 +583,7 @@ export default function PassengerTripReceipt() {
                   <span>{waitMinutes} min</span>
                 </div>
               ) : null}
-              <div className="border-t border-gray-300 my-2" />
+              <div className="border-t border-gray-300 dark:border-gray-600 my-2" />
               {isPooled && farePerSeat ? (
                 <>
                   <div className="flex justify-between text-gray-500 text-sm">
