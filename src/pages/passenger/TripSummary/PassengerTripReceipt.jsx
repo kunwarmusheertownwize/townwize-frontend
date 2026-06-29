@@ -23,13 +23,17 @@ const captureReceiptAsBlob = async () => {
   // html-to-image: uses browser's SVG renderer — natively supports oklch,
   // modern CSS, and Tailwind v4 colors. html2canvas hard-crashes on oklch.
   const { toPng } = await import("html-to-image");
+  // Use scrollWidth/scrollHeight so the full receipt is captured, not just
+  // the visible viewport slice (which clips the right-side fare card).
+  const captureWidth = Math.max(el.scrollWidth, 960);
   const dataUrl = await toPng(el, {
     backgroundColor: "#ffffff",
     pixelRatio: 2,
     cacheBust: true,
+    width: captureWidth,
+    height: el.scrollHeight,
+    style: { maxWidth: "none", width: `${captureWidth}px` },
     filter: (node) => {
-      // Drop external stylesheet links — not needed since styles are inlined
-      // by html-to-image via getComputedStyle().
       if (node.tagName === "LINK") return false;
       return true;
     },
