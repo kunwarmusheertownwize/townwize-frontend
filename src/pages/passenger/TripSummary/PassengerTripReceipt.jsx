@@ -26,12 +26,25 @@ const captureReceiptAsBlob = async () => {
   // the inner grid before html-to-image calls getComputedStyle().
   // The style option alone can't fix clipping because it only affects the
   // outer wrapper clone — inner grid columns still have their narrower computed widths.
-  const prev = { maxWidth: el.style.maxWidth, width: el.style.width };
-  el.style.maxWidth = "none";
-  el.style.width = "1000px";
-  // Hide action buttons so they don't appear in the shared image
-  const actionsEl = el.querySelector("#receipt-actions");
-  if (actionsEl) actionsEl.style.display = "none";
+  // Use position:fixed to escape the parent layout container — setting
+  // width:1000px inline alone doesn't work because the parent constrains it.
+  // fixed + z-index:-1 puts the element behind the page; users never see it.
+  const prev = {
+    position: el.style.position, top: el.style.top, left: el.style.left,
+    width: el.style.width, maxWidth: el.style.maxWidth,
+    zIndex: el.style.zIndex, margin: el.style.margin, boxShadow: el.style.boxShadow,
+  };
+  Object.assign(el.style, {
+    position: "fixed", top: "0", left: "0",
+    width: "1000px", maxWidth: "none",
+    zIndex: "-1", margin: "0", boxShadow: "none",
+  });
+
+  const brandingEl = el.querySelector(".receipt-branding");
+  const actionsEl  = el.querySelector("#receipt-actions");
+  if (brandingEl) brandingEl.style.display = "flex";
+  if (actionsEl)  actionsEl.style.display  = "none";
+
   // Two rAF ticks = one full browser layout+paint cycle
   await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
 
@@ -40,6 +53,7 @@ const captureReceiptAsBlob = async () => {
       backgroundColor: "#ffffff",
       pixelRatio: 2,
       cacheBust: true,
+      width: 1000,
       filter: (node) => {
         if (node.tagName === "LINK") return false;
         return true;
@@ -48,9 +62,9 @@ const captureReceiptAsBlob = async () => {
     const res = await fetch(dataUrl);
     return res.blob();
   } finally {
-    el.style.maxWidth = prev.maxWidth;
-    el.style.width = prev.width;
-    if (actionsEl) actionsEl.style.display = "";
+    Object.assign(el.style, prev);
+    if (brandingEl) brandingEl.style.display = "";
+    if (actionsEl)  actionsEl.style.display  = "";
   }
 };
 
@@ -484,8 +498,8 @@ export default function PassengerTripReceipt() {
     {showRating && <RatingModal rideId={rideId} onDone={() => setShowRating(false)} />}
     <div className="trip-receipt-page max-w-5xl mx-auto mt-6 bg-white dark:bg-townwize-primaryDark p-6 md:p-8 rounded-2xl shadow-lg space-y-6 border border-gray-100 dark:border-gray-700">
 
-      {/* Print-only branding header */}
-      <div className="hidden print:flex items-center justify-between pb-4 border-b border-gray-300 mb-2">
+      {/* Branding header — shown in print and during image capture (js shows it) */}
+      <div className="receipt-branding hidden print:flex items-center justify-between pb-4 border-b border-gray-300 mb-2">
         <div className="flex items-center gap-3">
           <img src="/images/logo-dark.png" alt="Townwize" className="h-9 w-auto" />
           <p className="text-xs text-gray-500">www.townwize.com · support@townwize.com</p>
