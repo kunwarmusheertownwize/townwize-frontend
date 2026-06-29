@@ -17,29 +17,42 @@ const buildShareText = (ride, fare) => {
   ].join("\n");
 };
 
+const RECEIPT_CAPTURE_WIDTH = 1000;
+
 const captureReceiptAsBlob = async () => {
-  const el = document.querySelector(".trip-receipt-page");
-  if (!el) return null;
-  // html-to-image: uses browser's SVG renderer — natively supports oklch,
-  // modern CSS, and Tailwind v4 colors. html2canvas hard-crashes on oklch.
+  const original = document.querySelector(".trip-receipt-page");
+  if (!original) return null;
   const { toPng } = await import("html-to-image");
-  // Use scrollWidth/scrollHeight so the full receipt is captured, not just
-  // the visible viewport slice (which clips the right-side fare card).
-  const captureWidth = Math.max(el.scrollWidth, 960);
-  const dataUrl = await toPng(el, {
-    backgroundColor: "#ffffff",
-    pixelRatio: 2,
-    cacheBust: true,
-    width: captureWidth,
-    height: el.scrollHeight,
-    style: { maxWidth: "none", width: `${captureWidth}px` },
-    filter: (node) => {
-      if (node.tagName === "LINK") return false;
-      return true;
-    },
+
+  // Clone the receipt off-screen at a fixed 1000px width so html-to-image
+  // renders the full two-column layout without inheriting viewport constraints.
+  const clone = original.cloneNode(true);
+  Object.assign(clone.style, {
+    position: "fixed",
+    top: "-9999px",
+    left: "-9999px",
+    width: `${RECEIPT_CAPTURE_WIDTH}px`,
+    maxWidth: "none",
+    zIndex: "-1",
   });
-  const res = await fetch(dataUrl);
-  return res.blob();
+  document.body.appendChild(clone);
+
+  try {
+    const dataUrl = await toPng(clone, {
+      backgroundColor: "#ffffff",
+      pixelRatio: 2,
+      cacheBust: true,
+      width: RECEIPT_CAPTURE_WIDTH,
+      filter: (node) => {
+        if (node.tagName === "LINK") return false;
+        return true;
+      },
+    });
+    const res = await fetch(dataUrl);
+    return res.blob();
+  } finally {
+    document.body.removeChild(clone);
+  }
 };
 
 const ShareButton = ({ ride, className = "" }) => {
@@ -58,8 +71,13 @@ const ShareButton = ({ ride, className = "" }) => {
       if (navigator.share && navigator.canShare?.({ files: [file] })) {
         // Mobile — native OS share sheet (WhatsApp, Telegram, etc.)
         await navigator.share({ title: "Townwize Trip Receipt", files: [file] });
+      } else if (navigator.clipboard?.write) {
+        // Desktop — copy image to clipboard; user can paste into WhatsApp Web, email, etc.
+        await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
+        setDone("Copied! Paste anywhere.");
+        setTimeout(() => setDone(""), 3500);
       } else {
-        // Desktop — download the image
+        // Final fallback — download
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
