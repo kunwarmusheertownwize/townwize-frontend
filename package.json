@@ -28,7 +28,7 @@
     "face-api.js": "^0.22.2",
     "firebase": "^10.12.2",
     "framer-motion": "^12.24.0",
-    "html2canvas": "^1.4.1",
+    "html-to-image": "^1.11.13",
     "i18next": "^25.7.3",
     "lottie-react": "^2.4.1",
     "lottie-web": "^5.13.0",

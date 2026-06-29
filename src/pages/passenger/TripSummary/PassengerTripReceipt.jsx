@@ -20,23 +20,22 @@ const buildShareText = (ride, fare) => {
 const captureReceiptAsBlob = async () => {
   const el = document.querySelector(".trip-receipt-page");
   if (!el) return null;
-  const html2canvas = (await import("html2canvas")).default;
-  // useCORS:false — skip XHR re-fetching of stylesheets/images entirely.
-  // All receipt content is same-origin text/styling; no external images are used.
-  const canvas = await html2canvas(el, {
+  // html-to-image: uses browser's SVG renderer — natively supports oklch,
+  // modern CSS, and Tailwind v4 colors. html2canvas hard-crashes on oklch.
+  const { toPng } = await import("html-to-image");
+  const dataUrl = await toPng(el, {
     backgroundColor: "#ffffff",
-    scale: 2,
-    useCORS: false,
-    allowTaint: false,
-    logging: false,
-    imageTimeout: 0,
-    onclone: (clonedDoc) => {
-      clonedDoc
-        .querySelectorAll("link[href*='fonts.googleapis.com'], link[href*='fonts.gstatic.com']")
-        .forEach((l) => l.remove());
+    pixelRatio: 2,
+    cacheBust: true,
+    filter: (node) => {
+      // Drop external stylesheet links — not needed since styles are inlined
+      // by html-to-image via getComputedStyle().
+      if (node.tagName === "LINK") return false;
+      return true;
     },
   });
-  return new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
+  const res = await fetch(dataUrl);
+  return res.blob();
 };
 
 const ShareButton = ({ ride, className = "" }) => {
