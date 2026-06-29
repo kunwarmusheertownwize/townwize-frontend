@@ -29,6 +29,9 @@ const captureReceiptAsBlob = async () => {
   const prev = { maxWidth: el.style.maxWidth, width: el.style.width };
   el.style.maxWidth = "none";
   el.style.width = "1000px";
+  // Hide action buttons so they don't appear in the shared image
+  const actionsEl = el.querySelector("#receipt-actions");
+  if (actionsEl) actionsEl.style.display = "none";
   // Two rAF ticks = one full browser layout+paint cycle
   await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
 
@@ -47,6 +50,7 @@ const captureReceiptAsBlob = async () => {
   } finally {
     el.style.maxWidth = prev.maxWidth;
     el.style.width = prev.width;
+    if (actionsEl) actionsEl.style.display = "";
   }
 };
 
@@ -489,19 +493,19 @@ export default function PassengerTripReceipt() {
         <p className="text-xs text-gray-400">Official Trip Receipt</p>
       </div>
 
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
         <div>
-          <h2 className="text-4xl font-extrabold text-townwize-primary leading-none">Trip Receipt</h2>
-          <p className="text-sm text-gray-500 mt-2">{toDateTime(receiptDate)}</p>
-          <p className="text-xs text-gray-500 mt-1">Receipt ID: {ride?._id || rideId}</p>
+          <h2 className="text-2xl sm:text-4xl font-extrabold text-townwize-primary dark:text-white leading-none">Trip Receipt</h2>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">{toDateTime(receiptDate)}</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Receipt ID: {ride?._id || rideId}</p>
         </div>
-        <div className="flex items-center gap-2 print:hidden">
-          <span className="inline-flex items-center rounded-lg px-3 py-1.5 text-xs font-semibold bg-gray-100 text-gray-700">
+        <div id="receipt-actions" className="flex items-center gap-2 print:hidden shrink-0">
+          <span className="hidden sm:inline-flex items-center rounded-lg px-3 py-1.5 text-xs font-semibold bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
             {rideLabel}
           </span>
           <button
             type="button"
-            className="rounded-lg border border-townwize-primary px-3 py-1.5 text-xs font-semibold text-townwize-primary"
+            className="rounded-lg border border-townwize-primary dark:border-white px-3 py-1.5 text-xs font-semibold text-townwize-primary dark:text-white"
             onClick={() => window.print()}
           >
             Print
