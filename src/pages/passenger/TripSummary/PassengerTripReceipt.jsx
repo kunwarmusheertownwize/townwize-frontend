@@ -17,42 +17,27 @@ const buildShareText = (ride, fare) => {
   ].join("\n");
 };
 
-const RECEIPT_CAPTURE_WIDTH = 1000;
-
 const captureReceiptAsBlob = async () => {
-  const original = document.querySelector(".trip-receipt-page");
-  if (!original) return null;
+  const el = document.querySelector(".trip-receipt-page");
+  if (!el) return null;
   const { toPng } = await import("html-to-image");
-
-  // Clone the receipt off-screen at a fixed 1000px width so html-to-image
-  // renders the full two-column layout without inheriting viewport constraints.
-  const clone = original.cloneNode(true);
-  Object.assign(clone.style, {
-    position: "fixed",
-    top: "-9999px",
-    left: "-9999px",
-    width: `${RECEIPT_CAPTURE_WIDTH}px`,
-    maxWidth: "none",
-    zIndex: "-1",
+  // Pass the live element — html-to-image reads getComputedStyle() from it
+  // internally, so layout is fully computed (no blank-image issue from
+  // off-screen clones). width + style override expands it to 1000px so the
+  // two-column layout isn't clipped.
+  const dataUrl = await toPng(el, {
+    backgroundColor: "#ffffff",
+    pixelRatio: 2,
+    cacheBust: true,
+    width: 1000,
+    style: { maxWidth: "none", width: "1000px", overflow: "visible" },
+    filter: (node) => {
+      if (node.tagName === "LINK") return false;
+      return true;
+    },
   });
-  document.body.appendChild(clone);
-
-  try {
-    const dataUrl = await toPng(clone, {
-      backgroundColor: "#ffffff",
-      pixelRatio: 2,
-      cacheBust: true,
-      width: RECEIPT_CAPTURE_WIDTH,
-      filter: (node) => {
-        if (node.tagName === "LINK") return false;
-        return true;
-      },
-    });
-    const res = await fetch(dataUrl);
-    return res.blob();
-  } finally {
-    document.body.removeChild(clone);
-  }
+  const res = await fetch(dataUrl);
+  return res.blob();
 };
 
 const ShareButton = ({ ride, className = "" }) => {
@@ -69,15 +54,15 @@ const ShareButton = ({ ride, className = "" }) => {
       const file = new File([blob], `townwize-receipt-${ride?._id || "receipt"}.png`, { type: "image/png" });
 
       if (navigator.share && navigator.canShare?.({ files: [file] })) {
-        // Mobile — native OS share sheet (WhatsApp, Telegram, etc.)
+        // Mobile + Chrome/Edge desktop — native OS share dialog (WhatsApp, etc.)
         await navigator.share({ title: "Townwize Trip Receipt", files: [file] });
       } else if (navigator.clipboard?.write) {
-        // Desktop — copy image to clipboard; user can paste into WhatsApp Web, email, etc.
+        // Firefox desktop — copy to clipboard; paste into WhatsApp Web, email, etc.
         await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
-        setDone("Copied! Paste anywhere.");
+        setDone("Copied — paste anywhere!");
         setTimeout(() => setDone(""), 3500);
       } else {
-        // Final fallback — download
+        // Last resort — download
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
