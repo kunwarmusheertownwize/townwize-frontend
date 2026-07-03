@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { deleteWaitlistEntry, fetchWaitlist, fetchWaitlistStats, updateWaitlistEntry } from "../../../api/adminApi";
 import EmptyState from "../../components/common/EmptyState";
 
-const TYPE_LABELS   = { passenger: "Passenger", driver: "Driver" };
+const TYPE_LABELS   = { passenger: "Towner", driver: "Wizer" };
 const STATUS_COLORS = {
   pending:  "bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300",
   invited:  "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300",
