@@ -24,6 +24,7 @@ const navItems = [
   { to: "/admin/settings/cancellation", label: "Cancellation Policy" },
 
   { to: "/admin/referral", label: "Referral" },
+  { to: "/admin/waitlist", label: "Waitlist" },
 
   { to: "/admin/audit", label: "Audit" },
 ];

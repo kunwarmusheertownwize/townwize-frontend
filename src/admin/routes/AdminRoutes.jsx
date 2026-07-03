@@ -22,6 +22,7 @@ import Zones from "../pages/Settings/Zones";
 import PricingSettings from "../pages/Settings/PricingSettings";
 import CancellationPolicy from "../pages/Settings/CancellationPolicy";
 import ReferralDashboard from "../pages/Referral/ReferralDashboard";
+import WaitlistPage from "../pages/Waitlist/WaitlistPage";
 
 export default function AdminRoutes() {
     return (
@@ -47,6 +48,7 @@ export default function AdminRoutes() {
             <Route path="settings/cancellation" element={<CancellationPolicy />} />
 
             <Route path="referral" element={<ReferralDashboard />} />
+            <Route path="waitlist" element={<WaitlistPage />} />
 
             <Route path="audit" element={<AuditLogs />} />
         </Route>

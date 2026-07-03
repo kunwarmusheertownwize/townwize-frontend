@@ -161,6 +161,15 @@ export const fetchRideDemandHeatmap = (days = 7) =>
 export const fetchDriverActiveHours = () =>
     call("/admin/analytics/driver-active-hours");
 
+// Waitlist management
+export const fetchWaitlist = (params) => {
+  const qs = new URLSearchParams(params || {}).toString();
+  return call(`/admin/waitlist${qs ? `?${qs}` : ""}`);
+};
+export const fetchWaitlistStats   = ()        => call("/admin/waitlist/stats");
+export const updateWaitlistEntry  = (id, body) => call(`/admin/waitlist/${id}`, { method: "PATCH", body: JSON.stringify(body) });
+export const deleteWaitlistEntry  = (id)       => call(`/admin/waitlist/${id}`, { method: "DELETE" });
+
 // Toll Plaza management
 export const fetchTollPlazas = () => call("/admin/pricing/tolls");
 export const createTollPlaza = (body) => call("/admin/pricing/tolls", { method: "POST", body: JSON.stringify(body) });
