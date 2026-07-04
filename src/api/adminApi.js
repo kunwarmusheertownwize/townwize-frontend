@@ -166,9 +166,20 @@ export const fetchWaitlist = (params) => {
   const qs = new URLSearchParams(params || {}).toString();
   return call(`/admin/waitlist${qs ? `?${qs}` : ""}`);
 };
-export const fetchWaitlistStats   = ()        => call("/admin/waitlist/stats");
+export const fetchWaitlistStats   = ()         => call("/admin/waitlist/stats");
 export const updateWaitlistEntry  = (id, body) => call(`/admin/waitlist/${id}`, { method: "PATCH", body: JSON.stringify(body) });
 export const deleteWaitlistEntry  = (id)       => call(`/admin/waitlist/${id}`, { method: "DELETE" });
+export const downloadWaitlistExport = async (params) => {
+  const qs  = new URLSearchParams(params || {}).toString();
+  const res = await authFetch(`${API_BASE}/admin/waitlist/export${qs ? `?${qs}` : ""}`);
+  const blob = await res.blob();
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement("a");
+  a.href     = url;
+  a.download = `waitlist-${Date.now()}.${params?.format || "csv"}`;
+  a.click();
+  URL.revokeObjectURL(url);
+};
 
 // Toll Plaza management
 export const fetchTollPlazas = () => call("/admin/pricing/tolls");
