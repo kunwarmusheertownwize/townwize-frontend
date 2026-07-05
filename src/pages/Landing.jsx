@@ -493,49 +493,6 @@ const Landing = () => {
                 </Motion.div>
             </section>
 
-            {/* ─── NEWSLETTER ───────────────────────────────────────────────── */}
-            <section className="bg-gray-100 dark:bg-townwize-bgDark py-24">
-                <div className="max-w-3xl mx-auto px-6 text-center">
-                    <h2 className="text-3xl md:text-4xl font-extrabold mb-4 text-townwize-primary dark:text-white">
-                        Stay in the Loop
-                    </h2>
-                    <p className="text-townwize-textSecondary dark:text-gray-300 mb-2">
-                        Get launch updates, feature announcements, and community-only offers.
-                    </p>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-8">
-                        No spam. Only important updates.
-                    </p>
-
-                    {subscribed ? (
-                        <Motion.div
-                            initial={{ opacity: 0, scale: 0.95 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            className="inline-block px-8 py-4 rounded-xl bg-townwize-accent/10 border border-townwize-accent/30 text-townwize-accent font-semibold"
-                        >
-                            You're on the list. We'll be in touch!
-                        </Motion.div>
-                    ) : (
-                        <form
-                            onSubmit={(e) => { e.preventDefault(); setSubscribed(true); }}
-                            className="flex flex-col sm:flex-row gap-4 justify-center"
-                        >
-                            <input
-                                type="email"
-                                placeholder="Your email address"
-                                className="px-5 py-3 rounded-xl shadow-sm border border-gray-300 dark:border-gray-600 flex-1 text-black dark:text-white bg-white dark:bg-gray-800 focus:ring-2 focus:ring-townwize-accent focus:outline-none"
-                                required
-                            />
-                            <button
-                                type="submit"
-                                className="px-6 py-3 rounded-xl font-semibold bg-townwize-primary text-white hover:bg-townwize-accent hover:text-townwize-primary transition"
-                            >
-                                Notify Me
-                            </button>
-                        </form>
-                    )}
-                </div>
-            </section>
-
             <Footer />
         </div>
     );
