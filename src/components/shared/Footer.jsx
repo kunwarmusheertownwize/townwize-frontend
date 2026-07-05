@@ -75,13 +75,13 @@ const Footer = () => (
                 {/* Nav columns */}
                 {NAV.map(({ heading, links }) => (
                     <div key={heading}>
-                        <p className="text-xs font-bold uppercase tracking-widest text-white/50 mb-4">{heading}</p>
+                        <p className="text-xs font-bold uppercase tracking-widest text-white/60 mb-4">{heading}</p>
                         <ul className="space-y-3">
                             {links.map(({ label, to }) => (
                                 <li key={label}>
                                     <Link
                                         to={to}
-                                        className="text-sm text-gray-300 hover:text-white transition-colors duration-150"
+                                        className="text-sm text-white/80 hover:text-white transition-colors duration-150"
                                     >
                                         {label}
                                     </Link>
@@ -100,8 +100,8 @@ const Footer = () => (
                     © {new Date().getFullYear()} Townwize. All rights reserved.
                 </p>
                 <div className="flex items-center gap-5">
-                    <Link to="/privacy"  className="text-xs text-gray-400 hover:text-white transition-colors">Privacy Policy</Link>
-                    <Link to="/terms"    className="text-xs text-gray-400 hover:text-white transition-colors">Terms of Use</Link>
+                    <Link to="/privacy"  className="text-xs text-white/60 hover:text-white transition-colors">Privacy Policy</Link>
+                    <Link to="/terms"    className="text-xs text-white/60 hover:text-white transition-colors">Terms of Use</Link>
                     <span className="text-xs text-townwize-accent font-medium">BTK Exclusive</span>
                 </div>
             </div>
