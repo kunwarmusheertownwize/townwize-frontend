@@ -145,24 +145,48 @@ function TypeSplitBar({ passenger, driver }) {
   );
 }
 
-// Top precincts horizontal bar chart
+// Top precincts vertical bar chart — dark azure
+const AZURE = "#003F87";
+const AZURE_HOVER = "#004FA8";
+
 function PrecinctChart({ data }) {
   if (!data || data.length === 0) return null;
   const max = data[0]?.count || 1;
+  const BAR_H = 96;
   return (
     <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
-      <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-4">Top Precincts</p>
-      <div className="space-y-2.5">
+      <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-3">Top Precincts</p>
+      {/* Bar area */}
+      <div className="flex items-end gap-1" style={{ height: `${BAR_H}px` }}>
+        {data.map((row) => {
+          const h = Math.max(4, Math.round((row.count / max) * BAR_H));
+          return (
+            <div key={row.precinct} className="flex flex-col items-center justify-end flex-1 group relative h-full">
+              {/* count above bar */}
+              <span className="text-[9px] font-semibold text-gray-600 dark:text-gray-300 mb-0.5 leading-none">
+                {row.count}
+              </span>
+              {/* bar */}
+              <div className="w-full rounded-t cursor-default transition-colors"
+                style={{ height: `${h}px`, backgroundColor: AZURE }}
+                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = AZURE_HOVER; }}
+                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = AZURE; }}
+                title={`${row.precinct}: ${row.count}`}
+              />
+            </div>
+          );
+        })}
+      </div>
+      {/* Rotated labels */}
+      <div className="flex gap-1 mt-1" style={{ height: "64px" }}>
         {data.map((row) => (
-          <div key={row.precinct}>
-            <div className="flex justify-between text-xs mb-1">
-              <span className="text-gray-700 dark:text-gray-300 truncate max-w-[180px]">{row.precinct}</span>
-              <span className="font-semibold text-gray-700 dark:text-gray-200 ml-2">{row.count}</span>
-            </div>
-            <div className="h-2 rounded-full bg-gray-100 dark:bg-gray-700 overflow-hidden">
-              <div className="h-2 rounded-full bg-teal-500 transition-all"
-                style={{ width: `${Math.round((row.count / max) * 100)}%` }} />
-            </div>
+          <div key={row.precinct} className="flex-1 flex items-start justify-center overflow-hidden">
+            <span
+              className="text-[9px] text-gray-500 dark:text-gray-400 whitespace-nowrap"
+              style={{ writingMode: "vertical-rl", transform: "rotate(180deg)", maxHeight: "64px", overflow: "hidden", textOverflow: "ellipsis" }}
+            >
+              {row.precinct}
+            </span>
           </div>
         ))}
       </div>
