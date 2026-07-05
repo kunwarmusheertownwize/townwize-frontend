@@ -464,7 +464,7 @@ export default function WaitlistPage() {
 
       {/* ── Capacity + Suspicious Row ── */}
       {stats && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <CapacityCard label="Towners" used={stats.passenger?.total || 0} limit={500} color="teal"   icon="🏘" />
           <CapacityCard label="Wizers"  used={stats.driver?.total    || 0} limit={100} color="purple" icon="🚗" />
           {(stats.suspicious > 0) && (
