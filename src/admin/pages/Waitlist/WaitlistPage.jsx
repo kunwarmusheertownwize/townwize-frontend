@@ -479,10 +479,10 @@ export default function WaitlistPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div className="space-y-3">
             <StatusBar totals={stats.totals} />
-            <TypeSplitBar passenger={stats.passenger} driver={stats.driver} />
+            <DailyChart data={stats.dailySignups} />
           </div>
           <div className="space-y-3">
-            <DailyChart  data={stats.dailySignups} />
+            <TypeSplitBar passenger={stats.passenger} driver={stats.driver} />
             <PrecinctChart data={stats.precinctDistribution} />
           </div>
         </div>
