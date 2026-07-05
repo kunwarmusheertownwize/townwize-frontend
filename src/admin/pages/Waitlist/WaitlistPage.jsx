@@ -175,20 +175,19 @@ function DailyChart({ data }) {
   const max = Math.max(...recent.map((d) => d.count), 1);
   const total = recent.reduce((a, d) => a + d.count, 0);
   return (
-    <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
+    <div className="flex-1 flex flex-col rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
       <div className="flex items-center justify-between mb-4">
         <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Daily Signups (last {recent.length} days)</p>
         <span className="text-xs font-semibold text-teal-600 dark:text-teal-400">{total} total</span>
       </div>
-      <div className="flex items-end gap-1 h-16">
+      <div className="flex items-end gap-1 flex-1 min-h-[64px]">
         {recent.map((d) => {
-          const h = Math.max(4, Math.round((d.count / max) * 64));
-          const label = d.date.slice(5); // MM-DD
+          const pct = Math.max(4, Math.round((d.count / max) * 100));
+          const label = d.date.slice(5);
           return (
-            <div key={d.date} className="flex flex-col items-center flex-1 group relative" title={`${d.date}: ${d.count}`}>
+            <div key={d.date} className="flex flex-col items-center justify-end flex-1 h-full group relative" title={`${d.date}: ${d.count}`}>
               <div className="w-full rounded-t bg-teal-400 dark:bg-teal-500 hover:bg-teal-500 dark:hover:bg-teal-400 transition-colors cursor-default"
-                style={{ height: `${h}px` }} />
-              {/* tooltip on hover */}
+                style={{ height: `${pct}%` }} />
               <div className="absolute bottom-full mb-1 hidden group-hover:flex flex-col items-center z-10 pointer-events-none">
                 <div className="bg-gray-800 text-white text-[10px] rounded px-1.5 py-0.5 whitespace-nowrap">{d.count} on {label}</div>
                 <div className="w-1.5 h-1.5 bg-gray-800 rotate-45 -mt-0.5" />
@@ -474,8 +473,8 @@ export default function WaitlistPage() {
 
       {/* ── Charts Row ── */}
       {stats && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <div className="space-y-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 items-stretch">
+          <div className="flex flex-col gap-3">
             <StatusBar totals={stats.totals} />
             <DailyChart data={stats.dailySignups} />
           </div>
