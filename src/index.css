@@ -72,12 +72,14 @@ p:not([class*="text-"]) {
   @apply text-townwize-textSecondary dark:text-townwize-textContent leading-relaxed;
 }
 
-a {
-  @apply text-townwize-primary hover:text-townwize-accent transition-colors;
-}
+@layer base {
+  a {
+    @apply text-townwize-primary hover:text-townwize-accent transition-colors;
+  }
 
-.dark a {
-  @apply text-townwize-textContent hover:text-townwize-accent;
+  .dark a {
+    @apply text-townwize-textContent hover:text-townwize-accent;
+  }
 }
 
 /* Alternate link variants */
