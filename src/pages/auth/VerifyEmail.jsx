@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, Link } from "react-router-dom";
 
 export default function VerifyEmail() {
   const { search } = useLocation();
   const [status, setStatus] = useState("loading");
-  const [message, setMessage] = useState("Verifying your email...");
+  const [message, setMessage] = useState("");
 
   useEffect(() => {
     let mounted = true;
@@ -13,34 +13,72 @@ export default function VerifyEmail() {
       const token = params.get("token");
       if (!token) {
         setStatus("error");
-        setMessage("Verification token is missing.");
+        setMessage("Verification token is missing. Please use the link from your email.");
         return;
       }
       try {
-        const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/auth/verify-email?token=${encodeURIComponent(token)}`);
+        const res = await fetch(
+          `${import.meta.env.VITE_API_BASE_URL}/auth/verify-email?token=${encodeURIComponent(token)}`
+        );
         const json = await res.json();
         if (!mounted) return;
-        if (!res.ok) throw new Error(json?.error?.message || json?.message || "Email verification failed");
+        if (!res.ok) throw new Error(json?.error?.message || json?.message || "Email verification failed.");
         setStatus("success");
-        setMessage(json?.message || "Your email has been verified.");
+        setMessage(json?.message || "Your email has been verified successfully.");
       } catch (e) {
         if (!mounted) return;
         setStatus("error");
-        setMessage(e?.message || "Email verification failed.");
+        setMessage(e?.message || "Email verification failed. The link may have expired.");
       }
     };
     run();
-    return () => {
-      mounted = false;
-    };
+    return () => { mounted = false; };
   }, [search]);
 
   return (
-    <div className="max-w-xl mx-auto mt-10 bg-white dark:bg-townwize-primaryDark border border-gray-200 dark:border-gray-700 rounded-xl p-6">
-      <h1 className="text-2xl font-bold text-townwize-primary">Email Verification</h1>
-      <p className={`mt-4 text-sm ${status === "success" ? "text-green-600" : status === "error" ? "text-red-600" : "text-gray-600"}`}>
-        {message}
-      </p>
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 px-4">
+      <div className="max-w-md w-full bg-white dark:bg-townwize-primaryDark border border-gray-200 dark:border-gray-700 rounded-2xl p-8 text-center shadow-sm">
+
+        {status === "loading" && (
+          <>
+            <div className="w-12 h-12 rounded-full border-4 border-townwize-accent border-t-transparent animate-spin mx-auto mb-4" />
+            <p className="text-gray-500 dark:text-gray-400 text-sm">Verifying your email…</p>
+          </>
+        )}
+
+        {status === "success" && (
+          <>
+            <div className="w-16 h-16 rounded-full bg-green-100 dark:bg-green-900/40 flex items-center justify-center mx-auto mb-4 text-3xl">
+              ✓
+            </div>
+            <h1 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Email Verified</h1>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">{message}</p>
+            <Link
+              to="/login"
+              className="inline-block w-full py-3 rounded-xl bg-townwize-primary text-white font-semibold hover:bg-townwize-primaryDark transition"
+            >
+              Go to Login
+            </Link>
+          </>
+        )}
+
+        {status === "error" && (
+          <>
+            <div className="w-16 h-16 rounded-full bg-red-100 dark:bg-red-900/40 flex items-center justify-center mx-auto mb-4 text-3xl">
+              ✕
+            </div>
+            <h1 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Verification Failed</h1>
+            <p className="text-sm text-red-500 dark:text-red-400 mb-6">{message}</p>
+            <Link
+              to="/register"
+              className="inline-block w-full py-3 rounded-xl bg-townwize-primary text-white font-semibold hover:bg-townwize-primaryDark transition"
+            >
+              Back to Registration
+            </Link>
+          </>
+        )}
+
+      </div>
     </div>
   );
 }

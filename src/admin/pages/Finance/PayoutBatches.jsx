@@ -9,6 +9,9 @@ export default function PayoutBatches() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+  const [pendingAction, setPendingAction] = useState(null); // { batch, nextStatus }
+  const [actionNotes, setActionNotes] = useState("");
+  const [actionFailureReason, setActionFailureReason] = useState("");
 
   const load = async () => {
     setLoading(true);
@@ -53,22 +56,28 @@ export default function PayoutBatches() {
     return [];
   };
 
-  const updateStatus = async (batch, nextStatus) => {
+  const openActionModal = (batch, nextStatus) => {
     if (!nextStatus) return;
-    const notes = window.prompt(`Optional note for ${nextStatus}:`, "") || "";
-    const failureReason = nextStatus === "FAILED" ? window.prompt("Failure reason (required for FAILED):", "") || "" : "";
-    if (nextStatus === "FAILED" && !failureReason.trim()) return;
+    setPendingAction({ batch, nextStatus });
+    setActionNotes("");
+    setActionFailureReason("");
+  };
 
+  const confirmAction = async () => {
+    if (!pendingAction) return;
+    const { batch, nextStatus } = pendingAction;
+    if (nextStatus === "FAILED" && !actionFailureReason.trim()) return;
     setBusy(true);
     setError("");
     setMessage("");
     try {
       await updateFinancePayoutStatus(batch._id || batch.id, {
         status: nextStatus,
-        notes,
-        failureReason,
+        notes: actionNotes,
+        failureReason: actionFailureReason,
       });
       setMessage(`Batch moved to ${nextStatus}.`);
+      setPendingAction(null);
       await load();
     } catch (e) {
       setError(e.message || "Failed to update payout batch");
@@ -153,7 +162,7 @@ export default function PayoutBatches() {
                           className="rounded border px-2 py-1 text-xs"
                           defaultValue=""
                           onChange={(e) => {
-                            updateStatus(it, e.target.value);
+                            openActionModal(it, e.target.value);
                             e.target.value = "";
                           }}
                         >
@@ -177,6 +186,62 @@ export default function PayoutBatches() {
           </tbody>
         </table>
       </div>
+    </div>
+
+      {/* Status-change modal */}
+      {pendingAction && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+          <div className="w-full max-w-sm rounded-2xl bg-white dark:bg-gray-900 shadow-xl p-6 space-y-4">
+            <h2 className="text-base font-semibold text-gray-900 dark:text-white">
+              Move to {pendingAction.nextStatus}
+            </h2>
+
+            <div>
+              <label className="text-xs font-medium text-gray-500 dark:text-gray-400 block mb-1">
+                Note <span className="text-gray-400">(optional)</span>
+              </label>
+              <textarea
+                rows={2}
+                value={actionNotes}
+                onChange={(e) => setActionNotes(e.target.value)}
+                placeholder="Add an internal note…"
+                className="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2 text-sm text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-townwize-primary"
+              />
+            </div>
+
+            {pendingAction.nextStatus === "FAILED" && (
+              <div>
+                <label className="text-xs font-medium text-red-500 block mb-1">
+                  Failure reason <span className="text-red-400">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={actionFailureReason}
+                  onChange={(e) => setActionFailureReason(e.target.value)}
+                  placeholder="Required for FAILED status"
+                  className="w-full rounded-lg border border-red-300 dark:border-red-700 bg-gray-50 dark:bg-gray-800 px-3 py-2 text-sm text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-red-400"
+                />
+              </div>
+            )}
+
+            <div className="flex gap-3 pt-1">
+              <button
+                onClick={() => setPendingAction(null)}
+                className="flex-1 py-2 rounded-xl border border-gray-200 dark:border-gray-700 text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmAction}
+                disabled={busy || (pendingAction.nextStatus === "FAILED" && !actionFailureReason.trim())}
+                className="flex-1 py-2 rounded-xl bg-townwize-primary text-white text-sm font-semibold disabled:opacity-50 transition"
+              >
+                {busy ? "Saving…" : "Confirm"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

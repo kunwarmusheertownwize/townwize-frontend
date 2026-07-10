@@ -141,6 +141,7 @@ export default function Zones() {
   // Demand heatmap
   const [heatmapEnabled, setHeatmapEnabled] = useState(false);
   const [heatmapLoading, setHeatmapLoading] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState(null);
   const heatmapLayerRef = useRef(null);
 
   const mapRef = useRef(null);
@@ -825,15 +826,19 @@ export default function Zones() {
     }
   };
 
-  const onDelete = async (zone) => {
-    if (!window.confirm(`Delete zone "${zone.name}" (${zone.code})?`)) return;
+  const onDelete = (zone) => setDeleteTarget(zone);
+
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
     try {
-      await deleteZone(zone._id);
+      await deleteZone(deleteTarget._id);
       setMessage("Zone deleted.");
+      setDeleteTarget(null);
       await loadZones();
-      if (editingId === zone._id) resetForm();
+      if (editingId === deleteTarget._id) resetForm();
     } catch (e) {
       setError(e?.message || "Failed to delete zone");
+      setDeleteTarget(null);
     }
   };
 
@@ -1277,6 +1282,35 @@ export default function Zones() {
                 onClick={onOverlapConfirm}
               >
                 Save Anyway
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete confirmation modal */}
+      {deleteTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+          <div className="w-full max-w-sm rounded-2xl bg-white dark:bg-gray-900 shadow-xl p-6 space-y-4">
+            <h2 className="text-base font-semibold text-gray-900 dark:text-white">Delete Zone</h2>
+            <p className="text-sm text-gray-600 dark:text-gray-300">
+              Are you sure you want to delete{" "}
+              <span className="font-semibold">"{deleteTarget.name}"</span>{" "}
+              <span className="text-gray-400">({deleteTarget.code})</span>?
+              This cannot be undone.
+            </p>
+            <div className="flex gap-3 pt-1">
+              <button
+                onClick={() => setDeleteTarget(null)}
+                className="flex-1 py-2 rounded-xl border border-gray-200 dark:border-gray-700 text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDelete}
+                className="flex-1 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white text-sm font-semibold transition"
+              >
+                Delete
               </button>
             </div>
           </div>

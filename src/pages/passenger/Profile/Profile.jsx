@@ -182,7 +182,10 @@ export default function Profile() {
                       <p className="text-sm text-gray-500 dark:text-gray-400">
                         Upload CNIC, BTK Proof, and Selfie Verification.
                       </p>
-                      <button className="px-4 py-2.5 bg-townwize-primary text-white text-sm font-semibold rounded-xl">
+                      <button
+                        onClick={() => toast.info("To update your documents, contact us at support@townwize.com")}
+                        className="px-4 py-2.5 bg-townwize-primary text-white text-sm font-semibold rounded-xl"
+                      >
                         Upload Documents
                       </button>
                     </div>
@@ -190,27 +193,15 @@ export default function Profile() {
 
                   {tab.key === "history" && (
                     <div className="space-y-3">
-                      {[1, 2].map((i) => (
-                        <div
-                          key={i}
-                          className="p-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900"
-                        >
-                          <div className="flex justify-between items-start">
-                            <span className="text-sm font-medium">
-                              Precinct 01 → BTK Head Office
-                            </span>
-                            <span className="text-xs text-gray-400 shrink-0 ml-2">Oct 10</span>
-                          </div>
-                          <div className="flex justify-between items-center mt-2">
-                            <span className="font-semibold text-green-600 dark:text-green-400 text-sm">
-                              PKR 380
-                            </span>
-                            <span className="text-[10px] bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 px-2 py-0.5 rounded-full">
-                              Completed
-                            </span>
-                          </div>
-                        </div>
-                      ))}
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        View all your past and upcoming rides.
+                      </p>
+                      <button
+                        onClick={() => navigate("/passenger/trips")}
+                        className="w-full py-3 bg-townwize-primary text-white text-sm font-semibold rounded-xl"
+                      >
+                        View Ride History →
+                      </button>
                     </div>
                   )}
 
@@ -523,7 +514,10 @@ export default function Profile() {
             <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
               Upload CNIC, BTK Proof, and Selfie Verification.
             </p>
-            <button className="px-5 py-2.5 bg-townwize-primary text-white rounded-xl hover:bg-townwize-primaryDark transition">
+            <button
+              onClick={() => toast.info("To update your documents, contact us at support@townwize.com")}
+              className="px-5 py-2.5 bg-townwize-primary text-white rounded-xl hover:bg-townwize-primaryDark transition"
+            >
               Upload Documents
             </button>
           </div>
@@ -532,36 +526,17 @@ export default function Profile() {
         {activeTab === "history" && (
           <div className="p-6 rounded-2xl bg-white dark:bg-townwize-primaryDark border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-all duration-300">
             <h3 className="text-lg font-semibold mb-3 text-townwize-primary dark:text-white">
-              Recent Rides
+              Ride History
             </h3>
-            <div className="grid md:grid-cols-2 gap-4">
-              {[1, 2].map((i) => (
-                <div
-                  key={i}
-                  className="p-4 rounded-lg border border-gray-200 dark:border-gray-700 hover:shadow transition-all"
-                >
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="font-medium text-townwize-primary dark:text-white">
-                      Precinct 01 → BTK Head Office
-                    </span>
-                    <span className="text-xs text-gray-500 dark:text-gray-400">
-                      Oct 10 • 10:45 AM
-                    </span>
-                  </div>
-                  <p className="text-sm text-gray-500 dark:text-gray-300">
-                    Distance • 8.5 km · Duration • 16 min
-                  </p>
-                  <div className="flex justify-between items-center mt-3">
-                    <span className="font-semibold text-green-600 dark:text-green-400">
-                      PKR 380
-                    </span>
-                    <span className="text-xs bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 px-2 py-0.5 rounded-full">
-                      Completed
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+              Your full trip history with receipts and ratings.
+            </p>
+            <button
+              onClick={() => navigate("/passenger/trips")}
+              className="px-5 py-2.5 bg-townwize-primary text-white rounded-xl hover:bg-townwize-primaryDark transition text-sm font-semibold"
+            >
+              View All Trips →
+            </button>
           </div>
         )}
 
@@ -734,33 +709,17 @@ export default function Profile() {
             <h3 className="text-lg font-semibold mb-3 text-townwize-primary dark:text-white">
               Wallet Overview
             </h3>
-            <div className="grid md:grid-cols-2 gap-5">
-              <div className="p-5 rounded-2xl bg-gray-50 dark:bg-townwize-primary border border-gray-200 dark:border-gray-700 shadow-sm">
-                <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">
-                  Current Balance
-                </p>
-                <h4 className="text-2xl font-bold text-townwize-primary dark:text-townwize-accent">
-                  PKR {user?.walletBalance?.toLocaleString() || "0.00"}
-                </h4>
-                <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                  Updated just now
-                </p>
-              </div>
-
-              <div className="p-5 rounded-2xl bg-gray-50 dark:bg-townwize-primary border border-gray-200 dark:border-gray-700 shadow-sm">
-                <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">
-                  Last Transaction
-                </p>
-                <h4 className="text-lg font-semibold text-green-600 dark:text-green-400">
-                  PKR -350 · Ride Fare
-                </h4>
-                <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                  Oct 9 · 12:45 PM
-                </p>
-              </div>
+            <div className="p-5 rounded-2xl bg-gray-50 dark:bg-townwize-primary border border-gray-200 dark:border-gray-700 shadow-sm mb-5">
+              <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Current Balance</p>
+              <h4 className="text-2xl font-bold text-townwize-primary dark:text-townwize-accent">
+                PKR {user?.walletBalance?.toLocaleString() || "0.00"}
+              </h4>
             </div>
-            <div className="text-center mt-6">
-              <button className="px-5 py-2.5 bg-townwize-primary text-white rounded-xl hover:bg-townwize-primaryDark transition">
+            <div className="text-center">
+              <button
+                onClick={() => toast.info("Digital payments are coming soon. Rides are currently cash only.")}
+                className="px-5 py-2.5 bg-townwize-primary text-white rounded-xl hover:bg-townwize-primaryDark transition"
+              >
                 Add Funds
               </button>
             </div>
