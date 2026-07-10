@@ -186,7 +186,6 @@ export default function PayoutBatches() {
           </tbody>
         </table>
       </div>
-    </div>
 
       {/* Status-change modal */}
       {pendingAction && (
