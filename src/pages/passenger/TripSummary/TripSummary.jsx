@@ -40,6 +40,8 @@ const TripSummary = () => {
 
   const [confirming, setConfirming] = useState(false);
   const [showFareDetails, setShowFareDetails] = useState(false);
+  const [maxSeats, setMaxSeats] = useState(2);
+  const scheduledAt = state?.scheduledAt || null;
   const [quote, setQuote] = useState({
     loading: true,
     finalFare: Number(state?.fare ?? 0),
@@ -367,6 +369,42 @@ const TripSummary = () => {
         {quote.message ? <p className="text-sm text-amber-700">{quote.message}</p> : null}
       </div>
 
+      {/* Scheduled ride seat picker */}
+      {scheduledAt && (
+        <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-xl px-4 py-3 space-y-3">
+          <div className="flex items-center gap-2">
+            <span className="text-amber-500">🗓</span>
+            <p className="text-sm font-semibold text-amber-800 dark:text-amber-300">
+              Scheduled for {new Date(scheduledAt).toLocaleString("en-PK", { dateStyle: "medium", timeStyle: "short" })}
+            </p>
+          </div>
+          <div>
+            <p className="text-xs text-amber-700 dark:text-amber-400 mb-2">Seats to offer (others can join up to your limit):</p>
+            <div className="flex gap-2">
+              {[1, 2, 3, 4].map((n) => (
+                <button
+                  key={n}
+                  type="button"
+                  onClick={() => setMaxSeats(n)}
+                  className={`w-10 h-10 rounded-xl text-sm font-bold border transition ${
+                    maxSeats === n
+                      ? "bg-townwize-primary text-white border-townwize-primary"
+                      : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-600"
+                  }`}
+                >
+                  {n}
+                </button>
+              ))}
+            </div>
+            {!quote.loading && (
+              <p className="text-xs text-amber-600 dark:text-amber-400 mt-2">
+                Fare per seat: <span className="font-semibold">PKR {Math.ceil(Number(quote.finalFare || fare || 0) / maxSeats).toLocaleString()}</span>
+              </p>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Confirm Button */}
       <div className="relative grid grid-cols-1 sm:grid-cols-2 gap-3">
         <button
@@ -374,6 +412,30 @@ const TripSummary = () => {
           onClick={async () => {
             try {
               setConfirming(true);
+
+              // Scheduled shared ride flow
+              if (scheduledAt) {
+                const res = await authFetch(
+                  `${import.meta.env.VITE_API_BASE_URL}/rides/shared`,
+                  {
+                    method: "POST",
+                    body: JSON.stringify({
+                      pickup, dropoff, pickupCoords, dropoffCoords,
+                      carType: "economy",
+                      fareEstimate: Number(quote.finalFare || fare || 0),
+                      distanceKm, etaMinutes,
+                      scheduledAt,
+                      maxSeats,
+                    }),
+                  }
+                );
+                const json = await res.json();
+                if (!res.ok) throw new Error(json?.error?.message || json?.message || "Could not schedule ride");
+                toast.success("Ride scheduled! You'll be notified when a driver is assigned.", { autoClose: 5000 });
+                navigate("/passenger/trips", { replace: true });
+                return;
+              }
+
               const res = await authFetch(
                 `${import.meta.env.VITE_API_BASE_URL}/rides`,
                 {
@@ -410,11 +472,9 @@ const TripSummary = () => {
               // RideTogether: route through pooling UI
               if (rideType === "RideTogether") {
                 if (data.matched && data.primaryRideId) {
-                  // Immediately matched — go straight to tracking on primary ride
                   localStorage.setItem("activePassengerRideId", data.primaryRideId);
                   navigate(`/passenger/live-tracking/${data.primaryRideId}`, { replace: true });
                 } else {
-                  // Sitting in POOLING — show countdown in Booking.jsx
                   navigate("/passenger/booking", {
                     replace: true,
                     state: {
@@ -435,7 +495,6 @@ const TripSummary = () => {
                 return;
               }
 
-              // Private ride — navigate to live tracking directly
               localStorage.setItem("activePassengerRideId", rideId);
               navigate(`/passenger/live-tracking/${rideId}`, { replace: true });
 
@@ -451,12 +510,12 @@ const TripSummary = () => {
             }`}
         >
           {confirming
-            ? "Creating ride..."
+            ? scheduledAt ? "Scheduling..." : "Creating ride..."
             : zoneCheck.loading
               ? "Checking zones..."
               : quote.loading
                 ? "Calculating fare..."
-              : "Confirm Trip"}
+              : scheduledAt ? "Schedule Shared Ride" : "Confirm Trip"}
         </button>
       <button
         onClick={() => {

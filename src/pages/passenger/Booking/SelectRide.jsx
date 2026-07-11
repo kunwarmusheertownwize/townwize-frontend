@@ -82,6 +82,7 @@ const SelectRide = () => {
   // ✅ Step 2: Load the saved state if current state is missing (after login redirect)
   const persistedState = JSON.parse(sessionStorage.getItem("selectRideStatePersist") || "{}");
   const effectiveState = state && Object.keys(state).length ? state : persistedState;
+  const scheduledAt = effectiveState?.scheduledAt || null;
 
 
   // Auth Context
@@ -755,6 +756,7 @@ navigate("/passenger/trip-summary", {
     fare,
     tollAmount,
     tollNames,
+    scheduledAt,
   },
 });
 
@@ -1146,6 +1148,19 @@ navigate("/passenger/trip-summary", {
               )}
             </div>
           </div>
+
+          {/* ── Scheduled ride banner ── */}
+          {scheduledAt && (
+            <div className="flex items-center gap-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-xl px-4 py-3">
+              <span className="text-amber-500 text-base shrink-0">🗓</span>
+              <div>
+                <p className="text-sm font-semibold text-amber-800 dark:text-amber-300">Scheduling a shared ride</p>
+                <p className="text-xs text-amber-700 dark:text-amber-400 mt-0.5">
+                  {new Date(scheduledAt).toLocaleString("en-PK", { dateStyle: "medium", timeStyle: "short" })}
+                </p>
+              </div>
+            </div>
+          )}
 
           {/* ── RideTogether card ── */}
           <div

@@ -256,12 +256,23 @@ const Home = () => {
       return;
     }
 
+    let scheduledAt = null;
+    if (pickupTime && pickupTime !== "now") {
+      const [hours, minutes] = pickupTime.split(":").map(Number);
+      const dt = new Date(pickupDate);
+      dt.setHours(hours, minutes, 0, 0);
+      if (dt > new Date()) scheduledAt = dt.toISOString();
+    }
+
+    if (scheduledAt) {
+      navigate("/passenger/schedule-ride", {
+        state: { pickup, pickupCoords: currentCoordsRef.current, dropoff, scheduledAt },
+      });
+      return;
+    }
+
     navigate("/passenger/select-ride", {
-      state: {
-        pickup,
-        pickupCoords: currentCoordsRef.current,
-        dropoff,
-      },
+      state: { pickup, pickupCoords: currentCoordsRef.current, dropoff },
       replace: true,
     });
   };
