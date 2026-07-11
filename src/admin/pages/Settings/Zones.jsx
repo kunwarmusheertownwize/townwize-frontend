@@ -142,6 +142,7 @@ export default function Zones() {
   const [heatmapEnabled, setHeatmapEnabled] = useState(false);
   const [heatmapLoading, setHeatmapLoading] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [editConfirmTarget, setEditConfirmTarget] = useState(null);
   const heatmapLayerRef = useRef(null);
 
   const mapRef = useRef(null);
@@ -1168,7 +1169,12 @@ export default function Zones() {
             >
               {saving ? "Saving..." : isEditing ? "Update Zone" : "Create Zone"}
             </button>
-            <button className="px-3 py-2 rounded-md border text-sm" onClick={resetForm}>Reset</button>
+            <button
+              className={`px-3 py-2 rounded-md border text-sm ${isEditing ? "border-red-300 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20" : ""}`}
+              onClick={resetForm}
+            >
+              {isEditing ? "Cancel Edit" : "Reset"}
+            </button>
             {isEditing && selectedZone ? <span className="text-xs text-gray-500 dark:text-gray-400">Editing: {selectedZone.code}</span> : null}
           </div>
         </div>
@@ -1235,7 +1241,7 @@ export default function Zones() {
                   <td className="px-4 py-3"><button className="text-townwize-primary underline" onClick={() => onOpenMap(z)}>Open Map</button></td>
                   <td className="px-4 py-3">
                     <div className="flex flex-wrap gap-2">
-                      <button className="px-2 py-1 border rounded text-xs" onClick={() => onEdit(z)}>Edit</button>
+                      <button className="px-2 py-1 border rounded text-xs" onClick={() => setEditConfirmTarget(z)}>Edit</button>
                       <button className="px-2 py-1 border rounded text-xs" onClick={() => onToggle(z)}>{z.active ? "Deactivate" : "Activate"}</button>
                       <button className="px-2 py-1 border border-red-300 text-red-700 rounded text-xs" onClick={() => onDelete(z)}>Delete</button>
                     </div>
@@ -1282,6 +1288,37 @@ export default function Zones() {
                 onClick={onOverlapConfirm}
               >
                 Save Anyway
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit confirmation modal */}
+      {editConfirmTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+          <div className="w-full max-w-sm rounded-2xl bg-white dark:bg-gray-900 shadow-xl p-6 space-y-4">
+            <h2 className="text-base font-semibold text-gray-900 dark:text-white">Edit Zone</h2>
+            <p className="text-sm text-gray-600 dark:text-gray-300">
+              You are about to edit{" "}
+              <span className="font-semibold">"{editConfirmTarget.name}"</span>{" "}
+              <span className="text-gray-400">({editConfirmTarget.code})</span>.
+            </p>
+            <p className="text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 rounded-lg px-3 py-2">
+              ⚠ Changes to zone boundaries or settings affect active ride routing and eligibility checks immediately upon saving.
+            </p>
+            <div className="flex gap-3 pt-1">
+              <button
+                onClick={() => setEditConfirmTarget(null)}
+                className="flex-1 py-2 rounded-xl border border-gray-200 dark:border-gray-700 text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => { onEdit(editConfirmTarget); setEditConfirmTarget(null); }}
+                className="flex-1 py-2 rounded-xl bg-townwize-primary text-white text-sm font-semibold transition"
+              >
+                Continue to Edit
               </button>
             </div>
           </div>
