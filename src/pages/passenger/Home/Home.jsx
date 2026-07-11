@@ -264,15 +264,13 @@ const Home = () => {
       if (dt > new Date()) scheduledAt = dt.toISOString();
     }
 
-    if (scheduledAt) {
-      navigate("/passenger/schedule-ride", {
-        state: { pickup, pickupCoords: currentCoordsRef.current, dropoff, scheduledAt },
-      });
-      return;
-    }
-
     navigate("/passenger/select-ride", {
-      state: { pickup, pickupCoords: currentCoordsRef.current, dropoff },
+      state: {
+        pickup,
+        pickupCoords: currentCoordsRef.current,
+        dropoff,
+        ...(scheduledAt ? { scheduledAt } : {}),
+      },
       replace: true,
     });
   };

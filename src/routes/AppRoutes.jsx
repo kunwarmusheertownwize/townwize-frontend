@@ -27,7 +27,6 @@ import AdminGuard from "../admin/guards/AdminGuard";
 import Home from "../pages/passenger/Home/Home";
 import Register from "../pages/auth/Register";
 import SelectRide from "../pages/passenger/Booking/SelectRide";
-import ScheduleRide from "../pages/passenger/Booking/ScheduleRide";
 import RideTogether from "../pages/passenger/RideTogether/RideTogether";
 import TripSummary from "../pages/passenger/TripSummary/TripSummary";
 import LiveTracking from "../pages/passenger/LiveTracking/LiveTracking";
@@ -110,7 +109,6 @@ const AppRoutes = () => {
 
           {/* Booking flow */}
           <Route path="/passenger/select-ride" element={<SelectRide />} />
-          <Route path="/passenger/schedule-ride" element={<ScheduleRide />} />
           <Route path="/passenger/ride-together" element={<RideTogether />} />
           <Route path="/passenger/trip-summary" element={<TripSummary />} />
           <Route path="/passenger/trip-receipt/:rideId" element={<PassengerTripReceipt />} />
