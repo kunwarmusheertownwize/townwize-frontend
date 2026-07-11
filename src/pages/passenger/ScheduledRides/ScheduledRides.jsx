@@ -38,9 +38,10 @@ const splitDateTime = (val) => val
   : { date: "", time: "" };
 
 // ── Lightweight Places autocomplete input ──────────────────────────────────
-const PlacesInput = ({ value, onChange, placeholder, className }) => {
+const PlacesInput = ({ value, onChange, placeholder, className, allowCurrentLocation = false }) => {
   const [suggestions, setSuggestions] = useState([]);
   const [mapsReady, setMapsReady] = useState(false);
+  const [locating, setLocating] = useState(false);
   const wrapperRef = useRef(null);
   const timerRef = useRef(null);
 
@@ -84,6 +85,28 @@ const PlacesInput = ({ value, onChange, placeholder, className }) => {
     setSuggestions([]);
   };
 
+  const handleCurrentLocation = () => {
+    if (!navigator.geolocation) { toast.error("Geolocation not supported"); return; }
+    if (!mapsReady) { toast.error("Maps not ready yet"); return; }
+    setLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const latLng = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        const geocoder = new window.google.maps.Geocoder();
+        geocoder.geocode({ location: latLng }, (results, status) => {
+          setLocating(false);
+          if (status === "OK" && results[0]) {
+            onChange(results[0].formatted_address);
+          } else {
+            toast.error("Could not determine address from your location");
+          }
+        });
+      },
+      () => { setLocating(false); toast.error("Unable to get your location"); },
+      { enableHighAccuracy: true, timeout: 8000 }
+    );
+  };
+
   return (
     <div className="relative" ref={wrapperRef}>
       <input
@@ -91,8 +114,21 @@ const PlacesInput = ({ value, onChange, placeholder, className }) => {
         value={value}
         onChange={handleChange}
         placeholder={placeholder}
-        className={className}
+        className={`${className} ${allowCurrentLocation ? "pr-10" : ""}`}
       />
+      {allowCurrentLocation && (
+        <button
+          type="button"
+          onClick={handleCurrentLocation}
+          disabled={locating}
+          className="absolute right-3 top-1/2 -translate-y-1/2 text-townwize-primary hover:text-townwize-primaryDark disabled:opacity-50 transition"
+          title="Use current location"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className={`w-4 h-4 ${locating ? "animate-spin" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <circle cx="12" cy="12" r="3" /><path d="M12 2v3m0 14v3M2 12h3m14 0h3" /><circle cx="12" cy="12" r="9" strokeDasharray="4 2" />
+          </svg>
+        </button>
+      )}
       {suggestions.length > 0 && (
         <ul className="absolute z-50 left-0 right-0 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl shadow-lg max-h-52 overflow-y-auto">
           {suggestions.map((s) => (
@@ -329,6 +365,7 @@ const CreateTab = () => {
             onChange={(v) => handleChange("pickup", v)}
             placeholder="e.g. DHA Phase 6, Karachi"
             className={inputCls}
+            allowCurrentLocation
           />
         </div>
 
