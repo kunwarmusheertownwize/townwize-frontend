@@ -1,8 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { FaClock, FaUsers, FaSearch, FaPlus, FaArrowRight, FaCalendarAlt } from "react-icons/fa";
 import { toast } from "react-toastify";
 import api from "../../../services/api";
+import { loadGoogleMaps } from "../../../utils/googleMapsLoader";
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -35,6 +36,79 @@ const combineDateTime = (date, time) => (date && time ? `${date}T${time}` : "");
 const splitDateTime = (val) => val
   ? { date: val.slice(0, 10), time: val.slice(11, 16) }
   : { date: "", time: "" };
+
+// ── Lightweight Places autocomplete input ──────────────────────────────────
+const PlacesInput = ({ value, onChange, placeholder, className }) => {
+  const [suggestions, setSuggestions] = useState([]);
+  const [mapsReady, setMapsReady] = useState(false);
+  const wrapperRef = useRef(null);
+  const timerRef = useRef(null);
+
+  useEffect(() => {
+    loadGoogleMaps().then(() => setMapsReady(true)).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    const handleClick = (e) => {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target)) {
+        setSuggestions([]);
+      }
+    };
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
+
+  const fetchSuggestions = useCallback((input) => {
+    if (!mapsReady || !input.trim()) { setSuggestions([]); return; }
+    const service = new window.google.maps.places.AutocompleteService();
+    service.getPlacePredictions(
+      { input, componentRestrictions: { country: "pk" } },
+      (predictions, status) => {
+        if (status === window.google.maps.places.PlacesServiceStatus.OK && predictions) {
+          setSuggestions(predictions.map((p) => ({ text: p.description, placeId: p.place_id })));
+        } else {
+          setSuggestions([]);
+        }
+      }
+    );
+  }, [mapsReady]);
+
+  const handleChange = (e) => {
+    onChange(e.target.value);
+    clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => fetchSuggestions(e.target.value), 400);
+  };
+
+  const handleSelect = (suggestion) => {
+    onChange(suggestion.text);
+    setSuggestions([]);
+  };
+
+  return (
+    <div className="relative" ref={wrapperRef}>
+      <input
+        type="text"
+        value={value}
+        onChange={handleChange}
+        placeholder={placeholder}
+        className={className}
+      />
+      {suggestions.length > 0 && (
+        <ul className="absolute z-50 left-0 right-0 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl shadow-lg max-h-52 overflow-y-auto">
+          {suggestions.map((s) => (
+            <li
+              key={s.placeId}
+              onMouseDown={() => handleSelect(s)}
+              className="px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition"
+            >
+              {s.text}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+};
 
 // ── Native-friendly date+time picker ───────────────────────────────────────
 const inputCls = "w-full rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 px-3 py-2.5 text-sm text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-townwize-primary";
@@ -250,23 +324,21 @@ const CreateTab = () => {
 
         <div className="space-y-2">
           <label className="text-xs text-gray-500 dark:text-gray-400 font-medium">Pickup location</label>
-          <input
-            type="text"
+          <PlacesInput
             value={form.pickup}
-            onChange={(e) => handleChange("pickup", e.target.value)}
+            onChange={(v) => handleChange("pickup", v)}
             placeholder="e.g. DHA Phase 6, Karachi"
-            className="w-full rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 px-3 py-2.5 text-sm text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-townwize-primary"
+            className={inputCls}
           />
         </div>
 
         <div className="space-y-2">
           <label className="text-xs text-gray-500 dark:text-gray-400 font-medium">Dropoff location</label>
-          <input
-            type="text"
+          <PlacesInput
             value={form.dropoff}
-            onChange={(e) => handleChange("dropoff", e.target.value)}
+            onChange={(v) => handleChange("dropoff", v)}
             placeholder="e.g. Saddar, Karachi"
-            className="w-full rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 px-3 py-2.5 text-sm text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-townwize-primary"
+            className={inputCls}
           />
         </div>
 
