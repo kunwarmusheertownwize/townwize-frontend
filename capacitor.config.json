@@ -1,6 +1,6 @@
 {
-  "appId": "com.townwize.app",
-  "appName": "Townwize",
+  "appId": "com.townwize.towner",
+  "appName": "Towner",
   "webDir": "dist",
   "bundledWebRuntime": false,
   "server": {
@@ -9,15 +9,15 @@
   },
   "plugins": {
     "SplashScreen": {
-      "launchShowDuration": 2000,
-      "launchAutoHide": true,
-      "backgroundColor": "#03311C",
+      "launchShowDuration": 0,
+      "launchAutoHide": false,
+      "backgroundColor": "#08110F",
       "androidSplashResourceName": "splash",
-      "androidScaleType": "CENTER",
+      "androidScaleType": "CENTER_CROP",
       "showSpinner": false,
       "splashFullScreen": true,
       "splashImmersive": true,
-      "fadeOutDuration": 400
+      "fadeOutDuration": 0
     }
   }
 }

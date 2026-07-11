@@ -2,13 +2,17 @@
 
 import { BrowserRouter as Router } from "react-router-dom";
 import AppRoutes from "./routes/AppRoutes";
-import { StrictMode } from "react";
+import { StrictMode, useState } from "react";
 import OfflineBanner from "./components/OfflineBanner";
-//import Navbar from "./components/shared/Navbar";
+import SplashScreen from "./components/SplashScreen";
+import { isNative } from "./utils/platform";
 
 function App() {
+  const [splashDone, setSplashDone] = useState(!isNative());
+
   return (
     <StrictMode>
+      {!splashDone && <SplashScreen onDone={() => setSplashDone(true)} />}
       <Router>
         <OfflineBanner />
         <div className="min-h-screen flex flex-col bg-townwize-bgLight dark:bg-townwize-bgDark text-townwize-textPrimary dark:text-white transition-colors">
