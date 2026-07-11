@@ -150,14 +150,27 @@ const PlacesInput = ({ value, onChange, placeholder, className, allowCurrentLoca
 const inputCls = "w-full rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 px-3 py-2.5 text-sm text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-townwize-primary";
 
 function DateTimePicker({ value, onChange, required = false }) {
-  const { date, time } = splitDateTime(value);
+  const initial = splitDateTime(value);
+  const [date, setDate] = useState(initial.date);
+  const [time, setTime] = useState(initial.time);
   const minDate = todayStr();
 
-  const handleDate = (e) => onChange(combineDateTime(e.target.value, time));
-  const handleTime = (e) => onChange(combineDateTime(date, e.target.value));
+  const handleDate = (e) => {
+    const newDate = e.target.value;
+    setDate(newDate);
+    if (newDate && time) onChange(combineDateTime(newDate, time));
+    else if (!newDate) onChange("");
+  };
 
-  const preview = value
-    ? new Date(value).toLocaleString("en-PK", { weekday: "short", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })
+  const handleTime = (e) => {
+    const newTime = e.target.value;
+    setTime(newTime);
+    if (date && newTime) onChange(combineDateTime(date, newTime));
+  };
+
+  const combined = date && time ? combineDateTime(date, time) : null;
+  const preview = combined
+    ? new Date(combined).toLocaleString("en-PK", { weekday: "short", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })
     : null;
 
   return (
@@ -180,6 +193,9 @@ function DateTimePicker({ value, onChange, required = false }) {
           className={inputCls}
         />
       </div>
+      {date && !time && (
+        <p className="text-[11px] text-gray-400 pl-1">Now select a time →</p>
+      )}
       {preview && (
         <p className="text-[11px] text-townwize-accent font-medium pl-1">{preview}</p>
       )}
