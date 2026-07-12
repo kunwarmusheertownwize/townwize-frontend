@@ -189,6 +189,22 @@ const DriverLiveTracking = () => {
       .catch(() => {});
   }, [rideId]);
 
+  // Keep screen awake while driver has an active trip (Uber Driver behaviour)
+  useEffect(() => {
+    if (!isNative() || !("wakeLock" in navigator)) return;
+    let lock = null;
+    const acquire = async () => {
+      try { lock = await navigator.wakeLock.request("screen"); } catch {}
+    };
+    acquire();
+    const onVisibility = () => { if (document.visibilityState === "visible") acquire(); };
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisibility);
+      lock?.release();
+    };
+  }, []);
+
   useEffect(() => {
     if (!navigator.geolocation) { toast.error("Location services not supported"); return; }
     const watchId = navigator.geolocation.watchPosition(
