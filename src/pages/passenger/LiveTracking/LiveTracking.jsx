@@ -762,6 +762,7 @@ const LiveTracking = () => {
         map.setZoom(16);
         tripZoomAppliedRef.current = true;
       }
+      if (heading != null) map.setHeading(heading);
       map.panTo(pos);
     } else if (!hasFitBoundsRef.current) {
       // Before trip starts: fit bounds once to show driver + pickup + dropoff

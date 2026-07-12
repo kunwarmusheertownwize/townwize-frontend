@@ -337,12 +337,11 @@ const DriverLiveTracking = () => {
 
     if (!mapInstanceRef.current) return;
     const isOnTrip = rideStatusRef.current === "ON_TRIP";
-    const heading = lastHeadingRef.current;
-    if (isOnTrip && heading !== null) {
-      mapInstanceRef.current.setHeading(heading);
-      mapInstanceRef.current.setTilt(45);
+    if (isOnTrip && effectiveHeading !== null && !isNaN(effectiveHeading)) {
+      mapInstanceRef.current.setHeading(effectiveHeading);
+      mapInstanceRef.current.setTilt(0);
       mapInstanceRef.current.setZoom(18);
-      mapInstanceRef.current.panTo(lookAhead(driverPosition, heading, 50));
+      mapInstanceRef.current.panTo(lookAhead(driverPosition, effectiveHeading, 50));
     } else {
       mapInstanceRef.current.setHeading(0);
       mapInstanceRef.current.setTilt(0);
@@ -382,7 +381,7 @@ const DriverLiveTracking = () => {
     const renderer = new google.maps.DirectionsRenderer({
       suppressMarkers: true, preserveViewport: true,
       polylineOptions: {
-        strokeColor: rideStatus === "ON_TRIP" ? "#03311C" : "#17BEBB",
+        strokeColor: "#17BEBB",
         strokeWeight: 5, strokeOpacity: 0.85,
       },
     });
