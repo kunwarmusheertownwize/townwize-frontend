@@ -190,18 +190,17 @@ const DriverLiveTracking = () => {
   }, [rideId]);
 
   // Keep screen awake while driver has an active trip (Uber Driver behaviour)
+  // Uses @capacitor-community/keep-awake which calls native APIs on both
+  // Android (FLAG_KEEP_SCREEN_ON) and iOS (isIdleTimerDisabled).
   useEffect(() => {
-    if (!isNative() || !("wakeLock" in navigator)) return;
-    let lock = null;
-    const acquire = async () => {
-      try { lock = await navigator.wakeLock.request("screen"); } catch {}
-    };
-    acquire();
-    const onVisibility = () => { if (document.visibilityState === "visible") acquire(); };
-    document.addEventListener("visibilitychange", onVisibility);
+    if (!isNative()) return;
+    import("@capacitor-community/keep-awake")
+      .then(({ KeepAwake }) => { KeepAwake.keepAwake().catch(() => {}); })
+      .catch(() => {});
     return () => {
-      document.removeEventListener("visibilitychange", onVisibility);
-      lock?.release();
+      import("@capacitor-community/keep-awake")
+        .then(({ KeepAwake }) => { KeepAwake.allowSleep().catch(() => {}); })
+        .catch(() => {});
     };
   }, []);
 
