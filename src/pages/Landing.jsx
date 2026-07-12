@@ -68,14 +68,14 @@ const Landing = () => {
         }
         return (
             <div
-                style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "#03311C" }}
+                style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "#08110F" }}
                 className="flex flex-col"
             >
                 <div
                     className="flex-1 flex flex-col items-center justify-center px-10 gap-5"
                     style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}
                 >
-                    <img src="/logo-white.png" alt="Townwize" className="w-52" />
+                    <img src="/images/logo-light.png" alt="Townwize" className="w-52" />
                     <p className="text-white/60 text-sm text-center leading-relaxed">
                         Safe, verified rides within<br />Bahria Town Karachi
                     </p>

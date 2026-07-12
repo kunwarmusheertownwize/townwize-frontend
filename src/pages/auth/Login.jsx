@@ -55,6 +55,20 @@ function Login() {
       password,
     });
 
+    const role = res.data.data.user.role;
+    const appRole = import.meta.env.VITE_APP_ROLE;
+
+    if (appRole === "driver" && role !== "driver") {
+      toast.error("This app is for Wizers (drivers) only. Please use the Towner app.");
+      setIsSubmitting(false);
+      return;
+    }
+    if (appRole === "passenger" && role === "driver") {
+      toast.error("This app is for Towners (passengers) only. Please use the Wizer app.");
+      setIsSubmitting(false);
+      return;
+    }
+
     login(res.data.data);
 
     // Native (Capacitor): cookies are blocked cross-origin, store tokens in
@@ -66,8 +80,6 @@ function Login() {
     }
 
     toast.success("Logged in successfully");
-
-    const role = res.data.data.user.role;
 
     // ✅ allow AuthContext to commit before guards run
     setTimeout(() => {
@@ -110,13 +122,24 @@ function Login() {
     setIsSubmitting(true);
     try {
       const res = await api.post("/auth/google", { credential });
+      const role = res.data.data.user.role;
+      const appRole = import.meta.env.VITE_APP_ROLE;
+      if (appRole === "driver" && role !== "driver") {
+        toast.error("This app is for Wizers (drivers) only.");
+        setIsSubmitting(false);
+        return;
+      }
+      if (appRole === "passenger" && role === "driver") {
+        toast.error("This app is for Towners (passengers) only.");
+        setIsSubmitting(false);
+        return;
+      }
       login(res.data.data);
       if (isNative()) {
         const { accessToken, refreshToken } = res.data.data;
         if (accessToken) localStorage.setItem("_tw_at", accessToken);
         if (refreshToken) localStorage.setItem("_tw_rt", refreshToken);
       }
-      const role = res.data.data.user.role;
       toast.success("Logged in successfully");
       setTimeout(() => {
         if (role === "admin") navigate("/admin", { replace: true });
