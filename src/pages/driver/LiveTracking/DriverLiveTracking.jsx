@@ -933,13 +933,13 @@ const DriverLiveTracking = () => {
           <div className="w-10 h-1 bg-gray-300 dark:bg-gray-700 rounded-full mx-auto mb-3" />
           <div className="space-y-3 max-h-[60vh] overflow-y-auto pb-2">
             <div className="space-y-1 text-sm">
-              <div className="flex items-start gap-3">
-                <span className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full bg-townwize-accent" />
-                <p className="font-medium leading-snug">{pickupAddress}</p>
+              <div className="flex items-center gap-3 min-w-0">
+                <span className="shrink-0 h-2.5 w-2.5 rounded-full bg-townwize-accent" />
+                <p className="font-medium truncate min-w-0">{pickupAddress}</p>
               </div>
-              <div className="flex items-start gap-3">
-                <span className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full bg-red-500" />
-                <p className="text-gray-500 leading-snug">{dropoffAddress}</p>
+              <div className="flex items-center gap-3 min-w-0">
+                <span className="shrink-0 h-2.5 w-2.5 rounded-full bg-red-500" />
+                <p className="text-gray-500 truncate min-w-0">{dropoffAddress}</p>
               </div>
               <div className="flex gap-4 mt-2 text-xs text-gray-400">
                 <span>{rideType}</span>
@@ -979,8 +979,8 @@ const DriverLiveTracking = () => {
             {passengerName && (
               <p className="md:col-span-2"><strong>Passenger:</strong> {passengerName}</p>
             )}
-            <p><strong>Pickup:</strong> {pickupAddress}</p>
-            <p><strong>Dropoff:</strong> {dropoffAddress}</p>
+            <p className="truncate"><strong>Pickup:</strong> {pickupAddress}</p>
+            <p className="truncate"><strong>Dropoff:</strong> {dropoffAddress}</p>
             <p><strong>Ride Type:</strong> {rideType}</p>
             <p><strong>Fare:</strong> {fare} PKR</p>
           </div>

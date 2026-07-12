@@ -1008,7 +1008,7 @@ navigate("/passenger/trip-summary", {
             <div className="w-10 h-1.5 bg-gray-300 dark:bg-gray-600 rounded-full" />
           </div>
           {/* Scrollable content */}
-          <div className="flex-1 overflow-y-auto px-5 pb-6 pt-0 md:py-6 space-y-4">
+          <div className="flex-1 overflow-y-auto px-5 pb-3 pt-0 md:py-6 space-y-4">
           {/* Pickup */}
           <div onClick={(e) => e.stopPropagation()}>
             <LocationField {...pickupProps} fetchSuggestions={fetchSuggestions} />
@@ -1281,8 +1281,13 @@ navigate("/passenger/trip-summary", {
             </div>
           )}
 
-          {/* ── Book CTA ── */}
-          <div className="relative w-full pt-1">
+          </div>{/* end scrollable content */}
+
+          {/* ── Sticky Book CTA — always pinned to bottom of sheet, never scrolls away ── */}
+          <div
+            className="shrink-0 px-5 pt-3 border-t border-gray-100 dark:border-gray-800 bg-white dark:bg-townwize-primaryDark"
+            style={{ paddingBottom: "max(16px, env(safe-area-inset-bottom, 16px))" }}
+          >
             <button
               onClick={handleContinue}
               disabled={
@@ -1324,7 +1329,6 @@ navigate("/passenger/trip-summary", {
               </span>
             </button>
           </div>
-          </div>{/* end scrollable content */}
         </div>{/* end sheet */}
 
         {/* Map — full screen on mobile, right column on desktop */}

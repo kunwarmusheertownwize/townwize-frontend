@@ -1,6 +1,7 @@
 // File: townwize-frontend\src\pages\passenger\TripSummary\TripSummary.jsx
 
 import { useEffect, useState } from "react";
+import { isNative } from "../../../utils/platform";
 import { useLocation, useNavigate } from "react-router-dom";
 import { getSocket } from "../../../hooks/useRideSocket";
 import { authFetch } from "../../../utils/authFetch";
@@ -253,8 +254,138 @@ const TripSummary = () => {
 
   if (!rideType) return null;
 
+  const handleCancelTrip = () => {
+    sessionStorage.removeItem("selectRideState");
+    sessionStorage.removeItem("selectRideStatePersist");
+    navigate("/passenger/home", { replace: true });
+  };
+
+  const handleConfirmTrip = async () => {
+    try {
+      setConfirming(true);
+
+      // Scheduled shared ride flow
+      if (scheduledAt) {
+        const res = await authFetch(
+          `${import.meta.env.VITE_API_BASE_URL}/rides/shared`,
+          {
+            method: "POST",
+            body: JSON.stringify({
+              pickup, dropoff, pickupCoords, dropoffCoords,
+              carType: "economy",
+              fareEstimate: Number(quote.finalFare || fare || 0),
+              distanceKm, etaMinutes,
+              scheduledAt,
+              maxSeats,
+            }),
+          }
+        );
+        const json = await res.json();
+        if (!res.ok) throw new Error(json?.error?.message || json?.message || "Could not schedule ride");
+        toast.success("Ride scheduled! You'll be notified when a driver is assigned.", { autoClose: 5000 });
+        navigate("/passenger/trips", { replace: true });
+        return;
+      }
+
+      const res = await authFetch(
+        `${import.meta.env.VITE_API_BASE_URL}/rides`,
+        {
+          method: "POST",
+          body: JSON.stringify({
+            pickup,
+            dropoff,
+            pickupCoords,
+            dropoffCoords,
+            ...(stop && stopCoords ? { stop, stopCoords } : {}),
+            distanceKm,
+            etaMinutes,
+            rideType,
+            carType,
+            fareEstimate: Number(quote.finalFare || fare || 0),
+            tollAmount,
+            tollNames,
+          }),
+        }
+      );
+
+      const json = await res.json();
+
+      if (!res.ok) {
+        throw new Error(getRideCreateErrorMessage(json, res.status));
+      }
+      const data = json?.data || {};
+      const rideId = data.rideId || json?.rideId || json?._id;
+
+      if (!rideId) {
+        throw new Error("Ride creation failed: Missing ride id");
+      }
+
+      // RideTogether: route through pooling UI
+      if (rideType === "RideTogether") {
+        if (data.matched && data.primaryRideId) {
+          localStorage.setItem("activePassengerRideId", data.primaryRideId);
+          navigate(`/passenger/live-tracking/${data.primaryRideId}`, { replace: true });
+        } else {
+          navigate("/passenger/booking", {
+            replace: true,
+            state: {
+              rideId,
+              pooling: true,
+              matchWindowMinutes: data.matchWindowMinutes || 3,
+              pickup: state.pickup,
+              dropoff: state.dropoff,
+              pickupCoords: state.pickupCoords,
+              dropoffCoords: state.dropoffCoords,
+              fare: quote.finalFare || fare,
+              distanceKm: state.distanceKm,
+              etaMinutes: state.etaMinutes,
+              rideType,
+            },
+          });
+        }
+        return;
+      }
+
+      localStorage.setItem("activePassengerRideId", rideId);
+      navigate(`/passenger/live-tracking/${rideId}`, { replace: true });
+
+    } catch (err) {
+      console.error("Confirm Trip failed:", err);
+      toast.error(err?.message || "Unable to create ride right now. Please try again.");
+      setConfirming(false);
+    }
+  };
+
+  const confirmCta = (
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <button
+        disabled={confirming || zoneCheck.loading || zoneCheck.eligible === false || quote.loading}
+        onClick={handleConfirmTrip}
+        className={`w-full py-3 rounded-xl font-semibold transition-all duration-300 shadow-md ${confirming
+          ? "cursor-wait text-white bg-townwize-primaryDark"
+          : "text-white bg-townwize-primary hover:bg-townwize-primaryDark"
+        }`}
+      >
+        {confirming
+          ? scheduledAt ? "Scheduling..." : "Creating ride..."
+          : zoneCheck.loading
+            ? "Checking zones..."
+            : quote.loading
+              ? "Calculating fare..."
+            : scheduledAt ? "Schedule Shared Ride" : "Confirm Trip"}
+      </button>
+      <button
+        onClick={handleCancelTrip}
+        className="w-full py-3 rounded-xl font-semibold bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition"
+      >
+        Cancel
+      </button>
+    </div>
+  );
+
   return (
-    <div className="max-w-4xl mx-auto bg-white dark:bg-townwize-primaryDark p-6 md:p-8 rounded-2xl shadow-lg space-y-6 text-townwize-textPrimary dark:text-white mt-6 border border-gray-100 dark:border-gray-700">
+    <>
+    <div className={`max-w-4xl mx-auto bg-white dark:bg-townwize-primaryDark p-6 md:p-8 rounded-2xl shadow-lg space-y-6 text-townwize-textPrimary dark:text-white mt-6 border border-gray-100 dark:border-gray-700 ${isNative() ? "mb-28" : ""}`}>
       <div className="flex items-start justify-between gap-4">
         <div>
       <h2 className="text-2xl font-bold text-townwize-primary dark:text-townwize-accent">
@@ -405,130 +536,19 @@ const TripSummary = () => {
         </div>
       )}
 
-      {/* Confirm Button */}
-      <div className="relative grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <button
-          disabled={confirming || zoneCheck.loading || zoneCheck.eligible === false || quote.loading}
-          onClick={async () => {
-            try {
-              setConfirming(true);
-
-              // Scheduled shared ride flow
-              if (scheduledAt) {
-                const res = await authFetch(
-                  `${import.meta.env.VITE_API_BASE_URL}/rides/shared`,
-                  {
-                    method: "POST",
-                    body: JSON.stringify({
-                      pickup, dropoff, pickupCoords, dropoffCoords,
-                      carType: "economy",
-                      fareEstimate: Number(quote.finalFare || fare || 0),
-                      distanceKm, etaMinutes,
-                      scheduledAt,
-                      maxSeats,
-                    }),
-                  }
-                );
-                const json = await res.json();
-                if (!res.ok) throw new Error(json?.error?.message || json?.message || "Could not schedule ride");
-                toast.success("Ride scheduled! You'll be notified when a driver is assigned.", { autoClose: 5000 });
-                navigate("/passenger/trips", { replace: true });
-                return;
-              }
-
-              const res = await authFetch(
-                `${import.meta.env.VITE_API_BASE_URL}/rides`,
-                {
-                  method: "POST",
-                  body: JSON.stringify({
-                    pickup,
-                    dropoff,
-                    pickupCoords,
-                    dropoffCoords,
-                    ...(stop && stopCoords ? { stop, stopCoords } : {}),
-                    distanceKm,
-                    etaMinutes,
-                    rideType,
-                    carType,
-                    fareEstimate: Number(quote.finalFare || fare || 0),
-                    tollAmount,
-                    tollNames,
-                  }),
-                }
-              );
-
-              const json = await res.json();
-
-              if (!res.ok) {
-                throw new Error(getRideCreateErrorMessage(json, res.status));
-              }
-              const data = json?.data || {};
-              const rideId = data.rideId || json?.rideId || json?._id;
-
-              if (!rideId) {
-                throw new Error("Ride creation failed: Missing ride id");
-              }
-
-              // RideTogether: route through pooling UI
-              if (rideType === "RideTogether") {
-                if (data.matched && data.primaryRideId) {
-                  localStorage.setItem("activePassengerRideId", data.primaryRideId);
-                  navigate(`/passenger/live-tracking/${data.primaryRideId}`, { replace: true });
-                } else {
-                  navigate("/passenger/booking", {
-                    replace: true,
-                    state: {
-                      rideId,
-                      pooling: true,
-                      matchWindowMinutes: data.matchWindowMinutes || 3,
-                      pickup: state.pickup,
-                      dropoff: state.dropoff,
-                      pickupCoords: state.pickupCoords,
-                      dropoffCoords: state.dropoffCoords,
-                      fare: quote.finalFare || fare,
-                      distanceKm: state.distanceKm,
-                      etaMinutes: state.etaMinutes,
-                      rideType,
-                    },
-                  });
-                }
-                return;
-              }
-
-              localStorage.setItem("activePassengerRideId", rideId);
-              navigate(`/passenger/live-tracking/${rideId}`, { replace: true });
-
-            } catch (err) {
-              console.error("Confirm Trip failed:", err);
-              toast.error(err?.message || "Unable to create ride right now. Please try again.");
-              setConfirming(false);
-            }
-          }}
-          className={`w-full py-3 rounded-xl font-semibold transition-all duration-300 shadow-md ${confirming
-            ? "cursor-wait text-white bg-townwize-primaryDark"
-            : "text-white bg-townwize-primary hover:bg-townwize-primaryDark"
-            }`}
-        >
-          {confirming
-            ? scheduledAt ? "Scheduling..." : "Creating ride..."
-            : zoneCheck.loading
-              ? "Checking zones..."
-              : quote.loading
-                ? "Calculating fare..."
-              : scheduledAt ? "Schedule Shared Ride" : "Confirm Trip"}
-        </button>
-      <button
-        onClick={() => {
-          sessionStorage.removeItem("selectRideState");
-          sessionStorage.removeItem("selectRideStatePersist");
-          navigate("/passenger/home", { replace: true });
-        }}
-        className="w-full py-3 rounded-xl font-semibold bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition"
-      >
-        Cancel
-      </button>
-      </div>
+      {/* Confirm Button — in flow on desktop; fixed bottom bar handles it on native */}
+      {!isNative() && confirmCta}
     </div>
+    {/* Fixed bottom CTA on native so it's always visible without scrolling */}
+    {isNative() && (
+      <div
+        className="fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-townwize-primaryDark px-5 pt-3 border-t border-gray-100 dark:border-gray-700 shadow-2xl"
+        style={{ paddingBottom: "max(16px, env(safe-area-inset-bottom, 16px))" }}
+      >
+        {confirmCta}
+      </div>
+    )}
+    </>
   );
 };
 

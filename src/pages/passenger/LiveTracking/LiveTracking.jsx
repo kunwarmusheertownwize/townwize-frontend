@@ -974,15 +974,15 @@ const LiveTracking = () => {
           <div className="px-5 pt-3 pb-4 space-y-4">
             {/* Route addresses */}
             <div className="space-y-2">
-              <div className="flex items-start gap-3">
-                <span className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full bg-townwize-accent" />
-                <p className="text-sm font-medium text-gray-800 dark:text-gray-100 leading-snug">
+              <div className="flex items-center gap-3 min-w-0">
+                <span className="shrink-0 h-2.5 w-2.5 rounded-full bg-townwize-accent" />
+                <p className="text-sm font-medium text-gray-800 dark:text-gray-100 truncate min-w-0">
                   {ride.pickup?.address}
                 </p>
               </div>
-              <div className="flex items-start gap-3">
-                <span className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full bg-red-500" />
-                <p className="text-sm text-gray-500 dark:text-gray-400 leading-snug">
+              <div className="flex items-center gap-3 min-w-0">
+                <span className="shrink-0 h-2.5 w-2.5 rounded-full bg-red-500" />
+                <p className="text-sm text-gray-500 dark:text-gray-400 truncate min-w-0">
                   {ride.dropoff?.address}
                 </p>
               </div>
@@ -1278,14 +1278,14 @@ const LiveTracking = () => {
           <span className="mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full bg-townwize-accent" />
           <div className="min-w-0">
             <p className="text-[10px] uppercase tracking-wider text-gray-400">Pickup</p>
-            <p className="text-sm font-medium text-gray-800 dark:text-gray-100 leading-snug">{ride.pickup?.address}</p>
+            <p className="text-sm font-medium text-gray-800 dark:text-gray-100 truncate">{ride.pickup?.address}</p>
           </div>
         </div>
         <div className="flex items-start gap-3">
           <span className="mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full bg-red-500" />
           <div className="min-w-0">
             <p className="text-[10px] uppercase tracking-wider text-gray-400">Dropoff</p>
-            <p className="text-sm text-gray-600 dark:text-gray-300 leading-snug">{ride.dropoff?.address}</p>
+            <p className="text-sm text-gray-600 dark:text-gray-300 truncate">{ride.dropoff?.address}</p>
           </div>
         </div>
         <div className="border-t border-gray-100 dark:border-gray-700 pt-3 flex items-center justify-between">
