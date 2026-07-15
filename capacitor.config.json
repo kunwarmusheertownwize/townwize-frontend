@@ -1,6 +1,6 @@
 {
   "appId": "com.townwize.towner",
-  "appName": "Towner",
+  "appName": "Townwize",
   "webDir": "dist",
   "bundledWebRuntime": false,
   "server": {
