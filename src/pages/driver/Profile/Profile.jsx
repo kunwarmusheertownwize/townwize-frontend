@@ -1,6 +1,7 @@
 import { useCallback, useContext, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { FaStar, FaGift, FaCopy, FaShareAlt, FaTicketAlt, FaCamera } from "react-icons/fa";
+import { FaStar, FaGift, FaCopy, FaShareAlt, FaTicketAlt, FaCamera, FaCar } from "react-icons/fa";
+import { HiOutlineMail, HiOutlinePhone, HiOutlineShieldCheck, HiOutlineClipboardCheck, HiOutlineStar } from "react-icons/hi";
 import { toast } from "react-toastify";
 import api from "../../../services/api";
 import AuthContext from "../../../contexts/AuthContext";
@@ -390,59 +391,7 @@ const DriverProfile = () => {
         </div>
       </div>
 
-      <div className="rounded-xl bg-white dark:bg-townwize-primaryDark shadow-sm ring-1 ring-gray-200 dark:ring-gray-700 overflow-hidden">
-        {[
-          { icon: "✉️", label: "Email", value: email },
-          { icon: "📱", label: "Phone", value: profile?.phone || "—" },
-          {
-            icon: "🚗", label: "Vehicle",
-            value: [profile?.vehicle?.type, profile?.vehicle?.carType, profile?.vehicle?.number].filter(Boolean).join("  ·  ") || "—",
-          },
-          {
-            icon: "🛡️", label: "Verification",
-            badge: vehicleVerification,
-            badgeColor: vehicleVerification === "APPROVED"
-              ? "bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400"
-              : vehicleVerification === "REJECTED"
-              ? "bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-400"
-              : "bg-amber-100 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400",
-          },
-          {
-            icon: "🔍", label: "Condition Review",
-            badge: conditionStatus.charAt(0).toUpperCase() + conditionStatus.slice(1).replace("_", " "),
-            badgeColor: conditionStatus === "pass"
-              ? "bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400"
-              : conditionStatus === "fail"
-              ? "bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-400"
-              : "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400",
-          },
-        ].map(({ icon, label, value, badge, badgeColor }) => (
-          <div key={label} className="flex items-center gap-4 px-5 py-4 border-b border-gray-100 dark:border-gray-700/60 last:border-0">
-            <span className="text-base shrink-0 w-6 text-center">{icon}</span>
-            <div className="flex-1 min-w-0">
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">{label}</p>
-              {badge ? (
-                <span className={`inline-block text-xs font-bold px-2.5 py-0.5 rounded-full mt-1 ${badgeColor}`}>{badge}</span>
-              ) : (
-                <p className="font-semibold text-gray-900 dark:text-white text-sm mt-0.5 truncate">{value}</p>
-              )}
-            </div>
-          </div>
-        ))}
-        <div className="flex items-center gap-4 px-5 py-4">
-          <span className="text-base shrink-0 w-6 text-center">⭐</span>
-          <div className="flex-1">
-            <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-1">Rating</p>
-            <StarRow average={profile?.rating?.average} count={profile?.rating?.count || 0} />
-          </div>
-        </div>
-      </div>
-
-      <DocumentSections profile={profile} onUploaded={() => setLoadTick((t) => t + 1)} />
-
-      <VehicleConditionCard profile={profile} onUploaded={() => setLoadTick((t) => t + 1)} />
-
-      {/* Referral & Rewards card */}
+      {/* Referral & Rewards card — top of content */}
       <div className="rounded-xl bg-white dark:bg-townwize-primaryDark p-6 shadow-sm ring-1 ring-gray-200 dark:ring-gray-700 space-y-5">
         <div className="flex items-center gap-2">
           <FaGift className="text-townwize-primary" />
@@ -490,6 +439,67 @@ const DriverProfile = () => {
           )}
         </div>
       </div>
+
+      {/* Info card */}
+      {(() => {
+        const rowIcon = "w-[17px] h-[17px] text-gray-400 dark:text-gray-500 shrink-0";
+        const rows = [
+          { icon: <HiOutlineMail className={rowIcon} />, label: "Email", value: email },
+          { icon: <HiOutlinePhone className={rowIcon} />, label: "Phone", value: profile?.phone || "—" },
+          {
+            icon: <FaCar className={rowIcon} />, label: "Vehicle",
+            value: [profile?.vehicle?.type, profile?.vehicle?.carType, profile?.vehicle?.number].filter(Boolean).join("  ·  ") || "—",
+          },
+          {
+            icon: <HiOutlineShieldCheck className={rowIcon} />, label: "Verification",
+            badge: vehicleVerification,
+            badgeColor: vehicleVerification === "APPROVED"
+              ? "bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400"
+              : vehicleVerification === "REJECTED"
+              ? "bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-400"
+              : "bg-amber-100 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400",
+          },
+          {
+            icon: <HiOutlineClipboardCheck className={rowIcon} />, label: "Condition Review",
+            badge: conditionStatus.charAt(0).toUpperCase() + conditionStatus.slice(1).replace("_", " "),
+            badgeColor: conditionStatus === "pass"
+              ? "bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400"
+              : conditionStatus === "fail"
+              ? "bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-400"
+              : "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400",
+          },
+        ];
+        return (
+          <div className="rounded-xl bg-white dark:bg-townwize-primaryDark shadow-sm ring-1 ring-gray-200 dark:ring-gray-700 overflow-hidden">
+            {rows.map(({ icon, label, value, badge, badgeColor }) => (
+              <div key={label} className="flex items-center gap-4 px-5 py-4 border-b border-gray-100 dark:border-gray-700/60 last:border-0">
+                <span className="flex items-center justify-center w-5 shrink-0">{icon}</span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">{label}</p>
+                  {badge ? (
+                    <span className={`inline-block text-xs font-bold px-2.5 py-0.5 rounded-full mt-1 ${badgeColor}`}>{badge}</span>
+                  ) : (
+                    <p className="font-semibold text-gray-900 dark:text-white text-sm mt-0.5 truncate">{value}</p>
+                  )}
+                </div>
+              </div>
+            ))}
+            <div className="flex items-center gap-4 px-5 py-4">
+              <span className="flex items-center justify-center w-5 shrink-0">
+                <HiOutlineStar className="w-[17px] h-[17px] text-gray-400 dark:text-gray-500" />
+              </span>
+              <div className="flex-1">
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-1">Rating</p>
+                <StarRow average={profile?.rating?.average} count={profile?.rating?.count || 0} />
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      <DocumentSections profile={profile} onUploaded={() => setLoadTick((t) => t + 1)} />
+
+      <VehicleConditionCard profile={profile} onUploaded={() => setLoadTick((t) => t + 1)} />
 
       <div className="flex flex-col gap-3">
         <button
