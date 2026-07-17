@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useContext, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { FaStar, FaGift, FaCopy, FaShareAlt, FaTicketAlt, FaCamera } from "react-icons/fa";
 import { toast } from "react-toastify";
 import api from "../../../services/api";
 import { useDriverMode } from "../../../contexts/useDriverMode";
+import AuthContext from "../../../contexts/AuthContext";
 
 const StarRow = ({ average, count }) => {
   const filled = Math.round(average || 0);
@@ -292,7 +293,16 @@ function DocumentSections({ profile, onUploaded }) {
 
 const DriverProfile = () => {
   const navigate = useNavigate();
+  const { logout } = useContext(AuthContext);
   const { driverEligibility } = useDriverMode();
+
+  const handleLogout = () => {
+    toast.info("Logging you out...", { autoClose: 800 });
+    setTimeout(() => {
+      logout();
+      navigate("/login");
+    }, 900);
+  };
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState(null);
   const [email, setEmail] = useState("-");
@@ -362,39 +372,47 @@ const DriverProfile = () => {
   const conditionStatus = String(profile?.vehicle?.conditionStatus || "pending");
 
   return (
-    <div className="mx-auto mt-8 max-w-4xl space-y-4">
-      <div className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-gray-200">
-        <h1 className="text-2xl font-bold">Driver Profile</h1>
-        <p className="mt-1 text-sm text-gray-500">Registration and verification status</p>
+    <div className="mx-auto mt-8 max-w-4xl space-y-4 pb-6">
+      {/* Header */}
+      <div className="rounded-xl bg-white dark:bg-townwize-primaryDark p-6 shadow-sm ring-1 ring-gray-200 dark:ring-gray-700">
+        <div className="flex items-center gap-4">
+          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-townwize-primary text-white text-xl font-black">
+            W
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold dark:text-white">Driver Profile</h1>
+            <p className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">Registration and verification status</p>
+          </div>
+        </div>
       </div>
 
-      <div className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-gray-200">
+      <div className="rounded-xl bg-white dark:bg-townwize-primaryDark p-6 shadow-sm ring-1 ring-gray-200 dark:ring-gray-700">
         <div className="grid gap-4 text-sm sm:grid-cols-2">
           <div>
-            <p className="text-gray-500">Email</p>
-            <p className="font-medium">{email}</p>
+            <p className="text-gray-500 dark:text-gray-400">Email</p>
+            <p className="font-medium dark:text-white">{email}</p>
           </div>
           <div>
-            <p className="text-gray-500">Phone</p>
-            <p className="font-medium">{profile?.phone || "-"}</p>
+            <p className="text-gray-500 dark:text-gray-400">Phone</p>
+            <p className="font-medium dark:text-white">{profile?.phone || "-"}</p>
           </div>
           <div>
-            <p className="text-gray-500">Vehicle</p>
-            <p className="font-medium">
+            <p className="text-gray-500 dark:text-gray-400">Vehicle</p>
+            <p className="font-medium dark:text-white">
               {profile?.vehicle?.type || "-"} | {profile?.vehicle?.carType || "-"} | {profile?.vehicle?.number || "-"}
             </p>
           </div>
           <div>
-            <p className="text-gray-500">Verification</p>
-            <p className="font-medium">{vehicleVerification}</p>
+            <p className="text-gray-500 dark:text-gray-400">Verification</p>
+            <p className="font-medium dark:text-white">{vehicleVerification}</p>
           </div>
           <div>
-            <p className="text-gray-500">Condition Review</p>
-            <p className="font-medium capitalize">{conditionStatus}</p>
+            <p className="text-gray-500 dark:text-gray-400">Condition Review</p>
+            <p className="font-medium capitalize dark:text-white">{conditionStatus}</p>
           </div>
           <div>
-            <p className="text-gray-500">Eligibility</p>
-            <p className="font-medium">
+            <p className="text-gray-500 dark:text-gray-400">Eligibility</p>
+            <p className="font-medium dark:text-white">
               {driverEligibility.verificationStatus === "APPROVED" &&
               driverEligibility.documentsSubmitted &&
               driverEligibility.registrationComplete
@@ -403,7 +421,7 @@ const DriverProfile = () => {
             </p>
           </div>
           <div>
-            <p className="text-gray-500">Rating</p>
+            <p className="text-gray-500 dark:text-gray-400">Rating</p>
             <StarRow average={profile?.rating?.average} count={profile?.rating?.count || 0} />
           </div>
         </div>
@@ -414,7 +432,7 @@ const DriverProfile = () => {
       <VehicleConditionCard profile={profile} onUploaded={() => setLoadTick((t) => t + 1)} />
 
       {/* Referral & Rewards card */}
-      <div className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-gray-200 space-y-5">
+      <div className="rounded-xl bg-white dark:bg-townwize-primaryDark p-6 shadow-sm ring-1 ring-gray-200 dark:ring-gray-700 space-y-5">
         <div className="flex items-center gap-2">
           <FaGift className="text-townwize-primary" />
           <h2 className="text-lg font-semibold">Referral & Rewards</h2>
@@ -462,12 +480,18 @@ const DriverProfile = () => {
         </div>
       </div>
 
-      <div className="flex justify-end">
+      <div className="flex flex-col gap-3">
         <button
           onClick={() => navigate("/register?role=driver")}
-          className="rounded-xl bg-townwize-primary px-5 py-2.5 font-semibold text-white"
+          className="w-full rounded-xl bg-townwize-primary dark:bg-townwize-accent px-5 py-3 font-semibold text-white dark:text-townwize-primary"
         >
           Update Registration
+        </button>
+        <button
+          onClick={handleLogout}
+          className="w-full rounded-xl border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 px-5 py-3 font-semibold text-red-600 dark:text-red-400"
+        >
+          Log Out
         </button>
       </div>
     </div>
