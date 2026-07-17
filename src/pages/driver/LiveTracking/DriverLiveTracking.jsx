@@ -54,6 +54,7 @@ const DriverLiveTracking = () => {
   const lastTripPositionRef = useRef(null);
   const lastHeadingRef = useRef(null);
   const prevDriverPositionRef = useRef(null);
+  const currentPositionRef = useRef(null);
 
   const { setDriverMode, incomingRide } = useDriverMode();
 
@@ -118,7 +119,9 @@ const DriverLiveTracking = () => {
     rideStatusRef.current = rideStatus;
     if (rideStatus === "ON_TRIP") {
       tripDistanceKmRef.current = 0;
-      lastTripPositionRef.current = null;
+      // Seed with last known GPS position so the very first fix accumulates distance
+      // rather than being wasted setting the starting point from null
+      lastTripPositionRef.current = currentPositionRef.current;
       lastHeadingRef.current = null;
     }
   }, [rideStatus]);
@@ -211,6 +214,7 @@ const DriverLiveTracking = () => {
         const coords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
         setDriverPosition(coords);
         setLastKnownPosition(coords);
+        currentPositionRef.current = coords;
         const rawHeading = pos.coords.heading;
         if (rawHeading != null && !isNaN(rawHeading)) {
           setDriverHeading(rawHeading);

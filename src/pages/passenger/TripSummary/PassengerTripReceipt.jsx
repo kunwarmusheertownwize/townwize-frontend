@@ -68,7 +68,7 @@ const captureReceiptAsBlob = async () => {
   }
 };
 
-const ShareButton = ({ ride, className = "" }) => {
+const ShareButton = ({ ride, fare, className = "" }) => {
   const [sharing, setSharing] = useState(false);
   const [done, setDone]       = useState("");
 
@@ -77,20 +77,32 @@ const ShareButton = ({ ride, className = "" }) => {
     setSharing(true);
     setDone("");
     try {
+      // On native (Capacitor) the mobile layout has no .trip-receipt-page element,
+      // so image capture silently returns null. Use text sharing instead — it works
+      // reliably on Android WebView via the OS share sheet (WhatsApp, email, etc.)
+      if (isNative()) {
+        const text = buildShareText(ride, fare || {});
+        if (navigator.share) {
+          await navigator.share({ title: "Townwize Trip Receipt", text });
+        } else {
+          await navigator.clipboard.writeText(text);
+          setDone("Copied!");
+          setTimeout(() => setDone(""), 2500);
+        }
+        return;
+      }
+
       const blob = await captureReceiptAsBlob();
       if (!blob) { setSharing(false); return; }
       const file = new File([blob], `townwize-receipt-${ride?._id || "receipt"}.png`, { type: "image/png" });
 
       if (navigator.share && navigator.canShare?.({ files: [file] })) {
-        // Mobile + Chrome/Edge desktop — native OS share dialog (WhatsApp, etc.)
         await navigator.share({ title: "Townwize Trip Receipt", files: [file] });
       } else if (navigator.clipboard?.write) {
-        // Firefox desktop — copy to clipboard; paste into WhatsApp Web, email, etc.
         await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
         setDone("Copied — paste anywhere!");
         setTimeout(() => setDone(""), 3500);
       } else {
-        // Last resort — download
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
@@ -479,7 +491,7 @@ export default function PassengerTripReceipt() {
             </div>
 
             {!loading && !error && (
-              <ShareButton ride={ride} className="w-full text-center" />
+              <ShareButton ride={ride} fare={fare} className="w-full text-center" />
             )}
             <button
               className="w-full rounded-xl bg-townwize-primary py-4 text-white font-semibold"
@@ -524,7 +536,7 @@ export default function PassengerTripReceipt() {
           >
             Print
           </button>
-          {!loading && !error && <ShareButton ride={ride} />}
+          {!loading && !error && <ShareButton ride={ride} fare={fare} />}
         </div>
       </div>
 
