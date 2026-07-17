@@ -37,7 +37,7 @@ export default function SplashScreen({ onDone }) {
       }}
     >
       <img
-        src="/images/splash-animated.gif"
+        src={import.meta.env.VITE_APP_ROLE === "driver" ? "/images/splash-wizer.gif" : "/images/splash-animated.gif"}
         alt=""
         style={{
           width: "100%",
