@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { FaStar, FaGift, FaCopy, FaShareAlt, FaTicketAlt, FaCamera } from "react-icons/fa";
 import { toast } from "react-toastify";
 import api from "../../../services/api";
-import { useDriverMode } from "../../../contexts/useDriverMode";
 import AuthContext from "../../../contexts/AuthContext";
 
 const StarRow = ({ average, count }) => {
@@ -261,8 +260,14 @@ function DocumentSections({ profile, onUploaded }) {
                       <span className="dark:text-gray-200">{label}</span>
                       {selected && <span className="text-townwize-accent font-medium truncate max-w-[120px]">{files[field].name}</span>}
                     </div>
-                    <span className={`shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-md ${selected ? "bg-townwize-accent text-white" : "bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-300"}`}>
-                      {selected ? "Change" : isRejected ? "Re-upload" : "Replace"}
+                    <span className={`shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-md ${
+                      selected
+                        ? "bg-townwize-accent text-white"
+                        : isRejected
+                        ? "bg-red-100 dark:bg-red-900/20 text-red-600 dark:text-red-400"
+                        : "bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500"
+                    }`}>
+                      {selected ? "Change" : isRejected ? "Re-upload" : "Update"}
                     </span>
                     <input
                       type="file"
@@ -294,7 +299,6 @@ function DocumentSections({ profile, onUploaded }) {
 const DriverProfile = () => {
   const navigate = useNavigate();
   const { logout } = useContext(AuthContext);
-  const { driverEligibility } = useDriverMode();
 
   const handleLogout = () => {
     toast.info("Logging you out...", { autoClose: 800 });
@@ -386,42 +390,49 @@ const DriverProfile = () => {
         </div>
       </div>
 
-      <div className="rounded-xl bg-white dark:bg-townwize-primaryDark p-6 shadow-sm ring-1 ring-gray-200 dark:ring-gray-700">
-        <div className="grid gap-4 text-sm sm:grid-cols-2">
-          <div>
-            <p className="text-gray-500 dark:text-gray-400">Email</p>
-            <p className="font-medium dark:text-white">{email}</p>
+      <div className="rounded-xl bg-white dark:bg-townwize-primaryDark shadow-sm ring-1 ring-gray-200 dark:ring-gray-700 overflow-hidden">
+        {[
+          { icon: "✉️", label: "Email", value: email },
+          { icon: "📱", label: "Phone", value: profile?.phone || "—" },
+          {
+            icon: "🚗", label: "Vehicle",
+            value: [profile?.vehicle?.type, profile?.vehicle?.carType, profile?.vehicle?.number].filter(Boolean).join("  ·  ") || "—",
+          },
+          {
+            icon: "🛡️", label: "Verification",
+            badge: vehicleVerification,
+            badgeColor: vehicleVerification === "APPROVED"
+              ? "bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400"
+              : vehicleVerification === "REJECTED"
+              ? "bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-400"
+              : "bg-amber-100 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400",
+          },
+          {
+            icon: "🔍", label: "Condition Review",
+            badge: conditionStatus.charAt(0).toUpperCase() + conditionStatus.slice(1).replace("_", " "),
+            badgeColor: conditionStatus === "pass"
+              ? "bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400"
+              : conditionStatus === "fail"
+              ? "bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-400"
+              : "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400",
+          },
+        ].map(({ icon, label, value, badge, badgeColor }) => (
+          <div key={label} className="flex items-center gap-4 px-5 py-4 border-b border-gray-100 dark:border-gray-700/60 last:border-0">
+            <span className="text-base shrink-0 w-6 text-center">{icon}</span>
+            <div className="flex-1 min-w-0">
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">{label}</p>
+              {badge ? (
+                <span className={`inline-block text-xs font-bold px-2.5 py-0.5 rounded-full mt-1 ${badgeColor}`}>{badge}</span>
+              ) : (
+                <p className="font-semibold text-gray-900 dark:text-white text-sm mt-0.5 truncate">{value}</p>
+              )}
+            </div>
           </div>
-          <div>
-            <p className="text-gray-500 dark:text-gray-400">Phone</p>
-            <p className="font-medium dark:text-white">{profile?.phone || "-"}</p>
-          </div>
-          <div>
-            <p className="text-gray-500 dark:text-gray-400">Vehicle</p>
-            <p className="font-medium dark:text-white">
-              {profile?.vehicle?.type || "-"} | {profile?.vehicle?.carType || "-"} | {profile?.vehicle?.number || "-"}
-            </p>
-          </div>
-          <div>
-            <p className="text-gray-500 dark:text-gray-400">Verification</p>
-            <p className="font-medium dark:text-white">{vehicleVerification}</p>
-          </div>
-          <div>
-            <p className="text-gray-500 dark:text-gray-400">Condition Review</p>
-            <p className="font-medium capitalize dark:text-white">{conditionStatus}</p>
-          </div>
-          <div>
-            <p className="text-gray-500 dark:text-gray-400">Eligibility</p>
-            <p className="font-medium dark:text-white">
-              {driverEligibility.verificationStatus === "APPROVED" &&
-              driverEligibility.documentsSubmitted &&
-              driverEligibility.registrationComplete
-                ? "Ready"
-                : "Blocked"}
-            </p>
-          </div>
-          <div>
-            <p className="text-gray-500 dark:text-gray-400">Rating</p>
+        ))}
+        <div className="flex items-center gap-4 px-5 py-4">
+          <span className="text-base shrink-0 w-6 text-center">⭐</span>
+          <div className="flex-1">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-1">Rating</p>
             <StarRow average={profile?.rating?.average} count={profile?.rating?.count || 0} />
           </div>
         </div>
