@@ -530,9 +530,11 @@
     <nav
         class="sticky top-0 z-50 bg-white/85 backdrop-blur-md border-b border-slate-100/80 dark:bg-gray-900/90 dark:border-gray-700/80">
         <div class="flex justify-between items-center px-6 py-4 max-w-7xl mx-auto">
-            <a href="#" class="hover:opacity-80 transition-opacity">
-                <img src="https://townwize.com/Townwize-dark.svg" alt="Townwize"
-                    class="h-7 md:h-8 w-auto dark:brightness-0 dark:invert">
+            <a href="#" class="hover:opacity-80 transition-opacity flex items-center">
+                <!-- Light mode logo (visible in light theme, hidden in dark) -->
+                <img src="/Townwize-logo-dark.png" alt="Townwize" class="h-7 md:h-8 w-auto block dark:hidden">
+                <!-- Dark mode logo (hidden in light theme, visible in dark) -->
+                <img src="/Townwize-logo-light.png" alt="Townwize" class="h-7 md:h-8 w-auto hidden dark:block">
             </a>
             <div class="flex items-center gap-4 md:gap-5">
                 <a href="#features"
@@ -1369,12 +1371,11 @@
                 class="mt-20 pt-10 border-t border-white/5 grid grid-cols-1 md:grid-cols-3 items-center gap-6 text-center md:text-right">
                 <!-- Column 1: Logo -->
                 <div class="flex justify-center md:justify-start">
-                 <a href="#" class="hover:opacity-80 transition-opacity flex items-center">
-                    <!-- Light mode logo (visible in light theme, hidden in dark) -->
-                    <img src="/Townwize-logo-light.png" alt="Townwize" class="h-7 md:h-8 w-auto block dark:hidden">
-                    <!-- Dark mode logo (hidden in light theme, visible in dark) -->
-                    <img src="/Townwize-logo-dark.png" alt="Townwize" class="h-7 md:h-8 w-auto hidden dark:block">
-                </a>
+                    <a href="#" class="relative inline-flex transition-opacity opacity-40 hover:opacity-80">
+                        <img src="https://townwize.com/logo-light.png" alt="Townwize" class="h-6 brightness-0 invert opacity-50">
+                        <span
+                            class="absolute -top-1.5 -right-3 text-[9px] font-medium text-white opacity-50">&trade;</span>
+                    </a>
                 </div>
 
                 <!-- Column 2: Tagline -->
