@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ur" dir="rtl">
+<html lang="en">
 
 <head>
     <!-- Google tag (gtag.js) -->
@@ -21,26 +21,26 @@
 
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>محفوظ سواری — ٹاؤن وائز | بحریہ ٹاؤن کراچی کا تصدیق شدہ رائڈ پلیٹ فارم</title>
+    <title>Safe Rides — Townwize | Bahria Town Karachi's Verified Ride Platform</title>
     <meta name="description"
-        content="ٹاؤن وائز بحریہ ٹاؤن کراچی کا کمیونٹی رائڈ پلیٹ فارم ہے۔ ہر ڈرائیور (وائزر) ایک تصدیق شدہ BTK رہائشی ہے۔ کوئی اجنبی نہیں۔ ویٹ لسٹ میں شامل ہوں۔">
+        content="Townwize is Bahria Town Karachi's community-first ride platform. Every driver is a verified BTK resident. No strangers. Join the waitlist for early access.">
 
     <!-- Open Graph -->
-    <meta property="og:title" content="محفوظ سواری — ٹاؤن وائز">
+    <meta property="og:title" content="Safe Rides — Townwize">
     <meta property="og:description"
-        content="بحریہ ٹاؤن کراچی کا تصدیق شدہ رائڈ پلیٹ فارم۔ ہر وائزر BTK رہائشی ہے۔ کوئی اجنبی نہیں، کوئی استثنا نہیں۔">
-    <meta property="og:url" content="https://www.townwize.com/index-ur.html">
+        content="Bahria Town Karachi's verified ride platform. Every Wizer (driver) is a verified BTK resident. No strangers. No exceptions.">
+    <meta property="og:url" content="https://www.townwize.com/">
     <meta property="og:type" content="website">
     <meta property="og:image" content="https://www.townwize.com/og-image.png">
 
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="محفوظ سواری — ٹاؤن وائز">
-    <meta name="twitter:description" content="بحریہ ٹاؤن کراچی کا تصدیق شدہ رائڈ پلیٹ فارم۔">
+    <meta name="twitter:title" content="Safe Rides — Townwize">
+    <meta name="twitter:description" content="Bahria Town Karachi's verified ride platform.">
     <meta name="twitter:image" content="https://www.townwize.com/og-image.png">
 
     <link rel="manifest" href="https://www.townwize.com/site.webmanifest">
-    <meta name="application-name" content="محفوظ سواری — ٹاؤن وائز" />
+    <meta name="application-name" content="Safe Rides — Townwize" />
 
     <link rel="icon" href="https://www.townwize.com/favicon-light.ico" sizes="any"
         media="(prefers-color-scheme: light)">
@@ -106,21 +106,12 @@
     <meta name="msapplication-square310x310logo" content="https://www.townwize.com/mstile-310x310-dark.png" />
 
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link
-        href="https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;700&family=Noto+Naskh+Arabic:wght@400;600;700&display=swap"
-        rel="stylesheet">
-
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
             darkMode: 'class',
             theme: {
                 extend: {
-                    fontFamily: {
-                        'urdu': ['"Noto Nastaliq Urdu"', 'serif'],
-                        'urdu-heading': ['"Noto Naskh Arabic"', 'serif'],
-                        'inter': ['Inter', 'sans-serif'],
-                    },
                     colors: {
                         townwize: {
                             primary: '#0A2318',
@@ -146,27 +137,28 @@
             scroll-behavior: smooth;
         }
 
-        body {
-            font-family: 'Noto Nastaliq Urdu', 'Inter', serif;
-        }
-
-        .eng-text {
-            font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
-        }
-
         .hero-gradient {
             background: linear-gradient(145deg, #071A12 0%, #051318 60%, #071824 100%);
         }
 
-        /* h1 text shadow ensures legibility even on lighter monitors */
+        /* Ensure h1 is always readable regardless of monitor calibration */
         .hero-gradient h1 {
             text-shadow: 0 2px 20px rgba(0, 0, 0, 0.5);
         }
 
+        .glass-card {
+            background: rgba(255, 255, 255, 0.04);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* Phone mockup glow */
         .phone-glow {
             box-shadow: 0 0 60px rgba(20, 184, 166, 0.15), 0 40px 80px rgba(0, 0, 0, 0.4);
         }
 
+        /* Accent glow for CTA button */
         .btn-glow:hover {
             box-shadow: 0 8px 30px rgba(20, 184, 166, 0.4);
         }
@@ -239,6 +231,7 @@
             animation: float 6s ease-in-out infinite;
         }
 
+        /* Feature card hover lift */
         .feature-card {
             transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
         }
@@ -253,11 +246,11 @@
         .faq-answer {
             max-height: 0;
             overflow: hidden;
-            transition: max-height 0.35s ease;
+            transition: max-height 0.35s ease, padding 0.35s ease;
         }
 
         .faq-item.open .faq-answer {
-            max-height: 400px;
+            max-height: 300px;
         }
 
         .faq-icon {
@@ -268,7 +261,7 @@
             transform: rotate(45deg);
         }
 
-        /* RTL select arrow — on the left side */
+        /* Select arrow fix */
         .select-wrap {
             position: relative;
         }
@@ -276,8 +269,7 @@
         .select-wrap::after {
             content: '▾';
             position: absolute;
-            left: 14px;
-            right: auto;
+            right: 14px;
             top: 50%;
             transform: translateY(-50%);
             pointer-events: none;
@@ -287,10 +279,6 @@
 
         .select-wrap.light::after {
             color: rgba(0, 0, 0, 0.35);
-        }
-
-        select::-ms-expand {
-            display: none;
         }
 
         /* ── Wide screen ──────────────────────────────────── */
@@ -324,13 +312,13 @@
             }
 
             .hero-gradient h1 {
-                font-size: 3.5rem;
-                line-height: 1.6;
+                font-size: 5.5rem;
+                line-height: 1.05;
             }
 
             .hero-gradient p {
-                font-size: 1.4rem;
-                line-height: 1.65;
+                font-size: 0.9rem;
+                line-height: 1.6;
             }
 
             #heroForm {
@@ -347,6 +335,10 @@
             #heroForm button {
                 min-height: 68px;
                 font-size: 1.4rem;
+            }
+
+            #features .max-w-6xl {
+                max-width: 1600px !important;
             }
 
             .py-24 {
@@ -370,8 +362,7 @@
 
             select {
                 max-width: 100%;
-                padding-left: 2rem !important;
-                padding-right: .75rem !important;
+                padding-right: 2rem !important;
             }
 
             input,
@@ -381,13 +372,13 @@
             }
 
             .hero-gradient h1 {
-                font-size: 26px !important;
-                line-height: 1.8 !important;
+                font-size: 28px !important;
+                line-height: 1.25 !important;
             }
 
             .hero-gradient p {
                 font-size: 14px !important;
-                line-height: 1.7 !important;
+                line-height: 1.55 !important;
             }
 
             #heroForm,
@@ -434,17 +425,30 @@
 
             h2.text-3xl,
             h2.md\:text-5xl {
-                font-size: 22px !important;
-                line-height: 1.7 !important;
+                font-size: 24px !important;
+                line-height: 1.3 !important;
             }
 
             h3.text-xl {
-                font-size: 17px !important;
+                font-size: 18px !important;
+            }
+
+            .group .flex.gap-5 {
+                gap: .75rem !important;
+            }
+
+            .group .w-10.h-10 {
+                width: 2rem !important;
+                height: 2rem !important;
+                font-size: .875rem !important;
+            }
+
+            footer .max-w-4xl {
+                padding: 0 .5rem !important;
             }
 
             footer h2 {
-                font-size: 26px !important;
-                line-height: 1.7 !important;
+                font-size: 28px !important;
             }
 
             .status-msg {
@@ -455,6 +459,7 @@
             .submit-btn,
             #heroContinueBtn {
                 font-size: 15px !important;
+                white-space: normal !important;
             }
 
             nav>div {
@@ -467,6 +472,10 @@
                 width: auto !important;
             }
 
+            nav .flex.space-x-4 {
+                gap: .75rem !important;
+            }
+
             nav .bg-townwize-accent {
                 padding: .5rem .875rem !important;
                 font-size: .7rem !important;
@@ -477,9 +486,9 @@
                 display: none !important;
             }
 
-            .stat-strip {
-                gap: 1rem !important;
-                flex-wrap: wrap !important;
+            nav .text-sm.font-bold {
+                font-size: .7rem !important;
+                padding: .25rem .6rem !important;
             }
 
             p,
@@ -491,13 +500,23 @@
             .text-sm {
                 word-break: break-word !important;
                 overflow-wrap: break-word !important;
+                hyphens: auto !important;
+            }
+
+            /* Social proof strip */
+            .stat-strip {
+                gap: 1rem !important;
+                flex-wrap: wrap !important;
+            }
+
+            .stat-strip>div {
+                min-width: 140px;
             }
         }
 
         @media (max-width: 480px) {
             .hero-gradient h1 {
-                font-size: 22px !important;
-                line-height: 2 !important;
+                font-size: 30px !important;
             }
 
             .px-6 {
@@ -508,37 +527,27 @@
             select option {
                 font-size: 11px !important;
             }
-
-            ::placeholder {
-                font-size: 13px !important;
-                text-align: right !important;
-            }
-        }
-
-        @media (min-width: 1024px) {
-            .hero-gradient h1 {
-                font-size: 3.24rem;
-                line-height: 1.8;
-            }
         }
     </style>
 </head>
 
-<body class="bg-townwize-bgLight text-townwize-primary antialiased">
+<body class="bg-townwize-bgLight font-['Inter'] text-townwize-primary antialiased">
 
     <!-- NAV -->
     <nav
         class="sticky top-0 z-50 bg-white/85 backdrop-blur-md border-b border-slate-100/80 dark:bg-gray-900/90 dark:border-gray-700/80">
         <div class="flex justify-between items-center px-6 py-4 max-w-7xl mx-auto">
-            <a href="#" class="hover:opacity-80 transition-opacity">
-                <img src="https://townwize.com/Townwize-dark.svg" alt="Townwize"
-                    class="h-7 md:h-8 w-auto dark:brightness-0 dark:invert">
+            <a href="#" class="hover:opacity-80 transition-opacity flex items-center">
+                <!-- Light mode logo (visible in light theme, hidden in dark) -->
+                <img src="/Townwize-logo-dark.png" alt="Townwize" class="h-7 md:h-8 w-auto block dark:hidden">
+                <!-- Dark mode logo (hidden in light theme, visible in dark) -->
+                <img src="/Townwize-logo-light.png" alt="Townwize" class="h-7 md:h-8 w-auto hidden dark:block">
             </a>
-            <div class="flex items-center gap-4 md:gap-5">
+            <div class="flex space-x-4 md:space-x-6 items-center">
                 <a href="#features"
-                    class="hidden sm:block text-sm font-semibold text-townwize-textSecondary hover:text-townwize-accent transition dark:text-gray-300 dark:hover:text-townwize-accent">خصوصیات</a>
+                    class="hidden sm:block text-sm font-semibold text-townwize-textSecondary hover:text-townwize-accent transition dark:text-gray-300 dark:hover:text-townwize-accent">Features</a>
                 <a href="#faq"
-                    class="hidden sm:block text-sm font-semibold text-townwize-textSecondary hover:text-townwize-accent transition dark:text-gray-300 dark:hover:text-townwize-accent">سوالات</a>
+                    class="hidden sm:block text-sm font-semibold text-townwize-textSecondary hover:text-townwize-accent transition dark:text-gray-300 dark:hover:text-townwize-accent">FAQ</a>
                 <button id="themeToggle"
                     class="p-2 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition"
                     aria-label="Toggle dark mode">
@@ -555,79 +564,74 @@
                         </path>
                     </svg>
                 </button>
-                <a href="index.html"
-                    class="eng-text text-xs font-semibold text-townwize-accent border border-townwize-accent/25 px-3 py-1 rounded-full hover:bg-townwize-accent hover:text-white transition">English</a>
+                <a href="index-ur.html"
+                    class="text-sm font-bold text-townwize-accent border border-townwize-accent/25 px-3 py-1 rounded-full hover:bg-townwize-accent hover:text-white transition">اردو</a>
                 <a href="#waitlist"
-                    class="bg-townwize-accent text-white px-4 py-2.5 rounded-full text-xs md:text-sm font-extrabold hover:bg-townwize-accentHover hover:shadow-lg hover:scale-105 transition-all active:scale-95 whitespace-nowrap">ویٹ
-                    لسٹ میں شامل ہوں</a>
+                    class="bg-townwize-accent text-white px-5 py-2.5 rounded-full text-xs md:text-sm font-extrabold hover:bg-townwize-accentHover hover:shadow-lg hover:scale-105 transition-all active:scale-95 btn-glow">Join
+                    Waitlist</a>
             </div>
         </div>
     </nav>
 
     <!-- HERO -->
     <section class="hero-gradient text-white pt-16 pb-24 md:py-32 px-6 overflow-hidden relative">
-        <div class="absolute top-0 left-0 w-96 h-96 rounded-full bg-townwize-accent/5 blur-[100px] pointer-events-none">
+        <!-- Decorative blobs -->
+        <div
+            class="absolute top-0 right-0 w-96 h-96 rounded-full bg-townwize-accent/5 blur-[100px] pointer-events-none">
         </div>
         <div
-            class="absolute bottom-0 right-1/4 w-64 h-64 rounded-full bg-townwize-gold/5 blur-[80px] pointer-events-none">
+            class="absolute bottom-0 left-1/4 w-64 h-64 rounded-full bg-townwize-gold/5 blur-[80px] pointer-events-none">
         </div>
 
         <div class="max-w-7xl mx-auto grid lg:grid-cols-2 gap-16 items-center relative z-10">
-            <div class="text-center lg:text-right">
+            <div class="text-left">
                 <span
-                    class="inline-block px-4 py-2 rounded-full bg-townwize-accent/15 text-townwize-accent text-[10px] md:text-xs font-bold uppercase tracking-[0.15em] mb-8 border border-townwize-accent/25">
-                    بحریہ ٹاؤن کراچی میں جلد آ رہا ہے
+                    class="inline-block px-4 py-1.5 rounded-full bg-townwize-accent/15 text-townwize-accent text-[10px] md:text-xs font-bold uppercase tracking-[0.2em] mb-8 border border-townwize-accent/25">
+                    Coming Soon to Bahria Town Karachi
                 </span>
-
-                <h1
-                    class="font-urdu text-4xl md:text-5xl lg:text-6xl font-extrabold leading-[1.75] md:leading-[1.85] mb-6 tracking-wide">
-                    سفر کہاں کا ہے، یہ اہم ہے —
-                    <span class="text-townwize-accent block mt-3">
-                        سفر کس کے ساتھ ہے، یہ سب سے اہم ہے۔
-                    </span>
+                <h1 class="text-4xl md:text-6xl lg:text-7xl font-extrabold mb-6 leading-[1.08] tracking-tight">
+                    Where You Ride Matters.
+                    <span class="text-townwize-accent block mt-1">Who You Ride With Matters More.</span>
                 </h1>
 
-                <!-- Role explainer pills — RTL layout, right-aligned -->
-                <div class="flex flex-wrap justify-start lg:justify-start gap-3 mb-7">
+                <!-- Role explainer pills — anchors vocabulary before anything else uses it -->
+                <div class="flex flex-nowrap justify-start gap-3 mb-7">
                     <div
                         class="flex items-center gap-2.5 px-4 py-2 rounded-full border border-townwize-accent/30 bg-townwize-accent/10">
-                        <span class="font-urdu text-sm font-semibold text-white">مسافر
-                            <span class="text-townwize-accent font-bold mx-1">=</span>ٹاؤنر
+                        <span class="text-base" style="filter: brightness(0) invert(1);">🧍</span>
+                        <span class="text-xs font-semibold text-white">Passenger
+                            <span class="text-townwize-accent font-bold ml-1">= Towner</span>
                         </span>
-                        <span class="text-base">🧍</span>
                     </div>
                     <div
                         class="flex items-center gap-2.5 px-4 py-2 rounded-full border border-townwize-accent/30 bg-townwize-accent/10">
-                        <span class="font-urdu text-sm font-semibold text-white">ڈرائیور
-                            <span class="text-townwize-accent font-bold mx-1">=</span>وائزر
+                        <span class="text-base" style="filter: brightness(0) invert(1);">🚗</span>
+                        <span class="text-xs font-semibold text-white">Driver
+                            <span class="text-townwize-accent font-bold ml-1">= Wizer</span>
                         </span>
-                        <span class="text-base">🚗</span>
                     </div>
                 </div>
 
-                <p
-                    class="font-urdu text-base md:text-lg text-slate-300 mb-10 leading-loose max-w-2xl mx-auto lg:mx-0 lg:mr-0">
-                    <strong class="text-white block mb-2 text-lg md:text-xl font-bold">«ٹاؤن وائز» بحریہ ٹاؤن اور کراچی
-                        کے رہائشیوں کے لیے ایک خصوصی اور محفوظ رائڈ ایپ ہے۔</strong>
-                    یہاں ہر مسافر (ٹاؤنر) اور ڈرائیور (وائزر) ایک تصدیق شدہ نیٹ ورک کا حصہ ہے۔ <strong
-                        class="text-white">کوئی اجنبی نہیں، کوئی استثنا نہیں۔</strong>
+                <p class="text-base md:text-lg text-slate-300 mb-10 leading-relaxed max-w-2xl mx-auto lg:mx-0">
+                    Every passenger (Towner) and driver (Wizer) is either a verified BTK resident or invited by one.
+                    <strong class="text-white">Wizers must be BTK residents. No strangers. No exceptions.</strong>
                 </p>
 
                 <!-- Hero form — 2-step -->
                 <form id="heroForm"
-                    class="flex flex-col gap-4 max-w-xl mx-auto lg:mx-0 lg:mr-0 bg-white/5 p-6 md:p-8 rounded-4xl border border-white/10 backdrop-blur-sm">
+                    class="flex flex-col gap-4 max-w-xl mx-auto lg:mx-0 bg-white/5 p-6 md:p-8 rounded-4xl border border-white/10 backdrop-blur-sm">
 
                     <!-- Step 1 -->
                     <div id="heroStep1" class="flex flex-col gap-4">
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <input type="email" name="email" placeholder="رہائشی ای میل پتہ" required
-                                class="px-5 py-4 rounded-2xl bg-white/10 border border-white/20 text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-townwize-accent transition-all text-right">
-                            <input type="tel" name="phone" placeholder="واٹس ایپ نمبر" required
-                                class="px-5 py-4 rounded-2xl bg-white/10 border border-white/20 text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-townwize-accent transition-all text-right">
+                            <input type="email" name="email" placeholder="Resident Email" required
+                                class="px-5 py-4 rounded-2xl bg-white/10 border border-white/20 text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-townwize-accent transition-all">
+                            <input type="tel" name="phone" placeholder="WhatsApp Number" required
+                                class="px-5 py-4 rounded-2xl bg-white/10 border border-white/20 text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-townwize-accent transition-all">
                         </div>
                         <button type="button" id="heroContinueBtn"
                             class="w-full px-8 py-5 bg-townwize-accent text-white rounded-2xl font-extrabold hover:bg-townwize-accentHover transition-all shadow-2xl hover:scale-[1.02] active:scale-95 text-lg btn-glow">
-                            جاری رکھیں ←
+                            Continue →
                         </button>
                     </div>
 
@@ -635,72 +639,72 @@
                     <div id="heroStep2" class="hidden flex-col gap-4">
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div class="select-wrap">
-                                <select name="precinct" aria-label="بحریہ ٹاؤن کراچی میں اپنا پریسنکٹ منتخب کریں"
+                                <select name="precinct" aria-label="Select your precinct in Bahria Town Karachi"
                                     required
-                                    class="w-full px-5 py-4 rounded-2xl bg-townwize-primaryDark border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-townwize-accent appearance-none cursor-pointer text-right leading-loose">
-                                    <option value="" disabled selected>اپنا پریسنکٹ منتخب کریں</option>
-                                    <option value="Precinct 1">پریسنکٹ 1</option>
-                                    <option value="Precinct 2">پریسنکٹ 2 (قائد ولاز)</option>
-                                    <option value="Precinct 3">پریسنکٹ 3 (اقبال ولاز)</option>
-                                    <option value="Precinct 6">پریسنکٹ 6</option>
-                                    <option value="Precinct 8">پریسنکٹ 8</option>
-                                    <option value="Precinct 10-A">پریسنکٹ 10-A</option>
-                                    <option value="Precinct 10-B">پریسنکٹ 10-B</option>
-                                    <option value="Precinct 11-A">پریسنکٹ 11-A</option>
-                                    <option value="Precinct 11-B">پریسنکٹ 11-B</option>
-                                    <option value="Precinct 12">پریسنکٹ 12 (علی بلاک)</option>
-                                    <option value="Precinct 14">پریسنکٹ 14</option>
-                                    <option value="Precinct 15-A">پریسنکٹ 15-A</option>
-                                    <option value="Precinct 15-B">پریسنکٹ 15-B</option>
-                                    <option value="Precinct 16">پریسنکٹ 16</option>
-                                    <option value="Precinct 19">پریسنکٹ 19</option>
-                                    <option value="Precinct 27">پریسنکٹ 27</option>
-                                    <option value="Precinct 30">پریسنکٹ 30</option>
-                                    <option value="Precinct 31">پریسنکٹ 31</option>
-                                    <option value="Precinct 35">پریسنکٹ 35 (سپورٹس سٹی)</option>
-                                    <option value="Precinct 47">پریسنکٹ 47 (پیراڈائز)</option>
-                                    <option value="Precinct 51">پریسنکٹ 51</option>
-                                    <option value="Precinct 54">پریسنکٹ 54</option>
-                                    <option value="Bahria Farmhouses">بحریہ فارم ہاؤسز</option>
-                                    <option value="Golf City">گولف سٹی</option>
-                                    <option value="Other">دیگر / لسٹ میں شامل نہیں</option>
+                                    class="w-full px-5 py-4 rounded-2xl bg-townwize-primaryDark border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-townwize-accent appearance-none cursor-pointer">
+                                    <option value="" disabled selected>Select Your Precinct</option>
+                                    <option value="Precinct 1">Precinct 1</option>
+                                    <option value="Precinct 2">Precinct 2 (Quaid Villas)</option>
+                                    <option value="Precinct 3">Precinct 3 (Iqbal Villas)</option>
+                                    <option value="Precinct 6">Precinct 6</option>
+                                    <option value="Precinct 8">Precinct 8</option>
+                                    <option value="Precinct 10-A">Precinct 10-A</option>
+                                    <option value="Precinct 10-B">Precinct 10-B</option>
+                                    <option value="Precinct 11-A">Precinct 11-A</option>
+                                    <option value="Precinct 11-B">Precinct 11-B</option>
+                                    <option value="Precinct 12">Precinct 12 (Ali Block)</option>
+                                    <option value="Precinct 14">Precinct 14</option>
+                                    <option value="Precinct 15-A">Precinct 15-A</option>
+                                    <option value="Precinct 15-B">Precinct 15-B</option>
+                                    <option value="Precinct 16">Precinct 16</option>
+                                    <option value="Precinct 19">Precinct 19</option>
+                                    <option value="Precinct 27">Precinct 27</option>
+                                    <option value="Precinct 30">Precinct 30</option>
+                                    <option value="Precinct 31">Precinct 31</option>
+                                    <option value="Precinct 35">Precinct 35 (Sports City)</option>
+                                    <option value="Precinct 47">Precinct 47 (Paradise)</option>
+                                    <option value="Precinct 51">Precinct 51</option>
+                                    <option value="Precinct 54">Precinct 54</option>
+                                    <option value="Bahria Farmhouses">Bahria Farmhouses</option>
+                                    <option value="Golf City">Golf City</option>
+                                    <option value="Other">Other / Not Listed</option>
                                 </select>
-                                <input type="text" name="precinct_other"
-                                    placeholder="اپنے پریسنکٹ یا علاقے کا نام لکھیں"
-                                    class="hidden w-full px-5 py-3 rounded-2xl bg-townwize-primaryDark border border-townwize-accent/50 text-white focus:outline-none focus:ring-2 focus:ring-townwize-accent placeholder:text-white/40 text-sm mt-2 text-right">
-                                <p class="text-[10px] text-slate-400 mt-1 mr-1">بحریہ ٹاؤن کے اندرونی علاقوں کو پریسنکٹ
-                                    کہا جاتا ہے</p>
+                                <input type="text" name="precinct_other" placeholder="Type your precinct or area name"
+                                    class="hidden w-full px-5 py-3 rounded-2xl bg-townwize-primaryDark border border-townwize-accent/50 text-white focus:outline-none focus:ring-2 focus:ring-townwize-accent placeholder:text-white/40 text-sm mt-2">
+                                <p class="text-[10px] text-slate-400 mt-1 ml-1">Precincts are neighbourhoods within BTK
+                                </p>
                             </div>
 
                             <div class="select-wrap">
-                                <select name="interest" aria-label="اپنا کردار منتخب کریں" required
-                                    class="w-full px-5 py-4 rounded-2xl bg-townwize-primaryDark border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-townwize-accent appearance-none cursor-pointer text-right leading-loose">
-                                    <option value="" disabled selected>میں شامل ہونا چاہتا/چاہتی ہوں بطور…</option>
-                                    <option value="Towner">ٹاؤنر (مسافر)</option>
-                                    <option value="Wizer">وائزر (ڈرائیور)</option>
+                                <select name="interest" aria-label="Select your role" required
+                                    class="w-full px-5 py-4 rounded-2xl bg-townwize-primaryDark border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-townwize-accent appearance-none cursor-pointer">
+                                    <option value="" disabled selected>I want to join as…</option>
+                                    <option value="Towner">Towner (Passenger)</option>
+                                    <option value="Wizer">Wizer (Driver)</option>
                                 </select>
                             </div>
                         </div>
 
                         <div class="flex items-center gap-3 px-2 py-1">
                             <input type="checkbox" id="is_btk_hero" name="is_btk" value="Yes" required="true"
-                                class="w-5 h-5 rounded border-white/20 bg-white/10 text-townwize-accent focus:ring-townwize-accent cursor-pointer flex-shrink-0">
-                            <label for="is_btk_hero" class="text-sm text-slate-300 cursor-pointer text-right">
-                                میں بحریہ ٹاؤن کراچی (BTK) کا تصدیق شدہ رہائشی ہوں
+                                class="w-5 h-5 rounded border-white/20 bg-white/10 text-townwize-accent focus:ring-townwize-accent cursor-pointer">
+                            <label for="is_btk_hero" class="text-sm text-slate-300 cursor-pointer">
+                                I am a verified Bahria Town Karachi (BTK) resident
                             </label>
                         </div>
-                        <!-- BUTTON ROW: BACK + SUBMIT (RTL: Back on right, Submit on left visually) -->
                         <div class="flex gap-3">
                             <button type="button" id="heroBackBtn"
                                 class="w-1/2 px-8 py-5 bg-white/10 text-white rounded-2xl font-extrabold hover:bg-white/20 transition-all text-lg border border-white/20">
-                                ← واپس
+                                ← Back
                             </button>
                             <button type="submit"
                                 class="submit-btn w-1/2 px-8 py-5 bg-townwize-accent text-white rounded-2xl font-extrabold hover:bg-townwize-accentHover transition-all shadow-2xl hover:scale-[1.02] active:scale-95 text-lg btn-glow">
-                                ابتدائی رسائی حاصل کریں
+                                Claim Early Access
                             </button>
                         </div>
+
                     </div>
+
                     <div id="heroStatus" class="status-msg" aria-live="polite"></div>
                 </form>
             </div>
@@ -709,16 +713,20 @@
             <div class="relative hidden lg:flex justify-center animate-float">
                 <div
                     class="w-72 h-[580px] bg-townwize-primaryDark rounded-[3.5rem] border-[10px] border-townwize-primary phone-glow p-5 pt-10 relative overflow-hidden">
+                    <!-- Notch -->
                     <div
                         class="absolute top-0 left-1/2 -translate-x-1/2 w-28 h-6 bg-townwize-primary rounded-b-3xl z-20">
                     </div>
+                    <!-- Status area -->
                     <div
                         class="h-36 w-full bg-white/5 border border-white/10 rounded-2xl mb-6 flex flex-col items-center justify-center gap-2 p-4">
                         <div class="w-10 h-1 bg-townwize-accent rounded-full opacity-80"></div>
-                        <span class="text-townwize-accent text-[12px] font-bold text-center leading-loose">عنقریب
-                            آغاز</span>
-                        <span class="text-slate-500 text-[9px] tracking-wider text-center">بحریہ ٹاؤن کراچی</span>
+                        <span
+                            class="text-townwize-accent text-[11px] font-bold uppercase tracking-widest text-center">LAUNCHING
+                            SOON</span>
+                        <span class="text-slate-500 text-[9px] uppercase tracking-wider">Bahria Town Karachi</span>
                     </div>
+                    <!-- Mock UI rows -->
                     <div class="space-y-3 mb-6">
                         <div
                             class="h-11 w-full bg-white/5 rounded-xl border border-white/5 flex items-center px-3 gap-3">
@@ -736,9 +744,10 @@
                             <div class="h-2 w-2/3 bg-white/10 rounded-full"></div>
                         </div>
                     </div>
+                    <!-- CTA button in mock -->
                     <div
-                        class="absolute bottom-10 left-6 right-6 bg-townwize-accent rounded-2xl shadow-[0_8px_24px_rgba(20,184,166,0.35)] flex items-center justify-center animate-subtle-blink py-4">
-                        <span class="text-white text-xs font-black tracking-wider">ٹاؤن وائز</span>
+                        class="absolute bottom-10 left-6 right-6 h-13 bg-townwize-accent rounded-2xl shadow-[0_8px_24px_rgba(20,184,166,0.35)] flex items-center justify-center animate-subtle-blink py-4">
+                        <span class="text-white text-xs font-black uppercase tracking-wider">TOWNWIZE</span>
                     </div>
                 </div>
             </div>
@@ -750,43 +759,41 @@
         <div class="max-w-6xl mx-auto">
             <div class="flex justify-center md:justify-around items-center gap-6 md:gap-4 flex-wrap">
                 <div class="text-center min-w-[110px]">
-                    <p
-                        class="text-2xl md:text-3xl font-black text-townwize-primary eng-text leading-none dark:text-white">
-                        500</p>
-                    <p class="text-xs text-townwize-textSecondary font-semibold mt-2 leading-snug dark:text-gray-400">
-                        ابتدائی ٹاؤنر نشستیں
+                    <p class="text-2xl md:text-3xl font-black text-townwize-primary leading-none dark:text-white">500
                     </p>
+                    <p
+                        class="text-xs text-townwize-textSecondary font-semibold uppercase tracking-wider mt-2 leading-snug dark:text-gray-400">
+                        Early Towner Spots</p>
                 </div>
                 <div class="hidden md:block w-px h-10 bg-slate-200 flex-shrink-0 dark:bg-gray-700"></div>
                 <div class="text-center min-w-[110px]">
-                    <p
-                        class="text-2xl md:text-3xl font-black text-townwize-primary eng-text leading-none dark:text-white">
-                        100</p>
-                    <p class="text-xs text-townwize-textSecondary font-semibold mt-2 leading-snug dark:text-gray-400">
-                        ابتدائی وائزر نشستیں
+                    <p class="text-2xl md:text-3xl font-black text-townwize-primary leading-none dark:text-white">100
                     </p>
-                </div>
-                <div class="hidden md:block w-px h-10 bg-slate-200 flex-shrink-0 dark:bg-gray-700"></div>
-                <div class="text-center min-w-[110px]">
                     <p
-                        class="text-2xl md:text-3xl font-black text-townwize-primary eng-text leading-none dark:text-white">
-                        6 <span class="font-urdu text-xl">نکاتی</span></p>
-                    <p class="text-xs text-townwize-textSecondary font-semibold mt-2 leading-snug dark:text-gray-400">
-                        ڈرائیور کی تصدیق</p>
+                        class="text-xs text-townwize-textSecondary font-semibold uppercase tracking-wider mt-2 leading-snug dark:text-gray-400">
+                        Early Wizer Spots</p>
                 </div>
                 <div class="hidden md:block w-px h-10 bg-slate-200 flex-shrink-0 dark:bg-gray-700"></div>
                 <div class="text-center min-w-[110px]">
-                    <p class="text-2xl md:text-3xl font-black text-townwize-accent leading-none">صرف BTK</p>
-                    <p class="text-xs text-townwize-textSecondary font-semibold mt-2 leading-snug dark:text-gray-400">
-                        تصدیق شدہ وائزرز</p>
-                </div>
-                <div class="hidden md:block w-px h-10 bg-slate-200 flex-shrink-0 dark:bg-gray-700"></div>
-                <div class="text-center min-w-[110px]">
+                    <p class="text-2xl md:text-3xl font-black text-townwize-primary leading-none dark:text-white">
+                        6-Point</p>
                     <p
-                        class="text-2xl md:text-3xl font-black text-townwize-primary eng-text leading-none dark:text-white">
-                        0%</p>
-                    <p class="text-xs text-townwize-textSecondary font-semibold mt-2 leading-snug dark:text-gray-400">
-                        سرج پرائسنگ نہیں</p>
+                        class="text-xs text-townwize-textSecondary font-semibold uppercase tracking-wider mt-2 leading-snug dark:text-gray-400">
+                        Driver Verification</p>
+                </div>
+                <div class="hidden md:block w-px h-10 bg-slate-200 flex-shrink-0 dark:bg-gray-700"></div>
+                <div class="text-center min-w-[110px]">
+                    <p class="text-2xl md:text-3xl font-black text-townwize-accent leading-none">BTK Only</p>
+                    <p
+                        class="text-xs text-townwize-textSecondary font-semibold uppercase tracking-wider mt-2 leading-snug dark:text-gray-400">
+                        Verified Wizers</p>
+                </div>
+                <div class="hidden md:block w-px h-10 bg-slate-200 flex-shrink-0 dark:bg-gray-700"></div>
+                <div class="text-center min-w-[110px]">
+                    <p class="text-2xl md:text-3xl font-black text-townwize-primary leading-none dark:text-white">0%</p>
+                    <p
+                        class="text-xs text-townwize-textSecondary font-semibold uppercase tracking-wider mt-2 leading-snug dark:text-gray-400">
+                        Surge Pricing</p>
                 </div>
             </div>
         </div>
@@ -796,11 +803,11 @@
     <section class="py-24 px-6 bg-white dark:bg-gray-900">
         <div class="max-w-6xl mx-auto">
             <div class="text-center mb-16">
-                <span class="text-townwize-accent font-bold text-xs uppercase tracking-widest">آپ کی حفاظت، یقینی</span>
+                <span class="text-townwize-accent font-bold text-xs uppercase tracking-widest">Your Safety,
+                    Guaranteed</span>
                 <h2
                     class="text-3xl md:text-5xl font-extrabold text-townwize-primary mt-4 mb-4 tracking-tight dark:text-white">
-                    ہر قدم پر
-                    خودکار تحفظ</h2>
+                    Built-In Protection at Every Step</h2>
                 <div class="w-20 h-1.5 bg-townwize-accent mx-auto rounded-full"></div>
             </div>
 
@@ -815,16 +822,15 @@
                             </path>
                         </svg>
                     </div>
-                    <h3 class="font-bold text-townwize-primary mb-2 dark:text-white">خودکار تصدیق</h3>
-                    <p class="text-xs text-townwize-accent font-semibold leading-loose">وائزر (ڈرائیور) کے لیے 6 نکاتی
-                        جانچ</p>
-                    <p class="text-xs text-townwize-textSecondary leading-loose mt-1 dark:text-gray-400">BTK ID، یوٹیلٹی
-                        بل، CNIC، لائسنس،
-                        گاڑی رجسٹریشن، سیلفی</p>
-                    <p class="text-xs text-townwize-accent font-semibold mt-3">ٹاؤنر (مسافر)</p>
-                    <p class="text-xs text-townwize-textSecondary leading-loose mt-1 dark:text-gray-400">BTK ID اور
-                        یوٹیلٹی بل — یا کسی
-                        تصدیق شدہ رکن کا ریفرل</p>
+                    <h3 class="font-bold text-townwize-primary mb-2 dark:text-white">Automated Verification</h3>
+                    <p class="text-xs text-townwize-accent font-semibold">6-Point Wizer (Driver) Screening</p>
+                    <p class="text-xs text-townwize-textSecondary mt-1 dark:text-gray-400">BTK ID, Utility Bill, CNIC,
+                        Licence, Vehicle
+                        Registration, Selfie Verification.</p>
+                    <p class="text-xs text-townwize-accent font-semibold mt-3">Towners (Passengers)</p>
+                    <p class="text-xs text-townwize-textSecondary mt-1 dark:text-gray-400">BTK ID &amp; Utility Bill —
+                        or referral from a
+                        verified member.</p>
                 </div>
 
                 <div
@@ -837,10 +843,10 @@
                             </path>
                         </svg>
                     </div>
-                    <h3 class="font-bold text-townwize-primary mb-2 dark:text-white">سفر کی براہِ راست مانیٹرنگ</h3>
-                    <p class="text-sm text-townwize-textSecondary leading-relaxed dark:text-gray-400">سفر کی لائیو
-                        لوکیشن گھر والوں سے شیئر
-                        کریں۔ ہر لمحہ پرسکون، ہمیشہ۔</p>
+                    <h3 class="font-bold text-townwize-primary mb-2 dark:text-white">Live Trip Tracking</h3>
+                    <p class="text-sm text-townwize-textSecondary dark:text-gray-400">Share your ride location with
+                        family in real-time.
+                        Peace of mind, always.</p>
                 </div>
 
                 <div
@@ -853,9 +859,10 @@
                             </path>
                         </svg>
                     </div>
-                    <h3 class="font-bold text-townwize-primary mb-2 dark:text-white">ایمرجنسی SOS بٹن</h3>
-                    <p class="text-sm text-townwize-textSecondary dark:text-gray-400">ایک کلک پر ایمرجنسی رابطوں کو فوری
-                        الرٹ</p>
+                    <h3 class="font-bold text-townwize-primary mb-2 dark:text-white">Emergency SOS Button</h3>
+                    <p class="text-sm text-townwize-textSecondary dark:text-gray-400">One-tap alert to your emergency
+                        contacts — instantly.
+                    </p>
                 </div>
 
                 <div
@@ -868,10 +875,10 @@
                             </path>
                         </svg>
                     </div>
-                    <h3 class="font-bold text-townwize-primary mb-2 dark:text-white">ترجیحی سپورٹ</h3>
-                    <p class="text-sm text-townwize-textSecondary dark:text-gray-400">قطار چھوڑیں۔ ارلی ایکسیس ممبرز کو
-                        تیز تر جوابات ملیں
-                        گے۔</p>
+                    <h3 class="font-bold text-townwize-primary mb-2 dark:text-white">Priority Support</h3>
+                    <p class="text-sm text-townwize-textSecondary dark:text-gray-400">Skip the queue. Early Access
+                        members get faster
+                        responses on every issue.</p>
                 </div>
 
                 <div
@@ -884,10 +891,10 @@
                             </path>
                         </svg>
                     </div>
-                    <h3 class="font-bold text-townwize-primary mb-2 dark:text-white">سفر کی تاریخ اور رسید</h3>
-                    <p class="text-sm text-townwize-textSecondary dark:text-gray-400">ہر سفر کی مکمل شفافیت۔ رسید ڈاؤن
-                        لوڈ کریں، راستے
-                        دیکھیں۔</p>
+                    <h3 class="font-bold text-townwize-primary mb-2 dark:text-white">Ride History &amp; Receipts</h3>
+                    <p class="text-sm text-townwize-textSecondary dark:text-gray-400">Full transparency for every trip.
+                        Download receipts,
+                        review routes.</p>
                 </div>
 
                 <div
@@ -900,10 +907,10 @@
                             </path>
                         </svg>
                     </div>
-                    <h3 class="font-bold text-townwize-primary mb-2 dark:text-white">تصدیق شدہ کمیونٹی نیٹ ورک</h3>
-                    <p class="text-sm text-townwize-textSecondary dark:text-gray-400">ہر ٹاؤنر اور وائزر بحریہ ٹاؤن
-                        کراچی کی تصدیق شدہ
-                        کمیونٹی کا حصہ ہے۔</p>
+                    <h3 class="font-bold text-townwize-primary mb-2 dark:text-white">Verified Community Network</h3>
+                    <p class="text-sm text-townwize-textSecondary dark:text-gray-400">Every Towner and Wizer is part of
+                        the verified Bahria
+                        Town Karachi community.</p>
                 </div>
             </div>
         </div>
@@ -913,82 +920,79 @@
     <section id="features" class="py-24 px-6 bg-townwize-bgLight dark:bg-gray-800">
         <div class="max-w-6xl mx-auto">
             <div class="text-center mb-16">
-                <span class="text-townwize-accent font-bold text-xs uppercase tracking-widest">بحریہ ٹاؤن کراچی کے لیے
-                    تیار کردہ</span>
+                <span class="text-townwize-accent font-bold text-xs uppercase tracking-widest">Built for Bahria Town
+                    Karachi</span>
                 <h2
-                    class="text-2xl md:text-5xl font-extrabold text-townwize-primary mt-4 mb-4 tracking-tight pb-4 leading-loose dark:text-white">
-                    کمیونٹی کو اولین ترجیح دینے والے فیچرز</h2>
+                    class="text-3xl md:text-5xl font-extrabold text-townwize-primary mt-4 mb-4 tracking-tight dark:text-white">
+                    Community-First Features</h2>
                 <div class="w-20 h-1.5 bg-townwize-accent mx-auto rounded-full"></div>
             </div>
 
             <div class="grid md:grid-cols-2 gap-8 lg:gap-10">
                 <div
-                    class="p-8 rounded-3xl bg-white border border-slate-100 feature-card flex flex-col items-start text-right dark:bg-gray-900 dark:border-gray-700">
-                    <div
-                        class="w-14 h-14 bg-townwize-accent/10 rounded-2xl flex items-center justify-center mb-6 mr-0 ml-auto">
+                    class="p-8 rounded-3xl bg-white border border-slate-100 feature-card flex flex-col items-start text-left dark:bg-gray-900 dark:border-gray-700">
+                    <div class="w-14 h-14 bg-townwize-accent/10 rounded-2xl flex items-center justify-center mb-6">
                         <svg class="w-8 h-8 text-townwize-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z">
                             </path>
                         </svg>
                     </div>
-                    <h3 class="text-xl font-bold mb-3 w-full dark:text-white">بحریہ ٹاؤن کراچی کے لیے تصدیق شدہ نیٹ ورک
-                    </h3>
-                    <p class="text-townwize-textSecondary text-sm leading-relaxed dark:text-gray-400">«ٹاؤن وائز» ایک
-                        محفوظ رائڈ ایپ ہے جو
-                        بنی ہے رہائشیوں اور ان کے اپنے لوگوں کے لیے۔ BTK کے اندر ہو یا پورے کراچی میں، آپ کا واسطہ ہمیشہ
-                        ایک تصدیق شدہ «وائزر» سے ہوگا۔</p>
+                    <h3 class="text-xl font-bold mb-3 dark:text-white">Verified Network for Bahria Town Karachi</h3>
+                    <p class="text-townwize-textSecondary text-sm leading-relaxed dark:text-gray-400">A secure ride
+                        platform exclusively
+                        for BTK residents and their trusted referrals. Whether you're travelling within BTK or across
+                        Karachi, your Wizer is always someone your community has verified.</p>
                 </div>
 
                 <div
-                    class="p-8 rounded-3xl bg-white border border-slate-100 feature-card flex flex-col items-start text-right dark:bg-gray-900 dark:border-gray-700">
-                    <div
-                        class="w-14 h-14 bg-townwize-accent/10 rounded-2xl flex items-center justify-center mb-6 mr-0 ml-auto">
+                    class="p-8 rounded-3xl bg-white border border-slate-100 feature-card flex flex-col items-start text-left dark:bg-gray-900 dark:border-gray-700">
+                    <div class="w-14 h-14 bg-townwize-accent/10 rounded-2xl flex items-center justify-center mb-6">
                         <svg class="w-8 h-8 text-townwize-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M9 12.75L11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 01-1.043 3.296 3.745 3.745 0 01-3.296 1.043A3.745 3.745 0 0112 21a3.745 3.745 0 01-3.068-.63 3.745 3.745 0 01-3.296-1.043 3.745 3.745 0 01-1.043-3.296A3.745 3.745 0 013 12c0-1.268.63-2.39 1.593-3.068a3.746 3.746 0 011.043-3.296 3.746 3.746 0 013.296-1.043A3.746 3.746 0 0112 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 013.296 1.043 3.746 3.746 0 011.043 3.296A3.745 3.745 0 0121 12z">
                             </path>
                         </svg>
                     </div>
-                    <h3 class="text-xl font-bold mb-3 w-full dark:text-white">آپ کی کمیونٹی، بحریہ ٹاؤن سے کراچی تک</h3>
-                    <p class="text-townwize-textSecondary text-sm leading-relaxed dark:text-gray-400">صرف تصدیق شدہ BTK
-                        رہائشیوں اور ان کے
-                        بھروسہ مند ریفرلز کے لیے۔ کراچی بھر میں ایک محفوظ اور جانچ شدہ نیٹ ورک کے ساتھ سفر کریں۔</p>
+                    <h3 class="text-xl font-bold mb-3 dark:text-white">Your Community, Anywhere in Karachi</h3>
+                    <p class="text-townwize-textSecondary text-sm leading-relaxed dark:text-gray-400">Travel within a
+                        secure, vetted
+                        network — inside BTK or city-wide. Every ride connects you only to people from your verified
+                        community, giving you confidence that no app badge can fake.</p>
                 </div>
 
                 <div
-                    class="p-8 rounded-3xl bg-white border border-slate-100 feature-card flex flex-col items-start text-right dark:bg-gray-900 dark:border-gray-700">
-                    <div
-                        class="w-14 h-14 bg-townwize-accent/10 rounded-2xl flex items-center justify-center mb-6 mr-0 ml-auto">
+                    class="p-8 rounded-3xl bg-white border border-slate-100 feature-card flex flex-col items-start text-left dark:bg-gray-900 dark:border-gray-700">
+                    <div class="w-14 h-14 bg-townwize-accent/10 rounded-2xl flex items-center justify-center mb-6">
                         <svg class="w-8 h-8 text-townwize-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z">
                             </path>
                         </svg>
                     </div>
-                    <h3 class="text-xl font-bold mb-3 w-full dark:text-white">شفاف کرایہ — کوئی بھاری کمیشن کی چالیں
-                        نہیں</h3>
-                    <p class="text-townwize-textSecondary text-sm leading-relaxed dark:text-gray-400">وائزرز کی آمدنی سے
-                        بھاری کمیشن نہیں
-                        کاٹا جاتا۔ ہر کرایے کا بڑا حصہ ڈرائیور کو ملتا ہے — صرف ایک معمولی کمیشن اور شفاف پلیٹ فارم فیس
-                        لاگو
-                        ہوتی ہے۔ سرج پرائسنگ بالکل نہیں۔</p>
+                    <h3 class="text-xl font-bold mb-3 dark:text-white">Transparent Fares — No Heavy Commission Games
+                    </h3>
+                    <p class="text-townwize-textSecondary text-sm leading-relaxed dark:text-gray-400">No hidden
+                        commissions eating into
+                        driver earnings. Wizers keep the vast majority of every fare — only a small comission &amp;
+                        transparent
+                        platform fee applies. No surge pricing. No unpredictable rate spikes.</p>
                 </div>
 
                 <div
-                    class="p-8 rounded-3xl bg-white border border-slate-100 feature-card flex flex-col items-start text-right dark:bg-gray-900 dark:border-gray-700">
-                    <div
-                        class="w-14 h-14 bg-townwize-accent/10 rounded-2xl flex items-center justify-center mb-6 mr-0 ml-auto">
+                    class="p-8 rounded-3xl bg-white border border-slate-100 feature-card flex flex-col items-start text-left dark:bg-gray-900 dark:border-gray-700">
+                    <div class="w-14 h-14 bg-townwize-accent/10 rounded-2xl flex items-center justify-center mb-6">
                         <svg class="w-8 h-8 text-townwize-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z">
                             </path>
                         </svg>
                     </div>
-                    <h3 class="text-xl font-bold mb-3 w-full dark:text-white">ٹاؤنر رائیڈ شیئر</h3>
-                    <p class="text-townwize-textSecondary text-sm leading-relaxed dark:text-gray-400">اخراجات بانٹیں،
-                        آرام نہیں۔ اپنے سفر
-                        کو تصدیق شدہ پڑوسیوں کے ساتھ شیئر کریں — کراچی میں ایک ماحول دوست اور سستا طریقہ۔</p>
+                    <h3 class="text-xl font-bold mb-3 dark:text-white">Towner Ride Share</h3>
+                    <p class="text-townwize-textSecondary text-sm leading-relaxed dark:text-gray-400">Split the cost,
+                        not the comfort.
+                        Share your commute with verified neighbours. A greener, more affordable way to travel together
+                        across Karachi.</p>
                 </div>
             </div>
         </div>
@@ -999,109 +1003,110 @@
         <div class="max-w-6xl mx-auto">
             <div class="text-center mb-16">
                 <h2
-                    class="text-3xl md:text-5xl font-extrabold text-townwize-primary mb-4 tracking-tight pb-4 leading-loose dark:text-white">
-                    ابتدائی صارفین کے لیے خصوصی مراعات</h2>
+                    class="text-3xl md:text-5xl font-extrabold text-townwize-primary mb-4 tracking-tight dark:text-white">
+                    Early Access
+                    Perks</h2>
                 <div class="w-20 h-1.5 bg-townwize-accent mx-auto rounded-full mb-6"></div>
-                <p
-                    class="font-urdu text-townwize-textSecondary max-w-2xl mx-auto text-base leading-loose dark:text-gray-400">
-                    بحریہ ٹاؤن کراچی کے سفر کو بدلنے میں «ٹاؤن وائز» کے اولین شراکت دار بنیں اور پائیں خصوصی فوائد۔
+                <p class="text-townwize-textSecondary max-w-2xl mx-auto text-base dark:text-gray-400">
+                    Be among the first to shape how Bahria Town Karachi moves. These limited spots come with exclusive
+                    benefits — and they won't last.
                 </p>
-                <p
-                    class="text-townwize-textSecondary max-w-2xl mx-auto text-sm mt-4 leading-relaxed dark:text-gray-400">
-                    صرف ابتدائی <strong class="text-townwize-primary dark:text-white">۵۰۰ مسافر (ٹاؤنرز)</strong> اور
-                    <strong class="text-townwize-primary dark:text-white">۱۰۰ ڈرائیور (وائزرز)</strong> ہی اس خاص لیول
-                    میں شامل ہو سکتے ہیں۔
+                <p class="text-townwize-textSecondary max-w-2xl mx-auto text-sm mt-4 dark:text-gray-400">
+                    Only <strong class="text-townwize-primary dark:text-white">500 passengers (Towners)</strong> and
+                    <strong class="text-townwize-primary dark:text-white">100 drivers (Wizers)</strong> get in at this
+                    level. Benefits are
+                    locked in at launch. Once we open to the public, these perks are gone.
                 </p>
             </div>
 
             <div class="grid md:grid-cols-2 gap-8 lg:gap-12">
                 <!-- Towner perks -->
                 <div
-                    class="group p-8 md:p-12 bg-townwize-bgLight rounded-4xl border border-slate-100 shadow-xl hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 text-right dark:bg-gray-800 dark:border-gray-700">
+                    class="group p-8 md:p-12 bg-townwize-bgLight rounded-4xl border border-slate-100 shadow-xl hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 dark:bg-gray-800 dark:border-gray-700">
                     <div
                         class="inline-block px-4 py-1.5 rounded-full bg-townwize-accent/10 text-townwize-accent text-[12px] font-bold uppercase tracking-widest mb-8">
-                        مسافروں کے لیے (ٹاؤنرز) — پہلی ۵۰۰ نشستیں
+                        For Passengers (Towners) — First 500 Spots
                     </div>
-                    <h3 class="text-2xl md:text-3xl font-extrabold mb-8 text-townwize-primary dark:text-white">BTK
-                        اوریجنلز</h3>
+                    <h3 class="text-2xl md:text-3xl font-extrabold mb-8 text-townwize-primary dark:text-white">The BTK
+                        Originals</h3>
                     <ul class="space-y-8">
-                        <li class="flex gap-4 items-start">
-                            <div class="flex-1 text-right">
-                                <h4 class="font-bold text-townwize-primary mb-1 dark:text-white">۳۰ دنوں کے لیے فکسڈ
-                                    ریٹس*</h4>
-                                <p class="text-sm text-townwize-textSecondary leading-loose dark:text-gray-400">پہلے ۱
-                                    ماہ کے لیے یکساں
-                                    بنیادی کرایہ۔ بغیر کسی فیول سرچارج یا اضافی چارجز کے۔</p>
-                            </div>
+                        <li class="flex gap-5">
                             <span
-                                class="flex-shrink-0 w-10 h-10 rounded-xl bg-townwize-accent/10 flex items-center justify-center text-townwize-accent font-black text-sm">01</span>
+                                class="flex-shrink-0 w-10 h-10 rounded-xl bg-townwize-accent/10 flex items-center justify-center text-townwize-accent font-black">01</span>
+                            <div>
+                                <h4 class="font-bold text-townwize-primary mb-1 dark:text-white">30-Day Rate Lock*</h4>
+                                <p class="text-sm text-townwize-textSecondary leading-relaxed dark:text-gray-400">Stable
+                                    base fares for
+                                    your first month. No fuel surcharges, no surprises.</p>
+                            </div>
                         </li>
-                        <li class="flex gap-4 items-start">
-                            <div class="flex-1 text-right">
-                                <h4 class="font-bold text-townwize-primary mb-1 dark:text-white">ذاتی رہنمائی</h4>
-                                <p class="text-sm text-townwize-textSecondary leading-loose dark:text-gray-400">ذاتی مدد
-                                    کے لیے مخصوص
-                                    نمائندے تک ترجیحی رسائی۔</p>
-                            </div>
+                        <li class="flex gap-5">
                             <span
-                                class="flex-shrink-0 w-10 h-10 rounded-xl bg-townwize-accent/10 flex items-center justify-center text-townwize-accent font-black text-sm">02</span>
+                                class="flex-shrink-0 w-10 h-10 rounded-xl bg-townwize-accent/10 flex items-center justify-center text-townwize-accent font-black">02</span>
+                            <div>
+                                <h4 class="font-bold text-townwize-primary mb-1 dark:text-white">Personal Concierge</h4>
+                                <p class="text-sm text-townwize-textSecondary leading-relaxed dark:text-gray-400">
+                                    Priority access to a
+                                    dedicated concierge for personalised assistance.</p>
+                            </div>
                         </li>
-                        <li class="flex gap-4 items-start">
-                            <div class="flex-1 text-right">
-                                <h4 class="font-bold text-townwize-primary mb-1 dark:text-white">ماہانہ ٹاؤنر کریڈٹ</h4>
-                                <p class="text-sm text-townwize-textSecondary leading-loose dark:text-gray-400">پہلے ۳
-                                    ماہ کے لیے ہر ماہ آپ
-                                    کے اکاؤنٹ میں مفت سواری کریڈٹ۔</p>
-                            </div>
+                        <li class="flex gap-5">
                             <span
-                                class="flex-shrink-0 w-10 h-10 rounded-xl bg-townwize-accent/10 flex items-center justify-center text-townwize-accent font-black text-sm">03</span>
+                                class="flex-shrink-0 w-10 h-10 rounded-xl bg-townwize-accent/10 flex items-center justify-center text-townwize-accent font-black">03</span>
+                            <div>
+                                <h4 class="font-bold text-townwize-primary mb-1 dark:text-white">Monthly Towner Credits
+                                </h4>
+                                <p class="text-sm text-townwize-textSecondary leading-relaxed dark:text-gray-400">Free
+                                    ride credits added
+                                    to your account each month for the first 3 months.</p>
+                            </div>
                         </li>
                     </ul>
                 </div>
 
                 <!-- Wizer perks -->
                 <div
-                    class="group p-8 md:p-12 pb-12 bg-townwize-primary text-white rounded-4xl shadow-2xl transition-all duration-500 hover:-translate-y-2 text-right dark:bg-gray-800 dark:text-white">
+                    class="group p-8 md:p-12 bg-townwize-primary text-white rounded-4xl shadow-2xl transition-all duration-500 hover:-translate-y-2 dark:bg-gray-800 dark:text-white">
                     <div
                         class="inline-block px-4 py-1.5 rounded-full bg-white/10 text-townwize-accent text-[12px] font-bold uppercase tracking-widest mb-8">
-                        ڈرائیوروں کے لیے (وائزرز) — پہلی ۱۰۰ نشستیں
+                        For Drivers (Wizers) — First 100 Spots
                     </div>
-                    <h3 class="text-2xl md:text-3xl font-extrabold mb-8">ایلیٹ وائزر</h3>
+                    <h3 class="text-2xl md:text-3xl font-extrabold mb-8">Elite Wizer</h3>
                     <ul class="space-y-8">
-                        <li class="flex gap-4 items-start">
-                            <div class="flex-1 text-right">
-                                <h4 class="font-bold mb-1">فاؤنڈنگ وائزر ریٹ لاک*</h4>
-                                <p class="text-sm text-slate-300 leading-loose">پہلے ۶۰ دنوں کے لیے سب سے کم پلیٹ فارم
-                                    فیس لاک کریں — پبلک ریٹس سے پہلے۔</p>
-                            </div>
+                        <li class="flex gap-5">
                             <span
-                                class="flex-shrink-0 w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center text-townwize-accent font-black text-sm">01</span>
+                                class="flex-shrink-0 w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center text-townwize-accent font-black">01</span>
+                            <div>
+                                <h4 class="font-bold mb-1">Founding Wizer Rate Lock*</h4>
+                                <p class="text-sm text-slate-300 leading-relaxed">Lock in the lowest platform service
+                                    fee for your first 60 days of operation — before public rates are published.</p>
+                            </div>
                         </li>
-                        <li class="flex gap-4 items-start">
-                            <div class="flex-1 text-right">
-                                <h4 class="font-bold mb-1">ایلیٹ وائزر بیج</h4>
-                                <p class="text-sm text-slate-300 leading-loose">بھروسے کی ڈیجیٹل علامت جو بکنگ میں ترجیح
-                                    اور زیادہ نمائش دیتی ہے۔</p>
-                            </div>
+                        <li class="flex gap-5">
                             <span
-                                class="flex-shrink-0 w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center text-townwize-accent font-black text-sm">02</span>
+                                class="flex-shrink-0 w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center text-townwize-accent font-black">02</span>
+                            <div>
+                                <h4 class="font-bold mb-1">Elite Wizer Badge</h4>
+                                <p class="text-sm text-slate-300 leading-relaxed">A digital mark of trust that grants
+                                    you booking priority and higher visibility in the app.</p>
+                            </div>
                         </li>
-                        <li class="flex gap-4 items-start">
-                            <div class="flex-1 text-right">
-                                <h4 class="font-bold mb-1">مستقل ایلیٹ حیثیت</h4>
-                                <p class="text-sm text-slate-300 leading-loose">آپ کی ایلیٹ حیثیت مستقل ہے۔ پبلک لانچ کے
-                                    بعد بھی آپ کے بانی فوائد ایک طویل مدت کے لیے محفوظ رہیں گے — کوئی دوبارہ مذاکرات
-                                    نہیں، کوئی میعاد ختم نہیں۔</p>
-                            </div>
+                        <li class="flex gap-5">
                             <span
-                                class="flex-shrink-0 w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center text-townwize-accent font-black text-sm">03</span>
+                                class="flex-shrink-0 w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center text-townwize-accent font-black">03</span>
+                            <div>
+                                <h4 class="font-bold mb-1">Permanent Elite Status</h4>
+                                <p class="text-sm text-slate-300 leading-relaxed">Your Elite status is permanent. Even
+                                    after public launch, your founding benefits stay locked in for an extended term — no
+                                    renegotiation, no expiry.</p>
+                            </div>
                         </li>
                     </ul>
                 </div>
             </div>
-            <p class="text-center text-xs text-townwize-textSecondary mt-8 dark:text-gray-400">*ریٹ لاک بنیادی کرایوں پر
-                لاگو ہوتا ہے۔
-                فاؤنڈنگ ریٹ پہلے ۶۰ فعال دنوں کے لیے ہے۔ لانچ کے وقت مکمل شرائط دیکھیں۔</p>
+            <p class="text-center text-xs text-townwize-textSecondary mt-8 italic dark:text-gray-400">*Rate lock applies
+                to base fares.
+                Founding rate applies for first 60 active days. See full terms at launch.</p>
         </div>
     </section>
 
@@ -1109,10 +1114,10 @@
     <section id="faq" class="py-24 px-6 bg-townwize-bgLight dark:bg-gray-800">
         <div class="max-w-3xl mx-auto">
             <div class="text-center mb-14">
-                <span class="text-townwize-accent font-bold text-xs uppercase tracking-widest">عام سوالات</span>
+                <span class="text-townwize-accent font-bold text-xs uppercase tracking-widest">Common Questions</span>
                 <h2
-                    class="text-3xl md:text-4xl font-extrabold text-townwize-primary mt-4 mb-4 tracking-tight leading-loose dark:text-white">
-                    اکثر پوچھے جانے والے سوالات</h2>
+                    class="text-3xl md:text-4xl font-extrabold text-townwize-primary mt-4 mb-4 tracking-tight dark:text-white">
+                    Frequently Asked Questions</h2>
                 <div class="w-20 h-1.5 bg-townwize-accent mx-auto rounded-full"></div>
             </div>
 
@@ -1120,63 +1125,59 @@
 
                 <div
                     class="faq-item bg-white border border-slate-100 rounded-2xl overflow-hidden dark:bg-gray-900 dark:border-gray-700">
-                    <button class="faq-trigger w-full flex items-center justify-between px-6 py-5 gap-4">
-                        <span
-                            class="font-semibold text-townwize-primary text-sm md:text-base text-right flex-1 dark:text-white">اگر
-                            میرے قریب کوئی وائزر دستیاب نہ ہو تو؟</span>
-                        <span class="faq-icon text-townwize-accent text-xl flex-shrink-0">+</span>
+                    <button class="faq-trigger w-full flex items-center justify-between px-6 py-5 text-left">
+                        <span class="font-semibold text-townwize-primary text-sm md:text-base dark:text-white">What if
+                            no Wizer is
+                            available near me?</span>
+                        <span class="faq-icon text-townwize-accent text-xl flex-shrink-0 ml-4">+</span>
                     </button>
-                    <div class="faq-answer">
-                        <p
-                            class="text-sm text-townwize-textSecondary leading-loose pb-6 pt-1 px-6 text-right dark:text-gray-400">
-                            لاؤنچ کا کاؤنٹ ڈاؤن شروع ہو چکا ہے! ہم مسافروں کی رجسٹریشن کھولنے سے پہلے BTK میں
-                            <strong>تصدیق شدہ وائزرز</strong> کا ایک مضبوط نیٹ ورک تیار کر رہے ہیں، تاکہ پہلی ہی
-                            سواری سے آپ کو فوری سروس مل سکے۔ ابتدائی ٹاؤنرز کے لیے گاڑی کی دستیابی کی مکمل ضمانت ہوگی۔
-                            جیسے جیسے مزید وائزرز ریفرل کے ذریعے شامل ہوں گے، آپ کا انتظار کا وقت مزید کم ہوتا جائے گا۔
+                    <div class="faq-answer px-6">
+                        <p class="text-sm text-townwize-textSecondary leading-relaxed pb-5 dark:text-gray-400">We are
+                            launching with a
+                            curated pool of verified Wizers in BTK before opening to passengers — so supply is in
+                            place before demand arrives. Early Towners will have guaranteed minimum availability. As
+                            more Wizers join through referrals, wait times shrink further. We'll be transparent in the
+                            app about estimated pickup times in your precinct.</p>
+                    </div>
+                </div>
+
+                <div
+                    class="faq-item bg-white border border-slate-100 rounded-2xl overflow-hidden dark:bg-gray-900 dark:border-gray-700">
+                    <button class="faq-trigger w-full flex items-center justify-between px-6 py-5 text-left">
+                        <span class="font-semibold text-townwize-primary text-sm md:text-base dark:text-white">I'm not a
+                            BTK resident —
+                            can I still join?</span>
+                        <span class="faq-icon text-townwize-accent text-xl flex-shrink-0 ml-4">+</span>
+                    </button>
+                    <div class="faq-answer px-6">
+                        <p class="text-sm text-townwize-textSecondary leading-relaxed pb-5 dark:text-gray-400">
+                            Yes — you can join as a <strong>Guest Towner (passenger)</strong> with your own profile if
+                            you receive an invitation link from an already verified Towner. Because Guest Towners are
+                            directly vouched for within a trusted resident's network, they can get started using basic
+                            details without standard residency document checks. However, <strong>Wizers (drivers) must
+                                be verified BTK residents</strong>, with no exceptions, since they form the
+                            safety-critical layer of the platform.
                         </p>
                     </div>
                 </div>
 
                 <div
                     class="faq-item bg-white border border-slate-100 rounded-2xl overflow-hidden dark:bg-gray-900 dark:border-gray-700">
-                    <button class="faq-trigger w-full flex items-center justify-between px-6 py-5 gap-4">
-                        <span
-                            class="font-semibold text-townwize-primary text-sm md:text-base text-right flex-1 dark:text-white">اگر
-                            میں
-                            BTK کا رہائشی نہ ہوں تو کیا میں شامل ہو سکتا ہوں؟</span>
-                        <span class="faq-icon text-townwize-accent text-xl flex-shrink-0">+</span>
+                    <button class="faq-trigger w-full flex items-center justify-between px-6 py-5 text-left">
+                        <span class="font-semibold text-townwize-primary text-sm md:text-base dark:text-white">How is
+                            Townwize different
+                            from Other Ride Apps & Platforms?</span>
+                        <span class="faq-icon text-townwize-accent text-xl flex-shrink-0 ml-4">+</span>
                     </button>
-                    <div class="faq-answer">
+                    <div class="faq-answer px-6">
                         <p
-                            class="text-sm text-townwize-textSecondary leading-loose pb-6 pt-1 px-6 text-right dark:text-gray-400">
-                            جی ہاں — آپ ایک <strong>گیسٹ ٹاؤنر (مسافر)</strong> کے طور پر اپنی پروفائل کے ساتھ شامل ہو
-                            سکتے ہیں، بشرطیکہ آپ کو کسی پہلے سے تصدیق شدہ ٹاؤنر کی طرف سے دعوتی لنک ملا ہو۔ چونکہ گیسٹ
-                            ٹاؤنرز ہمارے کسی تصدیق شدہ رہائشی کے بھروسے کے دائرے میں شامل ہوتے ہیں، اس لیے وہ رہائشی
-                            دستاویزات کی تصدیق کے بغیر صرف بنیادی معلومات کے ساتھ ایپ استعمال کر سکتے ہیں۔ تاہم،
-                            <strong>وائزرز (ڈرائیورز) کے لیے بغیر کسی استثنا کے BTK کا تصدیق شدہ رہائشی ہونا لازمی
-                                ہے</strong>، کیونکہ وہ ہمارے پلیٹ فارم کا سب سے اہم سیکیورٹی حصہ ہیں۔
-                        </p>
-                    </div>
-                </div>
-
-                <div
-                    class="faq-item bg-white border border-slate-100 rounded-2xl overflow-hidden dark:bg-gray-900 dark:border-gray-700">
-                    <button class="faq-trigger w-full flex items-center justify-between px-6 py-5 gap-4">
-                        <span
-                            class="font-semibold text-townwize-primary text-sm md:text-base text-right flex-1 dark:text-white">ٹاؤن
-                            وائز دیگر ایپ - پلیٹ فارمز سے کیسے مختلف ہے؟</span>
-                        <span class="faq-icon text-townwize-accent text-xl flex-shrink-0">+</span>
-                    </button>
-                    <div class="faq-answer">
-                        <p
-                            class="text-sm text-townwize-textSecondary leading-loose pb-6 pt-1 px-6 text-right dark:text-gray-400">
-                            سب سے بڑا فرق <strong>تصدیق شدہ شناخت</strong> ہے۔ زیادہ تر دیگر رائیڈ ایپس اور پلیٹ فارمز
-                            پر، بیک گراؤنڈ چیک صرف اکاؤنٹ ہولڈرز پر کیے جاتے ہیں — یعنی آپ کو ڈرائیو کرنے والا اصل شخص
-                            کار
-                            چلانے کے لیے ایک غیر تصدیق شدہ اجنبی ہو سکتا ہے۔ Townwize پر، ہر Wizer ایک تصدیق شدہ BTK
-                            رہائشی ہے — ایک پڑوسی، اجنبی نہیں۔ مزید برآں، Townwize 20-25% کمیشن کٹوتیوں کے بجائے ایک
-                            شفاف اور برائے نام کمیشن ماڈل استعمال کرتا ہے، اس لیے ڈرائیورز فی سواری نمایاں طور پر زیادہ
-                            کماتے ہیں اور مسافروں کے لیے کرایہ کم رہتا ہے۔
+                            class="text-sm text-townwize-textSecondary leading-loose pb-6 pt-1 px-6 text-left dark:text-gray-400">
+                            The biggest difference is <strong>verified identity</strong>. On most of the other ride apps
+                            and platforms, background checks are only run on the account holders—meaning the actual
+                            person driving you could be an unverified stranger hired to run the car. On Townwize, every
+                            Wizer is a verified BTK resident — a neighbour, not a stranger. Additionally, Townwize uses
+                            a transparent and nominal commission model instead of 20–25% commission cuts, so drivers
+                            earn significantly more per ride and fares stay lower for passengers.
                         </p>
 
                     </div>
@@ -1184,47 +1185,63 @@
 
                 <div
                     class="faq-item bg-white border border-slate-100 rounded-2xl overflow-hidden dark:bg-gray-900 dark:border-gray-700">
-                    <button class="faq-trigger w-full flex items-center justify-between px-6 py-5 gap-4">
-                        <span
-                            class="font-semibold text-townwize-primary text-sm md:text-base text-right flex-1 dark:text-white">وائزر
-                            بننے کے لیے کن دستاویزات کی ضرورت ہے؟</span>
-                        <span class="faq-icon text-townwize-accent text-xl flex-shrink-0">+</span>
+                    <button class="faq-trigger w-full flex items-center justify-between px-6 py-5 text-left">
+                        <span class="font-semibold text-townwize-primary text-sm md:text-base dark:text-white">What
+                            documents do I need
+                            to register as a Wizer?</span>
+                        <span class="faq-icon text-townwize-accent text-xl flex-shrink-0 ml-4">+</span>
                     </button>
-                    <div class="faq-answer">
+                    <div class="faq-answer px-6">
                         <p
-                            class="text-sm text-townwize-textSecondary leading-loose pb-6 pt-1 px-6 text-right dark:text-gray-400">
-                            یہ ایک <strong>مکمل خودکار نظام</strong> ہے جس کے لیے ۶ چیزیں درکار ہیں: (۱) BTK ID یا رہائش
-                            کا ثبوت، (۲) BTK پتے کا یوٹیلٹی بل، (۳) درست کمپیوٹرائزڈ قومی شناختی کارڈ ، (۴) فعال
-                            ڈرائیونگ
-                            لائسنس، (۵) گاڑی کے رجسٹریشن کاغذات، اور (۶) لائیو سیلفی۔ ایپ کا خودکار سسٹم اپ لوڈ ہوتے ہی
-                            ان دستاویزات کا فوری جائزہ لے کر تصدیق مکمل کرے گا۔
+                            class="text-sm text-townwize-textSecondary leading-loose pb-6 pt-1 px-6 text-left dark:text-gray-400">
+                            Our <strong>fully automated system</strong> requires 6 items: (1) BTK ID or proof of
+                            residence, (2) A utility bill at the BTK address, (3) A valid CNIC, (4) An
+                            active driving license, (5) Vehicle registration documents, and (6) A live selfie. The app's
+                            automated system will instantly review and verify all your documents upon upload.
                         </p>
 
                     </div>
+                </div>
 
-                    <div
-                        class="faq-item bg-white border border-slate-100 rounded-2xl overflow-hidden dark:bg-gray-900 dark:border-gray-700">
-                        <button class="faq-trigger w-full flex items-center justify-between px-6 py-5 gap-4">
-                            <span
-                                class="font-semibold text-townwize-primary text-sm md:text-base text-right flex-1 dark:text-white">ریفرل
-                                سسٹم کیسے کام کرتا ہے؟</span>
-                            <span class="faq-icon text-townwize-accent text-xl flex-shrink-0">+</span>
-                        </button>
-                        <div class="faq-answer">
-                            <p
-                                class="text-sm text-townwize-textSecondary leading-loose pb-6 pt-1 px-6 text-right dark:text-gray-400">
-                                ٹاؤن وائز پر صارف کی رجسٹریشن ایک خاص طریقہ کار کے تحت ہوتی ہے۔ <strong>پہلے سے تصدیق
-                                    شدہ وائزرز</strong> صرف ایسے BTK رہائشیوں کو ریفر کر سکتے ہیں جو وائزر بننا چاہتے
-                                ہیں، اور ان نئے وائزرز کے لیے ایپ کا خودکار دستاویزاتی تصدیقی نظام لازمی ہوگا۔ دوسری
-                                طرف، <strong>پہلے سے تصدیق شدہ ٹاؤنرز</strong> اپنے مہمانوں اور ملاقاتیوں کو ایپ پر مدعو
-                                کر سکتے ہیں۔ ان مہمانوں کو کسی دستاویز کی تصدیق کی ضرورت نہیں ہوتی اور وہ صرف بنیادی
-                                معلومات کے ساتھ شامل ہو سکتے ہیں، کیونکہ ہمارا سسٹم ان کی صداقت کا ریکارڈ مدعو کرنے والے
-                                ٹاؤنر کے ڈیٹا سے منسلک رکھتا ہے۔
-                            </p>
-                        </div>
+                <div
+                    class="faq-item bg-white border border-slate-100 rounded-2xl overflow-hidden dark:bg-gray-900 dark:border-gray-700">
+                    <button class="faq-trigger w-full flex items-center justify-between px-6 py-5 text-left">
+                        <span class="font-semibold text-townwize-primary text-sm md:text-base dark:text-white">When is
+                            the app
+                            launching?</span>
+                        <span class="faq-icon text-townwize-accent text-xl flex-shrink-0 ml-4">+</span>
+                    </button>
+                    <div class="faq-answer px-6">
+                        <p class="text-sm text-townwize-textSecondary leading-relaxed pb-5 dark:text-gray-400">The
+                            countdown to launch is
+                            on. Join the waitlist today to secure your invitation the moment the platform goes live.
+                            Early Access members get first priority, locked-in rates, and zero onboarding delays.</p>
                     </div>
                 </div>
+
+                <div
+                    class="faq-item bg-white border border-slate-100 rounded-2xl overflow-hidden dark:bg-gray-900 dark:border-gray-700">
+                    <button class="faq-trigger w-full flex items-center justify-between px-6 py-5 text-left">
+                        <span class="font-semibold text-townwize-primary text-sm md:text-base dark:text-white">How does
+                            the referral
+                            system work?</span>
+                        <span class="faq-icon text-townwize-accent text-xl flex-shrink-0 ml-4">+</span>
+                    </button>
+                    <div class="faq-answer px-6">
+                        <p
+                            class="text-sm text-townwize-textSecondary leading-loose pb-6 pt-1 text-left dark:text-gray-400">
+                            User registration on Townwize follows a precise verification model. <strong>Already
+                                verified Wizers</strong> can only refer BTK residents who wish to become Wizers, and
+                            these candidates must pass the standard automated document verification process. Conversely,
+                            <strong>already verified Towners</strong> can invite their guests and visitors to join the
+                            app using just basic details without document checks, as our system maps their authenticity
+                            directly to the inviting Towner's profile.
+                        </p>
+                    </div>
+                </div>
+
             </div>
+        </div>
     </section>
 
     <!-- FOOTER / WAITLIST -->
@@ -1233,159 +1250,145 @@
         <div
             class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] bg-townwize-accent/8 blur-[140px] rounded-full pointer-events-none">
         </div>
+        <div class="absolute top-0 right-0 w-64 h-64 bg-townwize-gold/5 blur-[100px] rounded-full pointer-events-none">
+        </div>
 
         <div class="max-w-4xl mx-auto relative z-10">
             <div class="mb-12">
-                <h2 class="text-4xl md:text-6xl font-black mb-6 text-white tracking-tight leading-[1.5]">ٹاؤن وائز کے
-                    ساتھ چلیں۔</h2>
-                <p class="text-slate-400 mb-8 max-w-xl mx-auto leading-loose pt-2">
-                    اپنے ارلی ایکسیس فوائد لاک کریں — اس سے پہلے کہ ویٹ لسٹ مکمل ہو جائے۔
+                <h2 class="text-4xl md:text-6xl font-black mb-6 text-white tracking-tight">Move with Townwize.</h2>
+                <p class="text-slate-400 mb-8 max-w-xl mx-auto leading-relaxed">
+                    Lock in your early access benefits — before the waitlist reaches capacity.
                 </p>
                 <div
-                    class="inline-flex items-center gap-2 px-4 py-3 rounded-full bg-white/5 border border-white/10 text-townwize-accent text-xs font-bold uppercase tracking-widest">
+                    class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 text-townwize-accent text-xs font-bold uppercase tracking-widest">
                     <span class="relative flex h-2 w-2">
                         <span
                             class="animate-ping absolute inline-flex h-full w-full rounded-full bg-townwize-accent opacity-75"></span>
                         <span class="relative inline-flex rounded-full h-2 w-2 bg-townwize-accent"></span>
                     </span>
-                    ارلی ایکسیس کے محدود مواقع دستیاب ہیں
+                    Limited Early Access Spots Available
                 </div>
             </div>
 
             <form id="footerForm"
-                class="max-w-lg mx-auto flex flex-col gap-4 bg-white p-8 md:p-10 rounded-[2.5rem] shadow-[0_20px_60px_rgba(0,0,0,0.35)] border border-slate-100 text-right dark:bg-gray-800 dark:border-gray-700">
+                class="max-w-lg mx-auto flex flex-col gap-4 bg-white p-8 md:p-10 rounded-[2.5rem] shadow-[0_20px_60px_rgba(0,0,0,0.35)] border border-slate-100 text-left dark:bg-gray-800 dark:border-gray-700">
                 <div class="mb-2">
-                    <p class="text-[12px] font-bold text-townwize-accent uppercase tracking-widest mb-2">ویٹ لسٹ
-                        رجسٹریشن</p>
-                    <p class="text-sm text-slate-500 dark:text-gray-400">اپنی تفصیلات درج کریں تاکہ ترجیحی رسائی حاصل ہو
-                        سکے۔</p>
+                    <p class="text-[10px] font-bold text-townwize-accent uppercase tracking-widest mb-1">Waitlist
+                        Registration</p>
+                    <p class="text-sm text-slate-500 dark:text-gray-400">Enter your details to secure priority access.
+                    </p>
                 </div>
 
-                <input type="email" name="email" placeholder="رہائشی ای میل پتہ" required
-                    class="px-6 py-4 rounded-2xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-townwize-accent text-base transition-all placeholder:text-slate-300 text-right dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder:text-gray-400">
+                <input type="email" name="email" placeholder="Resident Email Address" required
+                    class="px-6 py-4 rounded-2xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-townwize-accent text-base transition-all placeholder:text-slate-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder:text-gray-400">
 
-                <input type="tel" name="phone" placeholder="واٹس ایپ نمبر" required
-                    class="px-6 py-4 rounded-2xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-townwize-accent text-base transition-all placeholder:text-slate-300 text-right dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder:text-gray-400">
+                <input type="tel" name="phone" placeholder="WhatsApp Number" required
+                    class="px-6 py-4 rounded-2xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-townwize-accent text-base transition-all placeholder:text-slate-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder:text-gray-400">
 
                 <div class="grid grid-cols-2 gap-4">
                     <div class="select-wrap light">
-                        <select name="precinct" aria-label="اپنا پریسنکٹ منتخب کریں" required
-                            class="w-full px-4 py-4 rounded-2xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-townwize-accent text-sm appearance-none cursor-pointer text-right leading-loose text-slate-700 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-                            <option value="" disabled selected>اپنا پریسنکٹ منتخب کریں</option>
-                            <option value="Precinct 1">پریسنکٹ 1</option>
-                            <option value="Precinct 2">پریسنکٹ 2 (قائد ولاز)</option>
-                            <option value="Precinct 3">پریسنکٹ 3 (اقبال ولاز)</option>
-                            <option value="Precinct 6">پریسنکٹ 6</option>
-                            <option value="Precinct 8">پریسنکٹ 8</option>
-                            <option value="Precinct 10-A">پریسنکٹ 10-A</option>
-                            <option value="Precinct 10-B">پریسنکٹ 10-B</option>
-                            <option value="Precinct 11-A">پریسنکٹ 11-A</option>
-                            <option value="Precinct 11-B">پریسنکٹ 11-B</option>
-                            <option value="Precinct 12">پریسنکٹ 12 (علی بلاک)</option>
-                            <option value="Precinct 14">پریسنکٹ 14</option>
-                            <option value="Precinct 15-A">پریسنکٹ 15-A</option>
-                            <option value="Precinct 15-B">پریسنکٹ 15-B</option>
-                            <option value="Precinct 16">پریسنکٹ 16</option>
-                            <option value="Precinct 19">پریسنکٹ 19</option>
-                            <option value="Precinct 27">پریسنکٹ 27</option>
-                            <option value="Precinct 30">پریسنکٹ 30</option>
-                            <option value="Precinct 31">پریسنکٹ 31</option>
-                            <option value="Precinct 35">پریسنکٹ 35 (سپورٹس سٹی)</option>
-                            <option value="Precinct 47">پریسنکٹ 47 (پیراڈائز)</option>
-                            <option value="Precinct 51">پریسنکٹ 51</option>
-                            <option value="Precinct 54">پریسنکٹ 54</option>
-                            <option value="Bahria Farmhouses">بحریہ فارم ہاؤسز</option>
-                            <option value="Golf City">گولف سٹی</option>
-                            <option value="Other">دیگر / لسٹ میں شامل نہیں</option>
+                        <select name="precinct" aria-label="Select your precinct" required
+                            class="w-full px-4 py-4 rounded-2xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-townwize-accent text-sm appearance-none cursor-pointer text-slate-700 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                            <option value="" disabled selected>Select Your Precinct</option>
+                            <option value="Precinct 1">Precinct 1</option>
+                            <option value="Precinct 2">Precinct 2 (Quaid Villas)</option>
+                            <option value="Precinct 3">Precinct 3 (Iqbal Villas)</option>
+                            <option value="Precinct 6">Precinct 6</option>
+                            <option value="Precinct 8">Precinct 8</option>
+                            <option value="Precinct 10-A">Precinct 10-A</option>
+                            <option value="Precinct 10-B">Precinct 10-B</option>
+                            <option value="Precinct 11-A">Precinct 11-A</option>
+                            <option value="Precinct 11-B">Precinct 11-B</option>
+                            <option value="Precinct 12">Precinct 12 (Ali Block)</option>
+                            <option value="Precinct 14">Precinct 14</option>
+                            <option value="Precinct 15-A">Precinct 15-A</option>
+                            <option value="Precinct 15-B">Precinct 15-B</option>
+                            <option value="Precinct 16">Precinct 16</option>
+                            <option value="Precinct 19">Precinct 19</option>
+                            <option value="Precinct 27">Precinct 27</option>
+                            <option value="Precinct 30">Precinct 30</option>
+                            <option value="Precinct 31">Precinct 31</option>
+                            <option value="Precinct 35">Precinct 35 (Sports City)</option>
+                            <option value="Precinct 47">Precinct 47 (Paradise)</option>
+                            <option value="Precinct 51">Precinct 51</option>
+                            <option value="Precinct 54">Precinct 54</option>
+                            <option value="Bahria Farmhouses">Bahria Farmhouses</option>
+                            <option value="Golf City">Golf City</option>
+                            <option value="Other">Other / Not Listed</option>
                         </select>
                     </div>
 
                     <div class="select-wrap light">
-                        <select name="interest" aria-label="اپنا کردار منتخب کریں" required
-                            class="w-full px-4 py-4 rounded-2xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-townwize-accent text-sm appearance-none cursor-pointer text-right leading-loose text-slate-700 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-                            <option value="" disabled selected>میں شامل ہونا چاہتا/چاہتی ہوں بطور…</option>
-                            <option value="Towner">ٹاؤنر (مسافر)</option>
-                            <option value="Wizer">وائزر (ڈرائیور)</option>
+                        <select name="interest" aria-label="Select your role" required
+                            class="w-full px-4 py-4 rounded-2xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-townwize-accent text-sm appearance-none cursor-pointer text-slate-700 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                            <option value="" disabled selected>I want to join as…</option>
+                            <option value="Towner">Towner (Passenger)</option>
+                            <option value="Wizer">Wizer (Driver)</option>
                         </select>
                     </div>
                 </div>
 
-                <input type="text" name="precinct_other"
-                    placeholder="اپنے پریسنکٹ یا علاقے کا نام لکھیں"
-                    class="hidden w-full px-6 py-4 rounded-2xl border border-townwize-accent/60 focus:outline-none focus:ring-2 focus:ring-townwize-accent text-base transition-all placeholder:text-slate-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder:text-gray-400 text-right">
+                <input type="text" name="precinct_other" placeholder="Type your precinct or area name"
+                    class="hidden w-full px-6 py-4 rounded-2xl border border-townwize-accent/60 focus:outline-none focus:ring-2 focus:ring-townwize-accent text-base transition-all placeholder:text-slate-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder:text-gray-400">
 
                 <div class="flex items-center gap-3 px-2 py-1">
                     <input type="checkbox" id="is_btk_hero" name="is_btk" value="Yes" required="true"
                         class="w-5 h-5 rounded border-white/20 bg-white/10 text-townwize-accent focus:ring-townwize-accent cursor-pointer">
                     <label for="is_btk_hero" class="text-sm text-slate-300 cursor-pointer">
-                        میں بحریہ ٹاؤن کراچی (BTK) کا تصدیق شدہ رہائشی ہوں
+                        I am a verified Bahria Town Karachi (BTK) resident
                     </label>
                 </div>
 
-                <div
-                    class="text-xs text-slate-500 bg-slate-50 p-4 rounded-xl mt-2 text-right leading-loose dark:bg-gray-700 dark:text-gray-300">
-                    <p class="font-bold text-slate-700 mb-3 text-sm border-b border-slate-200 pb-2 dark:text-gray-200">
-                        📎 ریفرلز کیسے کام
-                        کرتے ہیں؟</p>
-                    <div class="space-y-2">
-                        <p class="border-r-2 border-townwize-accent pr-3">
-                            <strong class="text-slate-700 dark:text-gray-200">ٹاؤنرز (مسافر):</strong> نئے مسافروں کو
-                            دعوت دے سکتے ہیں،
-                            چاہے BTK کے اندر ہوں یا کراچی میں کہیں بھی۔
-                        </p>
-                        <p class="border-r-2 border-slate-300 pr-3 dark:border-gray-600">
-                            <strong class="text-slate-700 dark:text-gray-200">وائزرز (ڈرائیور):</strong> صرف BTK کے
-                            مقامی رہائشی ڈرائیورز
-                            کو ہی شامل کر سکتے ہیں۔
-                        </p>
-                    </div>
+                <div class="text-xs text-slate-400 bg-slate-50 p-3 rounded-xl mt-1 dark:bg-gray-700 dark:text-gray-300">
+                    <p class="font-semibold text-slate-600 mb-1 dark:text-gray-200">📎 How referrals work:</p>
+                    <p>Towners invite new Towners — from inside or outside BTK. Wizers invite new Wizers — BTK residents
+                        only. Both roles grow the community through secure referral codes.</p>
                 </div>
 
                 <button type="submit"
                     class="submit-btn mt-2 px-8 py-5 bg-townwize-primary text-white rounded-2xl font-black hover:bg-townwize-accent transition-all shadow-xl text-lg hover:scale-[1.02] active:scale-95 text-center">
-                    میری جگہ محفوظ کریں
+                    Reserve My Spot
                 </button>
 
                 <div class="flex justify-center gap-4 mt-4">
                     <a href="#" aria-label="iOS app — coming soon"
                         class="opacity-70 hover:opacity-100 transition-opacity cursor-not-allowed dark:invert">
-                        <img src="Coming-Soon-iOS-Townwize.png" alt="iOS app جلد آ رہا ہے" class="h-auto w-auto">
+                        <img src="Coming-Soon-iOS-Townwize.png" alt="iOS app coming soon" class="h-auto w-auto">
                     </a>
                     <a href="#" aria-label="Android app — coming soon"
                         class="opacity-70 hover:opacity-100 transition-opacity cursor-not-allowed dark:invert">
-                        <img src="Coming-Soon-Android-Townwize.png" alt="Android app جلد آ رہا ہے"
-                            class="h-auto w-auto">
+                        <img src="Coming-Soon-Android-Townwize.png" alt="Android app coming soon" class="h-auto w-auto">
                     </a>
                 </div>
 
-                <p class="mt-4 text-[10px] text-slate-400 leading-relaxed text-center dark:text-gray-400">
-                    * صرف تصدیق شدہ بحریہ ٹاؤن کراچی کے رہائشی۔ ریٹ لاک بنیادی کرایوں پر۔ فاؤنڈنگ ریٹ پہلے ۶۰ فعال دنوں
-                    کے لیے۔ شرائط لاگو۔
+                <p class="mt-4 text-[10px] text-slate-400 leading-relaxed italic text-center dark:text-gray-400">
+                    * Verified Bahria Town Karachi residents only. Rate lock applies to base fares. Founding Wizer rate
+                    applies for first 60 active days. Benefits activated upon app launch. Terms apply.
                 </p>
                 <div id="footerStatus" class="status-msg" aria-live="polite"></div>
             </form>
-            
-             <div dir="rtl"
-                class="mt-20 pt-10 border-t border-white/5 grid grid-cols-1 md:grid-cols-3 items-center gap-6 text-center md:text-right">
+
+            <div
+                class="mt-20 pt-10 border-t border-white/5 grid grid-cols-1 md:grid-cols-3 items-center gap-6 text-center md:text-left">
                 <!-- Column 1: Logo -->
                 <div class="flex justify-center md:justify-start">
                     <a href="#" class="relative inline-flex transition-opacity opacity-40 hover:opacity-80">
-                        <img src="https://townwize.com/logo-light.png" alt="Townwize" class="h-6 brightness-0 invert opacity-50">
-                        <span
-                            class="absolute -top-1.5 -right-3 text-[9px] font-medium text-white opacity-50">&trade;</span>
+                        <img src="https://townwize.com/logo-light.png" alt="Townwize"
+                            class="h-6 brightness-0 invert opacity-50">
+                        <span class="absolute -top-1 -right-2 text-[12px] text-white opacity-50">&trade;</span>
                     </a>
                 </div>
 
                 <!-- Column 2: Tagline -->
                 <div class="flex justify-center">
-                    <p class="text-slate-500 text-[11px] font-bold tracking-wide opacity-80">محفوظ سفر — ٹاؤن وائز۔</p>
+                    <p class="text-slate-500 text-[10px] font-bold uppercase tracking-[0.1em]">Safe Rides — Townwize.
+                    </p>
                 </div>
 
-                <!-- Column 3: Copyright Fix -->
+                <!-- Column 3: Copyright -->
                 <div class="flex justify-center md:justify-end">
-                    <!-- The dir="ltr" utility belongs on the paragraph element itself -->
-                    <p dir="ltr" class="text-slate-500 text-[9px] font-normal tracking-wide opacity-60">&copy; 2026
-                        TOWNWIZE (PVT) LTD. </p>
+                    <p class="text-slate-500 text-[9px] font-clean">&copy; 2026 TOWNWIZE (PVT) LTD.
+                    </p>
                 </div>
             </div>
         </div>
@@ -1454,8 +1457,8 @@
                             const email = emailInput.value.trim();
                             const phone = phoneInput.value.trim();
                             let err = '';
-                            if (!validateEmail(email)) err = 'درست ای میل ایڈریس درج کریں۔';
-                            else if (!isValidPakPhone(phone)) err = 'درست پاکستانی موبائل نمبر درج کریں (مثال: 0300-1234567)۔';
+                            if (!validateEmail(email)) err = 'Enter a valid email address.';
+                            else if (!isValidPakPhone(phone)) err = 'Enter a valid Pakistani mobile number (e.g. 0300-1234567).';
 
                             if (err) { statusBox.className = 'status-msg is-error'; statusBox.innerHTML = err; return; }
                             statusBox.className = 'status-msg'; statusBox.innerHTML = '';
@@ -1503,23 +1506,24 @@
                             interest,
                             type: interest === 'Towner' ? 'passenger' : 'driver',
                             is_btk: isBTK ? 'Yes' : 'No',
-                            lang: 'ur'
+                            lang: 'en'
                         };
 
                         let err = '';
-                        if (!validateEmail(payload.email)) err = 'درست ای میل ایڈریس درج کریں۔';
-                        else if (!isValidPakPhone(payload.phone || '')) err = 'درست پاکستانی موبائل نمبر درج کریں (مثال: 0300-1234567)۔';
-                        else if (!payload.precinct || payload.precinct === 'Other') err = 'براہِ کرم اپنے پریسنکٹ یا علاقے کا نام لکھیں۔';
-                        else if (!payload.interest) err = 'براہِ کرم اپنا کردار منتخب کریں۔';
+                        if (!validateEmail(payload.email)) err = 'Enter a valid email address.';
+                        else if (!isValidPakPhone(payload.phone || '')) err = 'Enter a valid Pakistani mobile number (e.g. 0300-1234567).';
+                        else if (!payload.precinct || payload.precinct === 'Other') err = 'Please enter your precinct or area name.';
+                        else if (!payload.interest) err = 'Please select your role.';
+                        // Wizers MUST be BTK residents
                         else if ((interest === 'Wizer') && !isBTK)
-                            err = 'وائزرز کا بحریہ ٹاؤن کراچی کا رہائشی ہونا ضروری ہے۔';
+                            err = 'Wizers must be Bahria Town Karachi residents. Towners may join via referral without being a BTK resident.';
 
                         if (err) { statusBox.className = 'status-msg is-error'; statusBox.innerHTML = err; return; }
 
                         statusBox.className = 'status-msg'; statusBox.innerHTML = '';
                         submitBtn.disabled = true;
                         const orig = submitBtn.textContent;
-                        submitBtn.textContent = 'عمل جاری ہے…';
+                        submitBtn.textContent = 'Processing…';
 
                         try {
                             const res = await fetch('https://townwize-backend.onrender.com/api/v1.2/waitlist', {
@@ -1543,17 +1547,18 @@
                                 }, 6000);
                             } else {
                                 statusBox.className = 'status-msg is-error';
-                                statusBox.innerHTML = result.message || 'کچھ غلط ہو گیا۔ براہِ کرم دوبارہ کوشش کریں۔';
+                                statusBox.innerHTML = result.message || 'Something went wrong. Please try again.';
                             }
                         } catch {
                             statusBox.className = 'status-msg is-error';
-                            statusBox.innerHTML = 'کنکشن کا مسئلہ۔ براہِ کرم اپنا انٹرنیٹ چیک کریں۔';
+                            statusBox.innerHTML = 'Connection error. Please check your internet and try again.';
                         } finally {
                             submitBtn.disabled = false;
                             submitBtn.textContent = orig;
                         }
                     });
                 };
+
                 // ── Auto-format phone number as user types ──────────────────
                 function formatPhoneNumber(input) {
                     let digits = input.value.replace(/\D/g, '');
