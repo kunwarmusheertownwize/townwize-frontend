@@ -137,25 +137,28 @@ export default function SimulationPage() {
     if (!socket.connected) socket.connect();
     socket.emit("join", `ride:${watchRideId}`);
 
-    const onDriverLocation = ({ lat, lng }) => {
+    const onDriverLocation = ({ lat, lng, heading }) => {
       if (typeof google === "undefined" || !mapInstanceRef.current) return;
       const pos = { lat: Number(lat), lng: Number(lng) };
+      const icon = {
+        path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW,
+        scale: 6,
+        fillColor: "#1d4ed8",
+        fillOpacity: 1,
+        strokeColor: "#ffffff",
+        strokeWeight: 1.5,
+        rotation: heading != null ? Number(heading) : 0,
+      };
       if (!driverMarkerRef.current) {
         driverMarkerRef.current = new google.maps.Marker({
           position: pos,
           map: mapInstanceRef.current,
           title: "Simulated Driver",
-          icon: {
-            path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW,
-            scale: 6,
-            fillColor: "#1d4ed8",
-            fillOpacity: 1,
-            strokeColor: "#ffffff",
-            strokeWeight: 1.5,
-          },
+          icon,
         });
       } else {
         driverMarkerRef.current.setPosition(pos);
+        driverMarkerRef.current.setIcon(icon);
       }
     };
 
