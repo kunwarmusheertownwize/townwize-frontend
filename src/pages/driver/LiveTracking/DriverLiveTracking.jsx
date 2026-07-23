@@ -308,8 +308,8 @@ const DriverLiveTracking = () => {
         await google.maps.importLibrary("marker");
         const { AdvancedMarkerElement } = await google.maps.importLibrary("marker");
         const iconEl = document.createElement("img");
-        iconEl.src = "/favicon-96x96-dark.png";
-        iconEl.style.cssText = "width:48px;height:48px;border-radius:50%;box-shadow:0 3px 10px rgba(0,0,0,0.45);display:block;";
+        iconEl.src = "/favicon-96x96-light.png";
+        iconEl.style.cssText = "width:32px;height:32px;border-radius:50%;box-shadow:0 3px 10px rgba(0,0,0,0.45);display:block;";
         driverMarkerRef.current = new AdvancedMarkerElement({
           map: mapInstanceRef.current,
           position,

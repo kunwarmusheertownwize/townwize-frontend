@@ -752,8 +752,8 @@ const LiveTracking = () => {
 
     const buildMarkerEl = () => {
       const el = document.createElement("img");
-      el.src = "/favicon-96x96-light.png";
-      el.style.cssText = "width:48px;height:48px;border-radius:50%;box-shadow:0 3px 10px rgba(0,0,0,0.35);display:block;";
+      el.src = "/favicon-96x96-dark.png";
+      el.style.cssText = "width:32px;height:32px;border-radius:50%;box-shadow:0 3px 10px rgba(0,0,0,0.35);display:block;";
       return el;
     };
 
