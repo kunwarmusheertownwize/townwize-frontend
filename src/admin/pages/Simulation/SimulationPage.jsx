@@ -15,7 +15,7 @@ import {
 import { getSocket } from "../../../hooks/useRideSocket";
 import { loadGoogleMaps } from "../../../utils/googleMapsLoader";
 
-// Default: Bahria Town Karachi — Precinct 1 area
+// Default: Bahria Town Karachi — Precinct 1 → Precinct 28
 const DEFAULT_PICKUP  = { lat: 24.9892, lng: 67.3061, address: "Precinct 1, Bahria Town Karachi" };
 const DEFAULT_DROPOFF = { lat: 24.9200, lng: 67.2700, address: "Precinct 28, Bahria Town Karachi" };
 
@@ -56,13 +56,13 @@ export default function SimulationPage() {
   const [passengers, setPassengers] = useState([]);
   const [passengerUserId, setPassengerUserId] = useState("");
 
-  const [pickupLat, setPickupLat]       = useState(DEFAULT_PICKUP.lat);
-  const [pickupLng, setPickupLng]       = useState(DEFAULT_PICKUP.lng);
+  const [pickupLat, setPickupLat]         = useState(DEFAULT_PICKUP.lat);
+  const [pickupLng, setPickupLng]         = useState(DEFAULT_PICKUP.lng);
   const [pickupAddress, setPickupAddress] = useState(DEFAULT_PICKUP.address);
 
-  const [dropoffLat, setDropoffLat]       = useState(DEFAULT_DROPOFF.lat);
-  const [dropoffLng, setDropoffLng]       = useState(DEFAULT_DROPOFF.lng);
-  const [dropoffAddress, setDropoffAddress] = useState(DEFAULT_DROPOFF.address);
+  const [dropoffLat, setDropoffLat]           = useState(DEFAULT_DROPOFF.lat);
+  const [dropoffLng, setDropoffLng]           = useState(DEFAULT_DROPOFF.lng);
+  const [dropoffAddress, setDropoffAddress]   = useState(DEFAULT_DROPOFF.address);
 
   const [speedMultiplier, setSpeedMultiplier] = useState(3);
   const [dwellSeconds, setDwellSeconds]       = useState(4);
@@ -73,11 +73,12 @@ export default function SimulationPage() {
   const [error, setError] = useState("");
   const [mapReady, setMapReady] = useState(false);
 
-  const mapRef          = useRef(null);
-  const mapInstanceRef  = useRef(null);
-  const driverMarkerRef = useRef(null);
-  const pickupPinRef    = useRef(null);
-  const dropoffPinRef   = useRef(null);
+  const mapRef           = useRef(null);
+  const mapInstanceRef   = useRef(null);
+  const driverMarkerRef  = useRef(null);
+  const pickupPinRef     = useRef(null);
+  const dropoffPinRef    = useRef(null);
+  const routePolylineRef = useRef(null);
 
   // Load passengers
   useEffect(() => {
@@ -103,6 +104,15 @@ export default function SimulationPage() {
     poll();
     const t = setInterval(poll, 3000);
     return () => { mounted = false; clearInterval(t); };
+  }, [watchRideId]);
+
+  // Clear map overlays when the watched sim ends
+  useEffect(() => {
+    if (!watchRideId) {
+      if (routePolylineRef.current) { routePolylineRef.current.setMap(null); routePolylineRef.current = null; }
+      if (pickupPinRef.current)     { pickupPinRef.current.setMap(null);     pickupPinRef.current     = null; }
+      if (dropoffPinRef.current)    { dropoffPinRef.current.setMap(null);    dropoffPinRef.current    = null; }
+    }
   }, [watchRideId]);
 
   // Init Google Map
@@ -147,7 +157,6 @@ export default function SimulationPage() {
       } else {
         driverMarkerRef.current.setPosition(pos);
       }
-      mapInstanceRef.current.panTo(pos);
     };
 
     socket.on("driver:location", onDriverLocation);
@@ -160,26 +169,46 @@ export default function SimulationPage() {
     };
   }, [watchRideId, mapReady]);
 
-  const placePins = () => {
+  const placePins = (pLat, pLng, dLat, dLng) => {
     if (typeof google === "undefined" || !mapInstanceRef.current) return;
-    if (pickupPinRef.current) pickupPinRef.current.setMap(null);
+    if (pickupPinRef.current)  pickupPinRef.current.setMap(null);
     if (dropoffPinRef.current) dropoffPinRef.current.setMap(null);
     pickupPinRef.current = new google.maps.Marker({
-      position: { lat: Number(pickupLat), lng: Number(pickupLng) },
+      position: { lat: Number(pLat), lng: Number(pLng) },
       map: mapInstanceRef.current,
       label: { text: "P", color: "white", fontWeight: "bold" },
       title: "Pickup",
     });
     dropoffPinRef.current = new google.maps.Marker({
-      position: { lat: Number(dropoffLat), lng: Number(dropoffLng) },
+      position: { lat: Number(dLat), lng: Number(dLng) },
       map: mapInstanceRef.current,
       label: { text: "D", color: "white", fontWeight: "bold" },
       title: "Dropoff",
     });
     const bounds = new google.maps.LatLngBounds();
-    bounds.extend({ lat: Number(pickupLat), lng: Number(pickupLng) });
-    bounds.extend({ lat: Number(dropoffLat), lng: Number(dropoffLng) });
+    bounds.extend({ lat: Number(pLat), lng: Number(pLng) });
+    bounds.extend({ lat: Number(dLat), lng: Number(dLng) });
     mapInstanceRef.current.fitBounds(bounds, 60);
+  };
+
+  const drawRoute = (pLat, pLng, dLat, dLng) => {
+    if (typeof google === "undefined" || !mapInstanceRef.current) return;
+    if (routePolylineRef.current) { routePolylineRef.current.setMap(null); routePolylineRef.current = null; }
+    const ds = new google.maps.DirectionsService();
+    ds.route({
+      origin:      { lat: Number(pLat), lng: Number(pLng) },
+      destination: { lat: Number(dLat), lng: Number(dLng) },
+      travelMode:  google.maps.TravelMode.DRIVING,
+    }, (result, status) => {
+      if (status !== "OK" || !mapInstanceRef.current) return;
+      routePolylineRef.current = new google.maps.Polyline({
+        path:          result.routes[0].overview_path,
+        map:           mapInstanceRef.current,
+        strokeColor:   "#1d4ed8",
+        strokeWeight:  4,
+        strokeOpacity: 0.75,
+      });
+    });
   };
 
   const handleStart = async () => {
@@ -204,11 +233,8 @@ export default function SimulationPage() {
       });
       const rideId = json?.data?.rideId;
       setWatchRideId(rideId);
-      placePins();
-      if (mapInstanceRef.current) {
-        mapInstanceRef.current.setCenter({ lat: Number(pickupLat), lng: Number(pickupLng) });
-        mapInstanceRef.current.setZoom(14);
-      }
+      placePins(pickupLat, pickupLng, dropoffLat, dropoffLng);
+      drawRoute(pickupLat, pickupLng, dropoffLat, dropoffLng);
     } catch (e) {
       setError(e.message || "Failed to start simulation");
     } finally {
@@ -308,13 +334,23 @@ export default function SimulationPage() {
 
           {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
 
-          <button
-            onClick={handleStart}
-            disabled={busy}
-            className="w-full rounded-xl py-3 font-semibold text-sm bg-townwize-primary text-white hover:opacity-90 disabled:opacity-50 transition"
-          >
-            {busy ? "Starting…" : "▶ Start Simulation"}
-          </button>
+          {watchRideId ? (
+            <button
+              onClick={() => handleStop(watchRideId)}
+              disabled={busy}
+              className="w-full rounded-xl py-3 font-semibold text-sm bg-red-600 text-white hover:opacity-90 disabled:opacity-50 transition"
+            >
+              {busy ? "Stopping…" : "■ Stop Simulation"}
+            </button>
+          ) : (
+            <button
+              onClick={handleStart}
+              disabled={busy}
+              className="w-full rounded-xl py-3 font-semibold text-sm bg-townwize-primary text-white hover:opacity-90 disabled:opacity-50 transition"
+            >
+              {busy ? "Starting…" : "▶ Start Simulation"}
+            </button>
+          )}
         </div>
 
         {/* Active simulations */}
