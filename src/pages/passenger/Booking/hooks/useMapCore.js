@@ -58,6 +58,15 @@ export default function useMapCore({ onMapClick }) {
                     fullscreenControl: true,
                 });
 
+                // Android WebView may not have laid out the container by the time
+                // the Maps constructor runs — force a resize after a paint cycle
+                setTimeout(() => {
+                    if (mapInstanceRef.current && mapRef.current) {
+                        google.maps.event.trigger(mapInstanceRef.current, "resize");
+                        mapInstanceRef.current.setCenter(BTK_CENTER);
+                    }
+                }, 150);
+
                 // Map click handler
                 mapInstanceRef.current.addListener("click", (e) => {
                     if (typeof onMapClick === "function") {

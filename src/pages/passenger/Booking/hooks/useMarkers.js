@@ -111,14 +111,14 @@ export default function useMarkers({ mapInstanceRef, reverseGeocode, onMarkerUpd
 
       if (!bounds.isEmpty()) {
         const map = mapInstanceRef.current;
+        const isMobile = window.innerWidth < 768;
+        const padding = isMobile
+          ? { top: 60, right: 50, bottom: 300, left: 50 }
+          : 60;
         try {
-          map.moveCamera({
-            bounds,
-            padding: 50,
-            duration: 500,
-          });
+          map.fitBounds(bounds, padding);
         } catch {
-          map.fitBounds(bounds, { padding: 50 });
+          map.fitBounds(bounds, padding);
         }
       }
 

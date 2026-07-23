@@ -165,7 +165,8 @@ const LiveTracking = () => {
   const prevDriverPosRef = useRef(null);
   const lastDriverHeadingRef = useRef(null); // heading from GPS or computed bearing
   const pickupMarkerRef = useRef(null);
-  const routeRendererRef = useRef(null);
+  const routePolylineRef = useRef(null);  // manual Polyline — replaces DirectionsRenderer
+  const routePathRef = useRef([]);         // decoded step-path for real-time trimming
 
   const [ride, setRide] = useState(null);
   const rideRef = useRef(null);
@@ -578,9 +579,10 @@ const LiveTracking = () => {
     altRoutesRef.current = [];
 
     if (!statusNeedsRoute) {
-      if (routeRendererRef.current) {
-        routeRendererRef.current.setMap(null);
-        routeRendererRef.current = null;
+      if (routePolylineRef.current) {
+        routePolylineRef.current.setMap(null);
+        routePolylineRef.current = null;
+        routePathRef.current = [];
       }
       lastRouteStatusRef.current = null;
       lastRouteOriginRef.current = null;
@@ -629,18 +631,15 @@ const LiveTracking = () => {
     }
 
     if (!statusChanged) {
-      // Reroute only if driver has moved >150 m from the last drawn origin —
-      // applies to both DRIVER_ASSIGNED and ON_TRIP to keep route in sync
-      if (routeRendererRef.current) {
-        if (lastRouteOriginRef.current && haversineM(origin, lastRouteOriginRef.current) < 40) return;
+      // Re-fetch only if driver moved >250 m — trimming handles visual progress between fetches
+      if (routePolylineRef.current) {
+        if (lastRouteOriginRef.current && haversineM(origin, lastRouteOriginRef.current) < 250) return;
       }
     }
 
     lastRouteStatusRef.current = rideStatus;
     lastRouteOriginRef.current = origin;
 
-    // Capture snapshot of origin for the async callback so stale closures don't
-    // accidentally clear a newer renderer that replaced this one mid-flight
     const capturedOrigin = origin;
 
     new google.maps.DirectionsService().route(
@@ -652,23 +651,30 @@ const LiveTracking = () => {
       },
       (result, reqStatus) => {
         if (reqStatus !== "OK") return;
-        // Ignore stale response if driver has already moved further
         if (lastRouteOriginRef.current !== capturedOrigin) return;
 
-        // Swap renderer only when the new result is ready — no visual flicker
-        if (routeRendererRef.current) {
-          routeRendererRef.current.setMap(null);
-        }
-        const renderer = new google.maps.DirectionsRenderer({
-          suppressMarkers: true,
-          // During ON_TRIP let Effect B control the viewport via panTo/setZoom.
-          // Without this the renderer resets the map to fit the full route on
-          // every reroute call, overriding our zoom-14 navigation view.
-          preserveViewport: rideStatus === "ON_TRIP",
+        // Decode detailed step-by-step path (fine-grained, ~5-20m point spacing)
+        const path = [];
+        result.routes[0]?.legs?.forEach(leg => {
+          leg.steps.forEach(step => {
+            step.path.forEach(p => path.push({ lat: p.lat(), lng: p.lng() }));
+          });
         });
-        renderer.setMap(map);
-        renderer.setDirections(result);
-        routeRendererRef.current = renderer;
+        routePathRef.current = path;
+
+        // Create or update the manual Polyline
+        if (routePolylineRef.current) {
+          routePolylineRef.current.setPath(path);
+        } else {
+          routePolylineRef.current = new google.maps.Polyline({
+            path,
+            map,
+            strokeColor: "#17BEBB",
+            strokeWeight: 5,
+            strokeOpacity: 0.85,
+            clickable: false,
+          });
+        }
 
         // Update ETA from directions response (only while driver is en route to pickup)
         if (rideStatus === "DRIVER_ASSIGNED" || rideStatus === "EN_ROUTE") {
@@ -676,8 +682,6 @@ const LiveTracking = () => {
           if (secs != null) setEtaSeconds(secs);
         }
 
-        // After setDirections the renderer may shift the viewport even with
-        // preserveViewport:true on some browsers. Force navigation view again.
         if (rideStatus === "ON_TRIP") {
           map.setZoom(16);
           map.panTo(capturedOrigin);
@@ -728,20 +732,28 @@ const LiveTracking = () => {
     }
     prevDriverPosRef.current = pos;
 
-    // Determine marker style based on ride status
-    const currentStatus = String(rideRef.current?.status || "").toUpperCase();
-    const useArrow = ["EN_ROUTE", "ON_TRIP", "ARRIVED"].includes(currentStatus);
-    // Arrow only when driver is moving (has a valid heading)
-    const showArrow = useArrow && heading != null;
-
-    const buildMarkerEl = (rotation) => {
-      const el = document.createElement("div");
-      el.style.cssText = "width:36px;height:36px;display:flex;align-items:center;justify-content:center;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.35))";
-      if (showArrow) {
-        el.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 36 36" style="transform:rotate(${rotation}deg);transition:transform 0.4s ease"><circle cx="18" cy="18" r="16" fill="#17BEBB" stroke="#023645" stroke-width="2"/><polygon points="18,5 24.5,27 18,22.5 11.5,27" fill="#023645"/><polygon points="18,7 23.5,25.5 18,21 12.5,25.5" fill="white"/></svg>`;
-      } else {
-        el.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 36 36"><circle cx="18" cy="18" r="16" fill="#17BEBB" stroke="#023645" stroke-width="2"/><circle cx="18" cy="18" r="6" fill="white"/></svg>`;
+    // Real-time polyline trimming — consume route from the front as driver advances
+    const path = routePathRef.current;
+    if (path.length > 1 && routePolylineRef.current) {
+      let minDist = Infinity;
+      let nearestIdx = 0;
+      for (let i = 0; i < path.length; i++) {
+        const d = haversineM(pos, path[i]);
+        if (d < minDist) { minDist = d; nearestIdx = i; }
       }
+      if (minDist < 120 && nearestIdx < path.length - 1) {
+        routePolylineRef.current.setPath(path.slice(nearestIdx));
+      } else if (minDist > 150) {
+        lastRouteOriginRef.current = null; // off-route — force re-fetch on next cycle
+      }
+    }
+
+    const currentStatus = String(rideRef.current?.status || "").toUpperCase();
+
+    const buildMarkerEl = () => {
+      const el = document.createElement("img");
+      el.src = "/favicon-96x96-light.png";
+      el.style.cssText = "width:48px;height:48px;border-radius:50%;box-shadow:0 3px 10px rgba(0,0,0,0.35);display:block;";
       return el;
     };
 
@@ -749,17 +761,15 @@ const LiveTracking = () => {
       driverMarkerRef.current = new google.maps.marker.AdvancedMarkerElement({
         map,
         position: pos,
-        content: buildMarkerEl(heading || 0),
+        content: buildMarkerEl(),
       });
     } else {
       driverMarkerRef.current.position = pos;
-      // Update marker icon (replace content to switch between arrow/circle or update rotation)
-      driverMarkerRef.current.content = buildMarkerEl(heading || 0);
     }
 
     if (currentStatus === "ON_TRIP") {
       if (!tripZoomAppliedRef.current) {
-        map.setZoom(16);
+        map.setZoom(15);
         tripZoomAppliedRef.current = true;
       }
       if (heading != null) map.setHeading(heading);

@@ -120,11 +120,13 @@ const HeroForm = ({
 
         {/* Smart hint for Stop feature */}
         {dropoff && (
-          <div className="mt-1 pl-2">
-            <span className="text-xs font-semibold text-gray-600 dark:text-gray-300 
-      bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded-md inline-block">
-              {t("addStopHint", { stop: t("addStop") })}
-            </span>
+          <div className="mt-1">
+            <div className="flex items-center gap-2 bg-townwize-primary/8 dark:bg-townwize-primary/15 border border-townwize-primary/20 dark:border-townwize-primary/30 rounded-lg px-3 py-2">
+              <span className="text-townwize-primary dark:text-townwize-accent text-base leading-none">+</span>
+              <span className="text-xs font-medium text-townwize-primary dark:text-townwize-accent leading-snug">
+                You can <span className="font-bold">add a stop</span> on the next screen — if you need to!
+              </span>
+            </div>
           </div>
         )}
 

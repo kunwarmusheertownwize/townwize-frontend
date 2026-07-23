@@ -1,8 +1,10 @@
 /* global google */
 import { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { FaArrowLeft, FaCrosshairs, FaSearch, FaMapMarkerAlt } from "react-icons/fa";
+import { App } from "@capacitor/app";
 import { loadGoogleMaps, resetGoogleMapsLoader } from "../../../utils/googleMapsLoader";
 import { resolveAddressFromCoords } from "../../../utils/locationResolver";
 
@@ -40,24 +42,31 @@ export default function MobileHome() {
   const [activeField, setActiveField] = useState("dropoff");
   const [locating, setLocating] = useState(false);
   const [searchMode, setSearchMode] = useState(false);
+  const [mapDropoffResolving, setMapDropoffResolving] = useState(false);
+  // Triggers map init after Maps library is ready (fires after a React render/paint)
+  const [mapsReady, setMapsReady] = useState(false);
 
   // ── Refs ─────────────────────────────────────────────────────────────────
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
-  const mapsReadyRef = useRef(false);
+  const mapsReadyRef = useRef(false);   // fast sync access for fetchSuggestions
   const sessionTokenRef = useRef(null);
   const currentCoordsRef = useRef(null);
   const userMarkerRef = useRef(null);
   const dropoffInputRef = useRef(null);
   const pickupInputRef = useRef(null);
+  const searchMapRef = useRef(null);
+  const searchMapInstanceRef = useRef(null);
+  const searchMapIdleTimerRef = useRef(null);
 
-  // ── Google Maps init ─────────────────────────────────────────────────────
+  // ── Google Maps script load ──────────────────────────────────────────────
   useEffect(() => {
     const check = () => {
       if (sessionStorage.getItem("forceReload") === "1") {
         sessionStorage.removeItem("forceReload");
         mapsReadyRef.current = false;
         mapInstanceRef.current = null;
+        setMapsReady(false);
       }
     };
     check();
@@ -75,20 +84,42 @@ export default function MobileHome() {
         const { AutocompleteSessionToken } = await google.maps.importLibrary("places");
         sessionTokenRef.current = new AutocompleteSessionToken();
         mapsReadyRef.current = true;
-
-        if (mapRef.current && !mapInstanceRef.current) {
-          const { Map } = await google.maps.importLibrary("maps");
-          mapInstanceRef.current = new Map(mapRef.current, {
-            center: BTK,
-            zoom: 15,
-            mapId: import.meta.env.VITE_GOOGLE_MAP_ID,
-            disableDefaultUI: true,
-            gestureHandling: "greedy",
-          });
-        }
+        // Trigger state update so the map-init useEffect runs AFTER React re-renders
+        // (guarantees the map div has been painted and has non-zero dimensions)
+        setMapsReady(true);
       })
       .catch(console.error);
   }, []);
+
+  // ── Map init — runs AFTER mapsReady state flip (post-paint) ─────────────
+  useEffect(() => {
+    if (!mapsReady || !mapRef.current || mapInstanceRef.current) return;
+
+    const initMap = async () => {
+      try {
+        const { Map } = await google.maps.importLibrary("maps");
+        if (!mapRef.current || mapInstanceRef.current) return;
+        mapInstanceRef.current = new Map(mapRef.current, {
+          center: BTK,
+          zoom: 15,
+          mapId: import.meta.env.VITE_GOOGLE_MAP_ID,
+          disableDefaultUI: true,
+          gestureHandling: "greedy",
+        });
+        // Defer resize — Android WebView layout may not be committed yet
+        setTimeout(() => {
+          if (mapInstanceRef.current) {
+            google.maps.event.trigger(mapInstanceRef.current, "resize");
+            mapInstanceRef.current.setCenter(BTK);
+          }
+        }, 150);
+      } catch (e) {
+        console.error("Map init failed:", e);
+      }
+    };
+
+    initMap();
+  }, [mapsReady]);
 
   // ── Auto-locate on mount ─────────────────────────────────────────────────
   useEffect(() => { locate(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -98,6 +129,66 @@ export default function MobileHome() {
     if (!searchMode) return;
     const t = setTimeout(() => dropoffInputRef.current?.focus(), 80);
     return () => clearTimeout(t);
+  }, [searchMode]);
+
+  // ── Hardware back button (Capacitor) ────────────────────────────────────
+  useEffect(() => {
+    if (!searchMode) return;
+    let handle;
+    App.addListener("backButton", () => {
+      setSearchMode(false);
+      setSuggestions([]);
+    }).then((h) => { handle = h; });
+    return () => { handle?.remove(); };
+  }, [searchMode]);
+
+  // ── Search overlay drag-map init ─────────────────────────────────────────
+  useEffect(() => {
+    if (!searchMode || !mapsReady) return;
+    if (searchMapInstanceRef.current) return;
+    let cancelled = false;
+    // Wait for the slide-up animation (300ms) before reading div dimensions
+    const timer = setTimeout(async () => {
+      if (cancelled || !searchMapRef.current || searchMapInstanceRef.current) return;
+      try {
+        const { Map } = await google.maps.importLibrary("maps");
+        if (cancelled || searchMapInstanceRef.current) return;
+        const center = currentCoordsRef.current || BTK;
+        searchMapInstanceRef.current = new Map(searchMapRef.current, {
+          center, zoom: 16,
+          mapId: import.meta.env.VITE_GOOGLE_MAP_ID,
+          disableDefaultUI: true,
+          gestureHandling: "greedy",
+        });
+        google.maps.event.trigger(searchMapInstanceRef.current, "resize");
+        searchMapInstanceRef.current.setCenter(center);
+        searchMapInstanceRef.current.addListener("idle", () => {
+          clearTimeout(searchMapIdleTimerRef.current);
+          searchMapIdleTimerRef.current = setTimeout(async () => {
+            if (!searchMapInstanceRef.current) return;
+            const c = searchMapInstanceRef.current.getCenter();
+            if (!c) return;
+            setMapDropoffResolving(true);
+            try {
+              const addr = await resolveAddressFromCoords(c.lat(), c.lng());
+              if (addr) setDropoff(addr);
+            } catch { /* silent */ }
+            setMapDropoffResolving(false);
+          }, 600);
+        });
+      } catch { /* silent */ }
+    }, 350);
+    return () => { cancelled = true; clearTimeout(timer); };
+  }, [searchMode, mapsReady]);
+
+  // ── Search overlay drag-map cleanup ─────────────────────────────────────
+  useEffect(() => {
+    if (searchMode) return;
+    clearTimeout(searchMapIdleTimerRef.current);
+    if (searchMapInstanceRef.current) {
+      google.maps.event.clearInstanceListeners(searchMapInstanceRef.current);
+      searchMapInstanceRef.current = null;
+    }
   }, [searchMode]);
 
   // ── Geolocation ──────────────────────────────────────────────────────────
@@ -170,6 +261,10 @@ export default function MobileHome() {
           .replace(/^[A-Z0-9]{4,8}\+[A-Z0-9]{2,3}[, ]+/, "")
           .trim();
         setter(addr || prediction.placePrediction.text?.text || "");
+        // Pan search map to selected location
+        if (activeField === "dropoff" && p.location && searchMapInstanceRef.current) {
+          searchMapInstanceRef.current.panTo(p.location);
+        }
         const { AutocompleteSessionToken } = await google.maps.importLibrary("places");
         sessionTokenRef.current = new AutocompleteSessionToken();
         setSuggestions([]);
@@ -201,6 +296,11 @@ export default function MobileHome() {
     setDropoff(pickup);
     setSuggestions([]);
     currentCoordsRef.current = null;
+  }
+
+  function closeSearch() {
+    setSearchMode(false);
+    setSuggestions([]);
   }
 
   // ── Render ───────────────────────────────────────────────────────────────
@@ -253,8 +353,8 @@ export default function MobileHome() {
           </span>
         </button>
 
-        {/* Quick find ride if both already set */}
-        {pickup && dropoff && (
+        {/* Quick find ride if dropoff is set */}
+        {dropoff && (
           <button
             onClick={handleFindRide}
             className="mt-3 w-full py-4 bg-townwize-primary text-white rounded-2xl font-bold text-[15px] active:scale-95 touch-manipulation transition-transform"
@@ -264,148 +364,178 @@ export default function MobileHome() {
         )}
       </div>
 
-      {/* ── Search overlay ─────────────────────────────────────────────── */}
-      <div
-        className={`absolute inset-0 z-20 bg-white flex flex-col transition-transform duration-300 ${
-          !searchMode ? "pointer-events-none" : ""
-        }`}
-        style={{ transform: searchMode ? "translateY(0)" : "translateY(100%)" }}
-        aria-hidden={!searchMode}
-      >
-        {/* Header */}
-        <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-100 flex-shrink-0">
-          <button
-            onClick={() => {
-              setSearchMode(false);
-              setSuggestions([]);
-            }}
-            className="p-2 -ml-1 rounded-full active:bg-gray-100 touch-manipulation"
+      {/* ── Search overlay — Portal so it escapes all parent stacking contexts ── */}
+      {createPortal(
+        <div
+          className={`fixed inset-0 z-[9999] bg-white flex flex-col transition-transform duration-300 ${
+            !searchMode ? "pointer-events-none" : ""
+          }`}
+          style={{ transform: searchMode ? "translateY(0)" : "translateY(100%)" }}
+          aria-hidden={!searchMode}
+          onTouchMove={(e) => e.stopPropagation()}
+        >
+          {/* Header — padded below status bar */}
+          <div
+            className="flex items-center gap-2 px-2 border-b border-gray-100 flex-shrink-0"
+            style={{ paddingTop: "calc(env(safe-area-inset-top, 20px) + 8px)", paddingBottom: "8px" }}
           >
-            <FaArrowLeft className="text-townwize-primary text-base" />
-          </button>
-          <span className="font-semibold text-gray-900 text-[15px]">Plan your ride</span>
-        </div>
+            <button
+              onTouchStart={(e) => { e.stopPropagation(); closeSearch(); }}
+              onClick={closeSearch}
+              className="p-3 rounded-full active:bg-gray-100 touch-manipulation"
+              style={{ minWidth: 48, minHeight: 48 }}
+            >
+              <FaArrowLeft className="text-townwize-primary text-base" />
+            </button>
+            <span className="font-semibold text-gray-900 text-[15px]">Plan your ride</span>
+          </div>
 
-        {/* Inputs */}
-        <div className="px-4 pt-3 pb-2 flex-shrink-0">
-          <div className="relative space-y-2">
-            {/* Vertical connector line */}
-            <span className="absolute left-[11px] top-[26px] bottom-[18px] w-px bg-gray-200 z-10" />
+          {/* Inputs */}
+          <div className="px-4 pt-3 pb-2 flex-shrink-0">
+            <div className="relative space-y-2">
+              {/* Vertical connector line */}
+              <span className="absolute left-[11px] top-[26px] bottom-[18px] w-px bg-gray-200 z-10" />
 
-            {/* Pickup */}
-            <div className="relative">
-              <span className="absolute left-2 top-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full bg-townwize-primary z-20" />
-              <input
-                ref={pickupInputRef}
-                type="text"
-                value={pickup}
-                placeholder="Pickup location"
-                onFocus={() => {
-                  setActiveField("pickup");
-                  fetchSuggestions(pickup);
-                }}
-                onChange={(e) => {
-                  setPickup(e.target.value);
-                  clearTimeout(window.__tw_mp);
-                  window.__tw_mp = setTimeout(() => fetchSuggestions(e.target.value), 300);
-                }}
-                className="w-full pl-8 pr-10 py-3.5 bg-gray-100 rounded-xl text-sm text-gray-900 placeholder-gray-400 outline-none focus:bg-gray-50 focus:ring-2 focus:ring-townwize-primary/20"
-              />
-              <button
-                onClick={locate}
-                className="absolute right-3 top-1/2 -translate-y-1/2 p-1 touch-manipulation"
-              >
-                <FaCrosshairs
-                  className={`text-townwize-primary ${locating ? "animate-spin" : ""}`}
+              {/* Pickup */}
+              <div className="relative">
+                <span className="absolute left-2 top-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full bg-townwize-primary z-20" />
+                <input
+                  ref={pickupInputRef}
+                  type="text"
+                  value={pickup}
+                  placeholder="Pickup location"
+                  onFocus={() => {
+                    setActiveField("pickup");
+                    fetchSuggestions(pickup);
+                  }}
+                  onChange={(e) => {
+                    setPickup(e.target.value);
+                    clearTimeout(window.__tw_mp);
+                    window.__tw_mp = setTimeout(() => fetchSuggestions(e.target.value), 300);
+                  }}
+                  className="w-full pl-8 pr-10 py-3.5 bg-gray-100 rounded-xl text-sm text-gray-900 placeholder-gray-400 outline-none focus:bg-gray-50 focus:ring-2 focus:ring-townwize-primary/20"
                 />
-              </button>
-            </div>
-
-            {/* Swap */}
-            <div className="flex justify-center z-20 relative my-0.5">
-              <button
-                onClick={handleSwap}
-                className="bg-white border border-gray-200 rounded-full p-1.5 shadow-sm active:scale-95 touch-manipulation"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-3.5 w-3.5 text-townwize-primary"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
+                <button
+                  onClick={locate}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1 touch-manipulation"
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2.5}
-                    d="M17 7H7m0 0l4-4m-4 4l4 4M7 17h10m0 0l-4 4m4-4l-4-4"
+                  <FaCrosshairs
+                    className={`text-townwize-primary ${locating ? "animate-spin" : ""}`}
                   />
-                </svg>
-              </button>
-            </div>
+                </button>
+              </div>
 
-            {/* Dropoff */}
-            <div className="relative">
-              <span className="absolute left-2 top-1/2 -translate-y-1/2 w-2.5 h-2.5 bg-red-500 z-20" />
-              <input
-                ref={dropoffInputRef}
-                type="text"
-                value={dropoff}
-                placeholder="Where to?"
-                onFocus={() => {
-                  setActiveField("dropoff");
-                  fetchSuggestions(dropoff);
-                }}
-                onChange={(e) => {
-                  setDropoff(e.target.value);
-                  clearTimeout(window.__tw_md);
-                  window.__tw_md = setTimeout(() => fetchSuggestions(e.target.value), 200);
-                }}
-                className="w-full pl-8 pr-3 py-3.5 bg-gray-100 rounded-xl text-sm text-gray-900 placeholder-gray-400 outline-none focus:bg-gray-50 focus:ring-2 focus:ring-townwize-primary/20"
-              />
+              {/* Swap */}
+              <div className="flex justify-center z-20 relative my-0.5">
+                <button
+                  onClick={handleSwap}
+                  className="bg-white border border-gray-200 rounded-full p-1.5 shadow-sm active:scale-95 touch-manipulation"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-3.5 w-3.5 text-townwize-primary"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2.5}
+                      d="M17 7H7m0 0l4-4m-4 4l4 4M7 17h10m0 0l-4 4m4-4l-4-4"
+                    />
+                  </svg>
+                </button>
+              </div>
+
+              {/* Dropoff */}
+              <div className="relative">
+                <span className="absolute left-2 top-1/2 -translate-y-1/2 w-2.5 h-2.5 bg-red-500 z-20" />
+                <input
+                  ref={dropoffInputRef}
+                  type="text"
+                  value={dropoff}
+                  placeholder="Where to?"
+                  onFocus={() => {
+                    setActiveField("dropoff");
+                    fetchSuggestions(dropoff);
+                  }}
+                  onChange={(e) => {
+                    setDropoff(e.target.value);
+                    clearTimeout(window.__tw_md);
+                    window.__tw_md = setTimeout(() => fetchSuggestions(e.target.value), 200);
+                  }}
+                  className="w-full pl-8 pr-3 py-3.5 bg-gray-100 rounded-xl text-sm text-gray-900 placeholder-gray-400 outline-none focus:bg-gray-50 focus:ring-2 focus:ring-townwize-primary/20"
+                />
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Suggestions list */}
-        <div className="flex-1 overflow-y-auto">
-          {suggestions.length > 0 ? (
-            <ul>
-              {suggestions.map((p, idx) => (
-                <li
-                  key={p?.placePrediction?.placeId || idx}
-                  onClick={() => resolvePlace(p)}
-                  className="flex items-center gap-3 px-4 py-3.5 active:bg-gray-50 border-b border-gray-50 touch-manipulation cursor-pointer"
-                >
-                  <div className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
-                    <FaMapMarkerAlt className="text-gray-400 text-sm" />
+          {/* Suggestions list OR drag-to-set map */}
+          <div className="flex-1 relative overflow-hidden">
+            {suggestions.length > 0 ? (
+              <ul className="absolute inset-0 overflow-y-auto">
+                {suggestions.map((p, idx) => (
+                  <li
+                    key={p?.placePrediction?.placeId || idx}
+                    onTouchStart={(e) => { e.stopPropagation(); resolvePlace(p); }}
+                    onClick={() => resolvePlace(p)}
+                    className="flex items-center gap-3 px-4 py-3.5 active:bg-gray-50 border-b border-gray-50 touch-manipulation cursor-pointer"
+                  >
+                    <div className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
+                      <FaMapMarkerAlt className="text-gray-400 text-sm" />
+                    </div>
+                    <span className="text-[13px] text-gray-800 leading-snug">
+                      {p?.placePrediction?.text?.text || p.description || p.text}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <div className="absolute inset-0">
+                {/* Map fills remaining space */}
+                <div ref={searchMapRef} className="absolute inset-0" />
+                {/* Fixed center drop pin */}
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
+                  <div style={{ marginBottom: "36px" }}>
+                    <FaMapMarkerAlt className="text-red-500 text-4xl" style={{ filter: "drop-shadow(0 3px 4px rgba(0,0,0,0.4))" }} />
                   </div>
-                  <span className="text-[13px] text-gray-800 leading-snug">
-                    {p?.placePrediction?.text?.text || p.description || p.text}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <div className="flex flex-col items-center justify-center h-32 text-gray-300">
-              <FaSearch className="text-3xl mb-2" />
-              <span className="text-sm">Search for a location</span>
+                </div>
+                {/* Resolving address indicator */}
+                {mapDropoffResolving && (
+                  <div className="absolute top-3 left-1/2 -translate-x-1/2 bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-full text-xs text-gray-600 shadow-md z-20 flex items-center gap-1.5">
+                    <div className="w-2.5 h-2.5 border-2 border-townwize-primary border-t-transparent rounded-full animate-spin" />
+                    Locating…
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Find Ride button + stop hint — shows as soon as dropoff is entered */}
+          {dropoff && (
+            <div
+              className="px-4 pt-3 pb-3 border-t border-gray-100 flex-shrink-0 space-y-2"
+              style={{ paddingBottom: "max(12px, env(safe-area-inset-bottom, 12px))" }}
+            >
+              <div className="flex items-center gap-2 bg-townwize-primary/8 border border-townwize-primary/20 rounded-xl px-3 py-2">
+                <span className="text-townwize-primary font-bold text-sm leading-none">+</span>
+                <span className="text-xs font-medium text-townwize-primary leading-snug">
+                  You can <span className="font-bold">add a stop</span> on the next screen — if you need to!
+                </span>
+              </div>
+              <button
+                onTouchStart={(e) => { e.stopPropagation(); handleFindRide(); }}
+                onClick={handleFindRide}
+                className="w-full py-4 bg-townwize-primary text-white rounded-2xl font-bold text-[15px] active:scale-95 touch-manipulation transition-transform"
+              >
+                Find a Ride →
+              </button>
             </div>
           )}
-        </div>
-
-        {/* Find Ride button */}
-        {pickup && dropoff && (
-          <div className="px-4 py-3 border-t border-gray-100 flex-shrink-0">
-            <button
-              onClick={handleFindRide}
-              className="w-full py-4 bg-townwize-primary text-white rounded-2xl font-bold text-[15px] active:scale-95 touch-manipulation transition-transform"
-            >
-              Find a Ride →
-            </button>
-          </div>
-        )}
-      </div>
+        </div>,
+        document.body
+      )}
     </div>
   );
 }

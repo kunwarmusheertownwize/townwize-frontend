@@ -87,7 +87,6 @@ export default function RidesList() {
   const [selectedId, setSelectedId] = useState(null);
   const [selectedRide, setSelectedRide] = useState(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
-
   // Bulk selection
   const [checkedIds, setCheckedIds] = useState(new Set());
   const [showCancelModal, setShowCancelModal] = useState(false);
@@ -265,7 +264,9 @@ export default function RidesList() {
                       <div className="text-xs text-gray-500">Ride ID</div>
                       <div className="text-sm font-medium break-all">{r.rideId || r._id}</div>
                     </div>
-                    <StatusBadge status={r.status || "-"} />
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <StatusBadge status={r.status || "-"} />
+                    </div>
                   </div>
                   <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
                     <div>

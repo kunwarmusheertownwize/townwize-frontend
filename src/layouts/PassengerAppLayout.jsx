@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import api from "../services/api";
+import { getSocket } from "../hooks/useRideSocket";
 
 const ACTIVE_RIDE_STATUSES = new Set([
   "REQUESTED",
@@ -52,6 +53,28 @@ export default function PassengerAppLayout() {
       cancelled = true;
     };
   }, [location.pathname, navigate]);
+
+  // When a simulation starts the backend emits sim:started to the passenger's socket room.
+  // This listener auto-navigates the passenger app to LiveTracking — no manual action needed.
+  useEffect(() => {
+    let auth;
+    try { auth = JSON.parse(localStorage.getItem("auth")); } catch { /* no-op */ }
+    const userId = auth?.user?.id;
+    if (!userId) return;
+
+    const socket = getSocket();
+    if (!socket.connected) socket.connect();
+    socket.emit("join", `passenger:${userId}`);
+
+    const onSimStarted = ({ rideId }) => {
+      if (!rideId) return;
+      localStorage.setItem("activePassengerRideId", rideId);
+      navigate(`/passenger/live-tracking/${rideId}`, { replace: true });
+    };
+
+    socket.on("sim:started", onSimStarted);
+    return () => socket.off("sim:started", onSimStarted);
+  }, [navigate]);
 
   return <Outlet />;
 }

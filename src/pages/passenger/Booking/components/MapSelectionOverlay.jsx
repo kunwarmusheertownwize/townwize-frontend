@@ -1,40 +1,74 @@
-// src/pages/passenger/Booking/components/MapSelectionOverlay.jsx
-
 import React from "react";
 
 /**
  * MapSelectionOverlay
  * -------------------
- * UI-only overlay for map click selection.
- * Controlled entirely by parent.
+ * Center-pin drag-to-set UI. User drags the map under the pin, then taps confirm.
+ * Parent passes onConfirm() which reads the map center and sets the address.
  */
 export default function MapSelectionOverlay({
-    selectingFor,      // "pickup" | "stop" | "dropoff" | null
+    selectingFor,
     onCancel,
+    onConfirm,
 }) {
     if (!selectingFor) return null;
 
+    const label = selectingFor === "pickup" ? "Pickup" : selectingFor === "stop" ? "Stop" : "Dropoff";
+    const accentColor = selectingFor === "pickup" ? "#2d88e0" : selectingFor === "stop" ? "#f59e0b" : "#E53935";
+
     return (
-        <div className="absolute inset-0 z-10 pointer-events-none">
-            {/* Dim background (map still clickable) */}
-            <div className="absolute inset-0 bg-black bg-opacity-10" />
+        <div className="absolute inset-0 z-20 pointer-events-none">
+            {/* Center pin — always points at the exact map center */}
+            <div
+                className="absolute"
+                style={{
+                    top: "50%",
+                    left: "50%",
+                    transform: "translate(-50%, -100%)",
+                    pointerEvents: "none",
+                }}
+            >
+                <svg width="36" height="48" viewBox="0 0 36 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <ellipse cx="18" cy="46" rx="6" ry="2" fill="rgba(0,0,0,0.18)" />
+                    <path
+                        d="M18 0C9.163 0 2 7.163 2 16C2 27 18 44 18 44C18 44 34 27 34 16C34 7.163 26.837 0 18 0Z"
+                        fill={accentColor}
+                    />
+                    <circle cx="18" cy="16" r="7" fill="white" />
+                </svg>
+            </div>
 
-            {/* Instruction box */}
-            <div className="absolute inset-0 flex items-center justify-center">
-                <div className="bg-white dark:bg-townwize-primaryDark p-4 rounded-lg text-center pointer-events-auto shadow-lg">
-                    <p className="text-sm font-semibold mb-3 text-gray-800 dark:text-gray-100">
-                        Click on the map to set <span className="capitalize">{selectingFor}</span> location
-                    </p>
-
+            {/* Top bar — instruction + cancel */}
+            <div
+                className="absolute top-16 left-0 right-0 flex flex-col items-center gap-2 pointer-events-auto px-4"
+            >
+                <div className="bg-white dark:bg-townwize-primaryDark rounded-xl shadow-lg px-4 py-2.5 flex items-center gap-3 w-full max-w-xs">
+                    <span className="text-sm font-semibold text-gray-800 dark:text-gray-100 flex-1 text-center">
+                        Drag map to set {label}
+                    </span>
                     <button
                         type="button"
                         onClick={onCancel}
-                        className="px-4 py-2 rounded-md text-sm font-medium
-                       bg-red-500 text-white hover:bg-red-600"
+                        className="text-xs font-medium text-red-500 hover:text-red-600 shrink-0"
                     >
                         Cancel
                     </button>
                 </div>
+            </div>
+
+            {/* Confirm button — floats above the bottom sheet */}
+            <div
+                className="absolute left-0 right-0 flex justify-center pointer-events-auto"
+                style={{ bottom: "calc(32vh + 16px)" }}
+            >
+                <button
+                    type="button"
+                    onClick={onConfirm}
+                    className="px-8 py-3 rounded-full text-sm font-semibold text-white shadow-lg active:scale-95 transition-transform"
+                    style={{ backgroundColor: accentColor }}
+                >
+                    Set {label} here
+                </button>
             </div>
         </div>
     );

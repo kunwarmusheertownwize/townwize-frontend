@@ -25,6 +25,7 @@ const DriverLiveTracking = () => {
   const [driverPosition, setDriverPosition] = useState(null);
   const [driverHeading, setDriverHeading] = useState(null);
   const [mapReady, setMapReady] = useState(false);
+  const [nearPickup, setNearPickup] = useState(false);
   const [arriving, setArriving] = useState(false);
   const [startingTrip, setStartingTrip] = useState(false);
   const [endingTrip, setEndingTrip] = useState(false);
@@ -45,7 +46,8 @@ const DriverLiveTracking = () => {
   const mapInstanceRef = useRef(null);
   const driverMarkerRef = useRef(null);
   const destinationMarkerRef = useRef(null);
-  const routeRendererRef = useRef(null);
+  const routePolylineRef = useRef(null);   // manual Polyline — replaces DirectionsRenderer
+  const routePathRef = useRef([]);          // decoded step-path for real-time trimming
   const lastRouteKeyRef = useRef(null);
   const lastRouteOriginRef = useRef(null);
   const rideStatusRef = useRef(rideStatus);
@@ -55,6 +57,7 @@ const DriverLiveTracking = () => {
   const lastHeadingRef = useRef(null);
   const prevDriverPositionRef = useRef(null);
   const currentPositionRef = useRef(null);
+  const pickupCoordsRef = useRef(null); // populated from Directions API when en route to pickup
 
   const { setDriverMode, incomingRide } = useDriverMode();
 
@@ -302,17 +305,15 @@ const DriverLiveTracking = () => {
           gestureHandling: "greedy", streetViewControl: false, mapTypeControl: false,
         });
         setMapReady(true);
-        driverMarkerRef.current = new google.maps.Marker({
+        await google.maps.importLibrary("marker");
+        const { AdvancedMarkerElement } = await google.maps.importLibrary("marker");
+        const iconEl = document.createElement("img");
+        iconEl.src = "/favicon-96x96-dark.png";
+        iconEl.style.cssText = "width:48px;height:48px;border-radius:50%;box-shadow:0 3px 10px rgba(0,0,0,0.45);display:block;";
+        driverMarkerRef.current = new AdvancedMarkerElement({
           map: mapInstanceRef.current,
           position,
-          icon: {
-            path: google.maps.SymbolPath.CIRCLE,
-            scale: 9,
-            fillColor: "#17BEBB",
-            fillOpacity: 1,
-            strokeColor: "#ffffff",
-            strokeWeight: 2,
-          },
+          content: iconEl,
         });
       })
       .catch(() => toast.error("Failed to load Google Maps"));
@@ -321,55 +322,55 @@ const DriverLiveTracking = () => {
 
   useEffect(() => {
     if (!driverMarkerRef.current || !driverPosition) return;
-    driverMarkerRef.current.setPosition(driverPosition);
+    driverMarkerRef.current.position = driverPosition;
 
-    // Update heading — prefer GPS heading, fall back to computed bearing
-    if (prevDriverPositionRef.current && haversineM(prevDriverPositionRef.current, driverPosition) > 5) {
+    // Use only computed bearing — GPS heading from WebView is unreliable on Android
+    if (prevDriverPositionRef.current && haversineM(prevDriverPositionRef.current, driverPosition) > 3) {
       lastHeadingRef.current = bearingDeg(prevDriverPositionRef.current, driverPosition);
     }
     prevDriverPositionRef.current = driverPosition;
 
-    const effectiveHeading = (driverHeading != null && !isNaN(driverHeading))
-      ? driverHeading
-      : lastHeadingRef.current;
-
-    if (effectiveHeading != null && !isNaN(effectiveHeading)) {
-      driverMarkerRef.current.setIcon({
-        path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW,
-        rotation: effectiveHeading,
-        scale: 8,
-        fillColor: "#17BEBB",
-        fillOpacity: 1,
-        strokeColor: "#ffffff",
-        strokeWeight: 2,
-      });
-    } else {
-      driverMarkerRef.current.setIcon({
-        path: google.maps.SymbolPath.CIRCLE,
-        scale: 9,
-        fillColor: "#17BEBB",
-        fillOpacity: 1,
-        strokeColor: "#ffffff",
-        strokeWeight: 2,
-      });
+    // Enable "Arrived" button only when within 300m of pickup
+    if (rideStatusRef.current === "DRIVER_ASSIGNED" && pickupCoordsRef.current) {
+      setNearPickup(haversineM(driverPosition, pickupCoordsRef.current) <= 300);
     }
+
+    // Real-time polyline trimming — consume route from the front as driver advances,
+    // no API call needed, eliminates the "route trails behind marker" visual bug
+    const path = routePathRef.current;
+    if (path.length > 1 && routePolylineRef.current) {
+      let minDist = Infinity;
+      let nearestIdx = 0;
+      for (let i = 0; i < path.length; i++) {
+        const d = haversineM(driverPosition, path[i]);
+        if (d < minDist) { minDist = d; nearestIdx = i; }
+      }
+      if (minDist < 120 && nearestIdx < path.length - 1) {
+        routePolylineRef.current.setPath(path.slice(nearestIdx));
+      } else if (minDist > 150) {
+        // Driver is off-route — force immediate re-fetch on next cycle
+        lastRouteOriginRef.current = null;
+      }
+    }
+
+    const effectiveHeading = lastHeadingRef.current;
 
     if (!mapInstanceRef.current) return;
     const isOnTrip = rideStatusRef.current === "ON_TRIP";
     if (isOnTrip && effectiveHeading !== null && !isNaN(effectiveHeading)) {
       mapInstanceRef.current.setHeading(effectiveHeading);
       mapInstanceRef.current.setTilt(0);
-      mapInstanceRef.current.setZoom(18);
-      mapInstanceRef.current.panTo(lookAhead(driverPosition, effectiveHeading, 50));
+      mapInstanceRef.current.setZoom(16);
+      mapInstanceRef.current.panTo(driverPosition);
     } else {
       mapInstanceRef.current.setHeading(0);
       mapInstanceRef.current.setTilt(0);
-      mapInstanceRef.current.setZoom(15);
+      mapInstanceRef.current.setZoom(14);
       mapInstanceRef.current.setCenter(driverPosition);
     }
   }, [driverPosition, driverHeading]);
 
-  // Route polyline — adapts to pool stage for secondary pickup navigation
+  // Route polyline — manual Polyline + real-time trimming (no DirectionsRenderer lag)
   useEffect(() => {
     if (!mapReady || !mapInstanceRef.current || !window.google?.maps || !driverPosition) return;
 
@@ -386,35 +387,59 @@ const DriverLiveTracking = () => {
     const routeKey = `${rideStatus}-${stage}`;
     const statusChanged = lastRouteKeyRef.current !== routeKey;
 
-    if (!statusChanged && routeRendererRef.current) {
-      if (lastRouteOriginRef.current && haversineM(driverPosition, lastRouteOriginRef.current) < 40) return;
+    // Re-fetch: on status change, or when driver has traveled >250m since last fetch,
+    // or when lastRouteOriginRef was cleared (off-route detected)
+    if (!statusChanged && routePolylineRef.current) {
+      if (lastRouteOriginRef.current && haversineM(driverPosition, lastRouteOriginRef.current) < 250) return;
     }
 
     lastRouteKeyRef.current = routeKey;
     lastRouteOriginRef.current = driverPosition;
 
-    if (routeRendererRef.current) { routeRendererRef.current.setMap(null); routeRendererRef.current = null; }
-    if (!destination) return;
+    if (!destination) {
+      if (routePolylineRef.current) { routePolylineRef.current.setMap(null); routePolylineRef.current = null; }
+      routePathRef.current = [];
+      return;
+    }
     if (destinationMarkerRef.current) { destinationMarkerRef.current.map = null; destinationMarkerRef.current = null; }
-
-    const renderer = new google.maps.DirectionsRenderer({
-      suppressMarkers: true, preserveViewport: true,
-      polylineOptions: {
-        strokeColor: "#17BEBB",
-        strokeWeight: 5, strokeOpacity: 0.85,
-      },
-    });
-    renderer.setMap(mapInstanceRef.current);
-    routeRendererRef.current = renderer;
 
     new google.maps.DirectionsService().route(
       { origin: driverPosition, destination, travelMode: google.maps.TravelMode.DRIVING },
       (result, status) => {
-        if (status !== "OK" || !routeRendererRef.current) return;
-        routeRendererRef.current.setDirections(result);
+        if (status !== "OK" || !mapInstanceRef.current) return;
+
+        // Decode detailed step-by-step path (much finer than overview_path)
+        const path = [];
+        result.routes[0]?.legs?.forEach(leg => {
+          leg.steps.forEach(step => {
+            step.path.forEach(p => path.push({ lat: p.lat(), lng: p.lng() }));
+          });
+        });
+        routePathRef.current = path;
+
+        // Create or update the manual Polyline
+        if (routePolylineRef.current) {
+          routePolylineRef.current.setPath(path);
+        } else {
+          routePolylineRef.current = new google.maps.Polyline({
+            path,
+            map: mapInstanceRef.current,
+            strokeColor: "#17BEBB",
+            strokeWeight: 5,
+            strokeOpacity: 0.85,
+            clickable: false,
+          });
+        }
+
+        // Capture pickup coords so proximity gate can enable "Arrived" button
         const legs = result.routes[0]?.legs;
         const endLatLng = legs?.[legs.length - 1]?.end_location;
-        if (endLatLng && mapInstanceRef.current) {
+        if (endLatLng && rideStatus === "DRIVER_ASSIGNED") {
+          pickupCoordsRef.current = { lat: endLatLng.lat(), lng: endLatLng.lng() };
+        }
+
+        // Destination pin
+        if (endLatLng) {
           const pinEl = document.createElement("div");
           pinEl.style.cssText = "width:14px;height:14px;border-radius:50%;background:#EF4444;border:2px solid #fff;box-shadow:0 0 0 3px rgba(239,68,68,0.3)";
           destinationMarkerRef.current = new google.maps.marker.AdvancedMarkerElement({
@@ -665,7 +690,7 @@ const DriverLiveTracking = () => {
   ) : null;
 
   // ── Report extra passenger ─────────────────────────────────────────────
-  const reportExtraSection = ["ARRIVED", "ON_TRIP"].includes(rideStatus) ? (
+  const reportExtraSection = isPooled && ["ARRIVED", "ON_TRIP"].includes(rideStatus) ? (
     showReportConfirm ? (
       <div className="rounded-xl border border-orange-200 dark:border-orange-800 bg-orange-50 dark:bg-orange-950 p-3 space-y-2">
         <p className="text-xs font-semibold text-orange-800 dark:text-orange-300">Report unbooked extra passenger?</p>
@@ -814,10 +839,10 @@ const DriverLiveTracking = () => {
           </button>
           <button
             onClick={handleArrivedAtPickup}
-            disabled={arriving}
-            className={`flex-1 rounded-xl py-3 font-semibold ${arriving ? "cursor-not-allowed bg-gray-400" : "bg-green-600 text-white"}`}
+            disabled={arriving || !nearPickup}
+            className={`flex-1 rounded-xl py-3 font-semibold ${(arriving || !nearPickup) ? "cursor-not-allowed bg-gray-400 text-gray-200" : "bg-green-600 text-white"}`}
           >
-            Arrived
+            {arriving ? "Arriving…" : nearPickup ? "Arrived" : "Arrived (near pickup)"}
           </button>
         </>
       )}

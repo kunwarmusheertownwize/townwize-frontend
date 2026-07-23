@@ -68,6 +68,7 @@ const SelectRide = () => {
   // Bottom sheet snap state — "half" (72vh, map visible) | "full" (93vh, sheet dominates)
   const [sheetSnap, setSheetSnap] = useState("half");
   const sheetDragStartY = useRef(null);
+  const sheetRef = useRef(null);
   const state = routeStateRaw && Object.keys(routeStateRaw).length ? routeStateRaw : lastRideState;
 
   //const { state } = useLocation();
@@ -186,6 +187,16 @@ const SelectRide = () => {
   const handleMarkerUpdated = useCallback(() => {
     setMarkerVersion((value) => value + 1);
   }, []);
+  const continueAreaRef = useRef(null);
+
+  // Auto-scroll to the confirm button when a ride type is selected
+  useEffect(() => {
+    if (!selectedType) return;
+    const t = setTimeout(() => {
+      continueAreaRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+    }, 150);
+    return () => clearTimeout(t);
+  }, [selectedType, selectedCarType]);
   // Prevents tryRestore from re-running after it has already placed markers once.
   // Without this, setPickup/setDropoff inside the geocode callbacks would re-trigger
   // the effect (they were in the dep array), causing an infinite geocode → route loop.
@@ -821,7 +832,7 @@ navigate("/passenger/trip-summary", {
     label: "Stop",
     value: stop,
     onChange: setStop,
-    onClear: () => { setStop(""); clearMarker("stop"); },
+    onClear: () => { setStop(""); setHasStop(false); clearMarker("stop"); },
     onGPS: () => handleGPS(setStop, "stop"),
     onMap: () => setSelectingFor("stop"),
     suggestions: stopSuggestions,
@@ -968,12 +979,14 @@ navigate("/passenger/trip-summary", {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pickup, dropoff, markerVersion]);
 
-  // 🧭 Auto-draw route when markers change
+  // 🧭 Auto-draw route when addresses or stop status change
+  // markerVersion intentionally excluded — raw marker drags don't restart the animation;
+  // route only updates when pickup/dropoff address resolves or a stop is added/removed.
   useEffect(() => {
     if (!pickupMarkerRef.current || !dropoffMarkerRef.current) return;
     requestRoute();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pickup, dropoff, markerVersion]);
+  }, [pickup, dropoff, stop, hasStop]);
 
   return (
     <>
@@ -988,23 +1001,42 @@ navigate("/passenger/trip-summary", {
 
         {/* Form — bottom sheet on mobile, left column on desktop */}
         <div
+          ref={sheetRef}
           className="absolute bottom-0 left-0 right-0 z-10 bg-white dark:bg-townwize-primaryDark rounded-t-2xl shadow-2xl flex flex-col h-[92vh] overflow-hidden md:static md:order-1 md:rounded-2xl md:shadow-xl md:w-full md:max-w-[420px] md:mx-0 md:h-auto md:overflow-visible"
           style={window.innerWidth < 768 ? {
-            transform: sheetSnap === "full" ? "translateY(0)" : "translateY(32vh)",
+            transform: selectingFor
+              ? "translateY(85vh)"
+              : sheetSnap === "full" ? "translateY(0)" : "translateY(32vh)",
             transition: "transform 400ms cubic-bezier(0.32, 0.72, 0, 1)",
           } : undefined}
+          onTouchStart={(e) => {
+            if (window.innerWidth >= 768) return;
+            sheetDragStartY.current = e.touches[0].clientY;
+          }}
+          onTouchMove={(e) => {
+            if (window.innerWidth >= 768 || sheetDragStartY.current == null || !sheetRef.current) return;
+            const delta = e.touches[0].clientY - sheetDragStartY.current;
+            const baseTranslate = sheetSnap === "full" ? 0 : window.innerHeight * 0.32;
+            const clamped = Math.max(-20, Math.min(window.innerHeight * 0.32 + 20, baseTranslate + delta));
+            sheetRef.current.style.transition = "none";
+            sheetRef.current.style.transform = `translateY(${clamped}px)`;
+          }}
+          onTouchEnd={(e) => {
+            if (window.innerWidth >= 768) return;
+            const delta = e.changedTouches[0].clientY - (sheetDragStartY.current ?? e.changedTouches[0].clientY);
+            if (sheetRef.current) {
+              sheetRef.current.style.transition = "transform 400ms cubic-bezier(0.32, 0.72, 0, 1)";
+            }
+            if (delta < -40) setSheetSnap("full");
+            else if (delta > 40) setSheetSnap("half");
+            else if (sheetRef.current) {
+              sheetRef.current.style.transform = sheetSnap === "full" ? "translateY(0)" : "translateY(32vh)";
+            }
+            sheetDragStartY.current = null;
+          }}
         >
-          {/* Drag handle — swipe up to expand, down to collapse */}
-          <div
-            className="md:hidden flex justify-center pt-3 pb-2 shrink-0 cursor-grab active:cursor-grabbing"
-            onTouchStart={(e) => { sheetDragStartY.current = e.touches[0].clientY; }}
-            onTouchEnd={(e) => {
-              const delta = e.changedTouches[0].clientY - (sheetDragStartY.current ?? e.changedTouches[0].clientY);
-              if (delta < -40) setSheetSnap("full");
-              else if (delta > 40) setSheetSnap("half");
-              sheetDragStartY.current = null;
-            }}
-          >
+          {/* Drag handle — visual indicator only */}
+          <div className="md:hidden flex justify-center pt-3 pb-2 shrink-0">
             <div className="w-10 h-1.5 bg-gray-300 dark:bg-gray-600 rounded-full" />
           </div>
           {/* Scrollable content */}
@@ -1039,6 +1071,16 @@ navigate("/passenger/trip-summary", {
               onClick={(e) => {
                 e.stopPropagation();
                 setHasStop(true);
+                // Place draggable stop marker at current map center immediately
+                const map = coreMapInstanceRef.current;
+                if (map) {
+                  const center = map.getCenter();
+                  if (center) {
+                    const pos = { lat: center.lat(), lng: center.lng() };
+                    updateMapMarker(pos, "stop");
+                    reverseGeocode(center, (addr) => setStop(addr));
+                  }
+                }
               }}
               className="text-townwize-primary dark:text-townwize-textContent text-sm flex items-center gap-1"
             >
@@ -1285,6 +1327,7 @@ navigate("/passenger/trip-summary", {
 
           {/* ── Sticky Book CTA — always pinned to bottom of sheet, never scrolls away ── */}
           <div
+            ref={continueAreaRef}
             className="shrink-0 px-5 pt-3 border-t border-gray-100 dark:border-gray-800 bg-white dark:bg-townwize-primaryDark"
             style={{ paddingBottom: "max(16px, env(safe-area-inset-bottom, 16px))" }}
           >
@@ -1335,15 +1378,31 @@ navigate("/passenger/trip-summary", {
         <div className="absolute inset-0 md:static md:order-2 md:h-[calc(100vh-160px)] md:rounded-2xl md:shadow-lg md:border md:border-gray-200 dark:md:border-gray-700 md:overflow-hidden md:relative">
           <div ref={coreMapRef} className="w-full h-full" />
           <RouteLoaderOverlay isVisible={isCalculatingRoute} />
-          <MapSelectionOverlay
-            selectingFor={selectingFor}
-            onCancel={() => setSelectingFor(null)}
-          />
         </div>
+
+        {/* Map selection overlay — rendered as sibling so z-20 clears the sheet (z-10) */}
+        <MapSelectionOverlay
+          selectingFor={selectingFor}
+          onCancel={() => setSelectingFor(null)}
+          onConfirm={() => {
+            if (!coreMapInstanceRef.current) return;
+            const center = coreMapInstanceRef.current.getCenter();
+            const latLng = { lat: center.lat(), lng: center.lng() };
+            const target = selectingFor;
+            updateMapMarker(latLng, target);
+            reverseGeocode(latLng, (addr) => {
+              if (target === "pickup") setPickup(addr);
+              if (target === "stop") setStop(addr);
+              if (target === "dropoff") setDropoff(addr);
+            });
+            setSelectingFor(null);
+          }}
+        />
 
         {/* Back button — floats over map, mobile only */}
         <button
           type="button"
+          onTouchStart={(e) => { e.stopPropagation(); navigate(routeStateRaw?.from || "/passenger/home"); }}
           onClick={() => navigate(routeStateRaw?.from || "/passenger/home")}
           className="absolute top-4 left-4 z-20 md:hidden bg-white dark:bg-gray-800 rounded-full p-2.5 shadow-lg text-gray-700 dark:text-white active:scale-95 transition-transform"
         >

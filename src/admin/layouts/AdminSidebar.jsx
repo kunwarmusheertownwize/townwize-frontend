@@ -25,6 +25,7 @@ const navItems = [
 
   { to: "/admin/referral", label: "Referral" },
   { to: "/admin/waitlist", label: "Waitlist" },
+  { to: "/admin/simulation", label: "Simulation" },
 
   { to: "/admin/audit", label: "Audit" },
 ];
