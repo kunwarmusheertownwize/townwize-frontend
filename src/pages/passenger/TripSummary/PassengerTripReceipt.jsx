@@ -375,6 +375,7 @@ export default function PassengerTripReceipt() {
         {showRating && <RatingModal rideId={rideId} onDone={() => setShowRating(false)} />}
         {/* Header banner with fare */}
         <div className="bg-townwize-primary px-5 pt-6 pb-8 text-white">
+          <img src="/images/logo-light.png" alt="Townwize" className="h-7 w-auto mb-3" />
           <h2 className="text-2xl font-extrabold">Trip Receipt</h2>
           <p className="text-xs text-white/60 mt-1">{toDateTime(receiptDate)}</p>
           <p className="text-xs text-white/40 mt-0.5">ID: {ride?._id || rideId}</p>
@@ -510,8 +511,8 @@ export default function PassengerTripReceipt() {
     {showRating && <RatingModal rideId={rideId} onDone={() => setShowRating(false)} />}
     <div className="trip-receipt-page max-w-5xl mx-auto mt-6 bg-white dark:bg-townwize-primaryDark p-6 md:p-8 rounded-2xl shadow-lg space-y-6 border border-gray-100 dark:border-gray-700">
 
-      {/* Branding header — shown in print and during image capture (js shows it) */}
-      <div className="receipt-branding hidden print:flex items-center justify-between pb-4 border-b border-gray-300 mb-2">
+      {/* Branding header — always visible; also included in image capture */}
+      <div className="receipt-branding flex items-center justify-between pb-4 border-b border-gray-300 dark:border-gray-700 mb-2">
         <div className="flex items-center gap-3">
           <img src="/images/logo-dark.png" alt="Townwize" className="h-9 w-auto" />
           <p className="text-xs text-gray-500">www.townwize.com · support@townwize.com</p>
