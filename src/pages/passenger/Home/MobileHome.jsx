@@ -58,6 +58,8 @@ export default function MobileHome() {
   const searchMapRef = useRef(null);
   const searchMapInstanceRef = useRef(null);
   const searchMapIdleTimerRef = useRef(null);
+  const searchMapDraggedRef = useRef(false);
+  const searchUserTypedRef = useRef(false);
 
   // ── Google Maps script load ──────────────────────────────────────────────
   useEffect(() => {
@@ -162,7 +164,11 @@ export default function MobileHome() {
         });
         google.maps.event.trigger(searchMapInstanceRef.current, "resize");
         searchMapInstanceRef.current.setCenter(center);
+        searchMapInstanceRef.current.addListener("dragstart", () => {
+          searchMapDraggedRef.current = true;
+        });
         searchMapInstanceRef.current.addListener("idle", () => {
+          if (!searchMapDraggedRef.current && !searchUserTypedRef.current) return; // skip initial idle on open
           clearTimeout(searchMapIdleTimerRef.current);
           searchMapIdleTimerRef.current = setTimeout(async () => {
             if (!searchMapInstanceRef.current) return;
@@ -183,7 +189,11 @@ export default function MobileHome() {
 
   // ── Search overlay drag-map cleanup ─────────────────────────────────────
   useEffect(() => {
-    if (searchMode) return;
+    if (searchMode) {
+      searchMapDraggedRef.current = false;
+      searchUserTypedRef.current = false;
+      return;
+    }
     clearTimeout(searchMapIdleTimerRef.current);
     if (searchMapInstanceRef.current) {
       google.maps.event.clearInstanceListeners(searchMapInstanceRef.current);
@@ -409,6 +419,7 @@ export default function MobileHome() {
                     fetchSuggestions(pickup);
                   }}
                   onChange={(e) => {
+                    searchUserTypedRef.current = true;
                     setPickup(e.target.value);
                     clearTimeout(window.__tw_mp);
                     window.__tw_mp = setTimeout(() => fetchSuggestions(e.target.value), 300);
@@ -461,6 +472,7 @@ export default function MobileHome() {
                     fetchSuggestions(dropoff);
                   }}
                   onChange={(e) => {
+                    searchUserTypedRef.current = true;
                     setDropoff(e.target.value);
                     clearTimeout(window.__tw_md);
                     window.__tw_md = setTimeout(() => fetchSuggestions(e.target.value), 200);

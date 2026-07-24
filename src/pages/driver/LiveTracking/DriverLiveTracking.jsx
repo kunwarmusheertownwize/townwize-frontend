@@ -302,6 +302,7 @@ const DriverLiveTracking = () => {
         mapInstanceRef.current = new google.maps.Map(mapRef.current, {
           center: position, zoom: 15,
           mapId: import.meta.env.VITE_GOOGLE_MAP_ID,
+          renderingType: "VECTOR",
           gestureHandling: "greedy", streetViewControl: false, mapTypeControl: false,
         });
         setMapReady(true);

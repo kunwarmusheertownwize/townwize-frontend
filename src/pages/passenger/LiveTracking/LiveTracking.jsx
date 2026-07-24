@@ -419,6 +419,7 @@ const LiveTracking = () => {
           center: pickupLatLng,
           zoom: 15,
           mapId: import.meta.env.VITE_GOOGLE_MAP_ID,
+          renderingType: "VECTOR",
           disableDefaultUI: true,
         });
 
