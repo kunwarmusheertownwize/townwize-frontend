@@ -58,6 +58,7 @@ const DriverLiveTracking = () => {
   const prevDriverPositionRef = useRef(null);
   const currentPositionRef = useRef(null);
   const pickupCoordsRef = useRef(null); // populated from Directions API when en route to pickup
+  const routeFetchInFlightRef = useRef(false); // prevents concurrent DirectionsService floods
 
   const { setDriverMode, incomingRide } = useDriverMode();
 
@@ -389,10 +390,13 @@ const DriverLiveTracking = () => {
     const statusChanged = lastRouteKeyRef.current !== routeKey;
 
     // Re-fetch: on status change, or when driver has traveled >250m since last fetch,
-    // or when lastRouteOriginRef was cleared (off-route detected)
+    // or when lastRouteOriginRef was cleared (off-route detected).
+    // In-flight guard prevents flooding DirectionsService when off-route clears the ref every tick.
     if (!statusChanged && routePolylineRef.current) {
+      if (routeFetchInFlightRef.current) return;
       if (lastRouteOriginRef.current && haversineM(driverPosition, lastRouteOriginRef.current) < 250) return;
     }
+    routeFetchInFlightRef.current = false; // reset on status change so new fetch always fires
 
     lastRouteKeyRef.current = routeKey;
     lastRouteOriginRef.current = driverPosition;
@@ -404,9 +408,11 @@ const DriverLiveTracking = () => {
     }
     if (destinationMarkerRef.current) { destinationMarkerRef.current.map = null; destinationMarkerRef.current = null; }
 
+    routeFetchInFlightRef.current = true;
     new google.maps.DirectionsService().route(
       { origin: driverPosition, destination, travelMode: google.maps.TravelMode.DRIVING },
       (result, status) => {
+        routeFetchInFlightRef.current = false;
         if (status !== "OK" || !mapInstanceRef.current) return;
 
         // Decode detailed step-by-step path (much finer than overview_path)

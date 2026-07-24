@@ -168,7 +168,7 @@ export default function MobileHome() {
           searchMapDraggedRef.current = true;
         });
         searchMapInstanceRef.current.addListener("idle", () => {
-          if (!searchMapDraggedRef.current && !searchUserTypedRef.current) return; // skip initial idle on open
+          if (!searchMapDraggedRef.current) return; // only update dropoff when user explicitly dragged the map
           clearTimeout(searchMapIdleTimerRef.current);
           searchMapIdleTimerRef.current = setTimeout(async () => {
             if (!searchMapInstanceRef.current) return;
@@ -485,8 +485,24 @@ export default function MobileHome() {
 
           {/* Suggestions list OR drag-to-set map */}
           <div className="flex-1 relative overflow-hidden">
-            {suggestions.length > 0 ? (
-              <ul className="absolute inset-0 overflow-y-auto">
+            {/* Map always in DOM — unmounting detaches Google Maps from its container element */}
+            <div className={`absolute inset-0${suggestions.length > 0 ? " invisible pointer-events-none" : ""}`}>
+              <div ref={searchMapRef} className="absolute inset-0" />
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
+                <div style={{ marginBottom: "36px" }}>
+                  <FaMapMarkerAlt className="text-red-500 text-4xl" style={{ filter: "drop-shadow(0 3px 4px rgba(0,0,0,0.4))" }} />
+                </div>
+              </div>
+              {mapDropoffResolving && (
+                <div className="absolute top-3 left-1/2 -translate-x-1/2 bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-full text-xs text-gray-600 shadow-md z-20 flex items-center gap-1.5">
+                  <div className="w-2.5 h-2.5 border-2 border-townwize-primary border-t-transparent rounded-full animate-spin" />
+                  Locating…
+                </div>
+              )}
+            </div>
+            {/* Suggestions overlay — white background covers the map */}
+            {suggestions.length > 0 && (
+              <ul className="absolute inset-0 overflow-y-auto bg-white z-10">
                 {suggestions.map((p, idx) => (
                   <li
                     key={p?.placePrediction?.placeId || idx}
@@ -503,24 +519,6 @@ export default function MobileHome() {
                   </li>
                 ))}
               </ul>
-            ) : (
-              <div className="absolute inset-0">
-                {/* Map fills remaining space */}
-                <div ref={searchMapRef} className="absolute inset-0" />
-                {/* Fixed center drop pin */}
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
-                  <div style={{ marginBottom: "36px" }}>
-                    <FaMapMarkerAlt className="text-red-500 text-4xl" style={{ filter: "drop-shadow(0 3px 4px rgba(0,0,0,0.4))" }} />
-                  </div>
-                </div>
-                {/* Resolving address indicator */}
-                {mapDropoffResolving && (
-                  <div className="absolute top-3 left-1/2 -translate-x-1/2 bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-full text-xs text-gray-600 shadow-md z-20 flex items-center gap-1.5">
-                    <div className="w-2.5 h-2.5 border-2 border-townwize-primary border-t-transparent rounded-full animate-spin" />
-                    Locating…
-                  </div>
-                )}
-              </div>
             )}
           </div>
 
