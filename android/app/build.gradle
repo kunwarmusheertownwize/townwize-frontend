@@ -3,8 +3,19 @@ apply plugin: 'com.android.application'
 android {
     namespace "com.townwize.app"
     compileSdk rootProject.ext.compileSdkVersion
+    flavorDimensions "brand"
+    productFlavors {
+        townwize {
+            dimension "brand"
+            applicationId "com.townwize.towner"
+        }
+        wizer {
+            dimension "brand"
+            applicationId "com.townwize.wizer"
+        }
+    }
+
     defaultConfig {
-        applicationId "com.townwize.towner"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1

@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Townwize</string>
+    <string name="title_activity_main">Townwize</string>
+    <string name="package_name">com.townwize.towner</string>
+    <string name="custom_url_scheme">com.townwize.towner</string>
+</resources>
