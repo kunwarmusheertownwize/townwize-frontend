@@ -85,25 +85,6 @@ const DriverLiveTracking = () => {
     return ((Math.atan2(y, x) * 180) / Math.PI + 360) % 360;
   };
 
-  const lookAhead = (pos, heading, distMeters) => {
-    const R = 6371000;
-    const bRad = (heading * Math.PI) / 180;
-    const latRad = (pos.lat * Math.PI) / 180;
-    const lngRad = (pos.lng * Math.PI) / 180;
-    const d = distMeters / R;
-    const newLat = Math.asin(
-      Math.sin(latRad) * Math.cos(d) +
-        Math.cos(latRad) * Math.sin(d) * Math.cos(bRad)
-    );
-    const newLng =
-      lngRad +
-      Math.atan2(
-        Math.sin(bRad) * Math.sin(d) * Math.cos(latRad),
-        Math.cos(d) - Math.sin(latRad) * Math.sin(newLat)
-      );
-    return { lat: (newLat * 180) / Math.PI, lng: (newLng * 180) / Math.PI };
-  };
-
   const persistActiveTrip = (next) => {
     setActiveRequest(next);
     sessionStorage.setItem("activeDriverTrip", JSON.stringify(next));
@@ -854,7 +835,7 @@ const DriverLiveTracking = () => {
             disabled={arriving || !nearPickup}
             className={`flex-1 rounded-xl py-3 font-semibold ${(arriving || !nearPickup) ? "cursor-not-allowed bg-gray-400 text-gray-200" : "bg-green-600 text-white"}`}
           >
-            {arriving ? "Arriving…" : nearPickup ? "Arrived" : "Arrived (near pickup)"}
+            {arriving ? "Arriving…" : nearPickup ? "Arrived" : "Get closer to pickup"}
           </button>
         </>
       )}

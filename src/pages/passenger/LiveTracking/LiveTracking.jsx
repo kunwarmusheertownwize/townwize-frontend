@@ -182,6 +182,7 @@ const LiveTracking = () => {
 
   const lastRouteStatusRef = useRef(null);
   const lastRouteOriginRef = useRef(null); // lat/lng used for last Directions call during ON_TRIP
+  const routeFetchInFlightRef = useRef(false); // prevents concurrent DirectionsService requests
   const hasFitBoundsRef = useRef(false);
   const passengerMarkerRef = useRef(null);
   const altRoutesRef = useRef([]);
@@ -631,10 +632,13 @@ const LiveTracking = () => {
       }
     }
 
+    // In-flight guard — always first, prevents concurrent requests when polyline is null
+    if (routeFetchInFlightRef.current) return;
+
     if (!statusChanged) {
-      // Re-fetch only if driver moved >250 m — trimming handles visual progress between fetches
+      // Re-fetch only if driver moved >100 m — trimming handles visual progress between fetches
       if (routePolylineRef.current) {
-        if (lastRouteOriginRef.current && haversineM(origin, lastRouteOriginRef.current) < 250) return;
+        if (lastRouteOriginRef.current && haversineM(origin, lastRouteOriginRef.current) < 100) return;
       }
     }
 
@@ -643,6 +647,7 @@ const LiveTracking = () => {
 
     const capturedOrigin = origin;
 
+    routeFetchInFlightRef.current = true;
     new google.maps.DirectionsService().route(
       {
         origin,
@@ -651,6 +656,7 @@ const LiveTracking = () => {
         provideRouteAlternatives: rideStatus !== "ON_TRIP",
       },
       (result, reqStatus) => {
+        routeFetchInFlightRef.current = false;
         if (reqStatus !== "OK") return;
         if (lastRouteOriginRef.current !== capturedOrigin) return;
 
@@ -744,7 +750,7 @@ const LiveTracking = () => {
       }
       if (minDist < 120 && nearestIdx < path.length - 1) {
         routePolylineRef.current.setPath(path.slice(nearestIdx));
-      } else if (minDist > 150) {
+      } else if (nearestIdx < path.length - 1) {
         lastRouteOriginRef.current = null; // off-route — force re-fetch on next cycle
       }
     }
