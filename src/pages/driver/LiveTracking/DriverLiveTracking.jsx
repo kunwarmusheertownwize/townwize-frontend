@@ -349,8 +349,8 @@ const DriverLiveTracking = () => {
       }
       if (minDist < 120 && nearestIdx < path.length - 1) {
         routePolylineRef.current.setPath(path.slice(nearestIdx));
-      } else if (minDist > 150) {
-        // Driver is off-route — force immediate re-fetch on next cycle
+      } else if (nearestIdx < path.length - 1) {
+        // Driver is off-route (>120m from nearest point) — force immediate re-fetch
         lastRouteOriginRef.current = null;
       }
     }
@@ -389,12 +389,12 @@ const DriverLiveTracking = () => {
     const routeKey = `${rideStatus}-${stage}`;
     const statusChanged = lastRouteKeyRef.current !== routeKey;
 
-    // Re-fetch: on status change, or when driver has traveled >250m since last fetch,
+    // Re-fetch: on status change, or when driver has traveled >100m since last fetch,
     // or when lastRouteOriginRef was cleared (off-route detected).
     // In-flight guard prevents flooding DirectionsService when off-route clears the ref every tick.
     if (!statusChanged && routePolylineRef.current) {
       if (routeFetchInFlightRef.current) return;
-      if (lastRouteOriginRef.current && haversineM(driverPosition, lastRouteOriginRef.current) < 250) return;
+      if (lastRouteOriginRef.current && haversineM(driverPosition, lastRouteOriginRef.current) < 100) return;
     }
     routeFetchInFlightRef.current = false; // reset on status change so new fetch always fires
 

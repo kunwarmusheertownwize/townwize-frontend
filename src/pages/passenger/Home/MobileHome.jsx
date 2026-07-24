@@ -271,13 +271,14 @@ export default function MobileHome() {
           .replace(/^[A-Z0-9]{4,8}\+[A-Z0-9]{2,3}[, ]+/, "")
           .trim();
         setter(addr || prediction.placePrediction.text?.text || "");
-        // Pan search map to selected location
-        if (activeField === "dropoff" && p.location && searchMapInstanceRef.current) {
-          searchMapInstanceRef.current.panTo(p.location);
-        }
         const { AutocompleteSessionToken } = await google.maps.importLibrary("places");
         sessionTokenRef.current = new AutocompleteSessionToken();
+        const selectedLoc = activeField === "dropoff" ? p.location : null;
         setSuggestions([]);
+        // Pan search map AFTER suggestions clear (map becomes visible again)
+        if (selectedLoc && searchMapInstanceRef.current) {
+          requestAnimationFrame(() => { searchMapInstanceRef.current?.setCenter(selectedLoc); });
+        }
         if (activeField === "pickup") {
           setActiveField("dropoff");
           setTimeout(() => dropoffInputRef.current?.focus(), 50);
