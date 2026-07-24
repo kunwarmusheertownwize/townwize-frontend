@@ -389,30 +389,34 @@ const DriverLiveTracking = () => {
     const routeKey = `${rideStatus}-${stage}`;
     const statusChanged = lastRouteKeyRef.current !== routeKey;
 
-    // Re-fetch: on status change, or when driver has traveled >100m since last fetch,
-    // or when lastRouteOriginRef was cleared (off-route detected).
-    // In-flight guard prevents flooding DirectionsService when off-route clears the ref every tick.
+    // In-flight guard — always checked first, regardless of polyline state.
+    // Without this, status-change ticks (where routePolylineRef is null) bypass the guard
+    // and fire concurrent requests that later create duplicate destination markers.
+    if (routeFetchInFlightRef.current) return;
+
     if (!statusChanged && routePolylineRef.current) {
-      if (routeFetchInFlightRef.current) return;
       if (lastRouteOriginRef.current && haversineM(driverPosition, lastRouteOriginRef.current) < 100) return;
     }
-    routeFetchInFlightRef.current = false; // reset on status change so new fetch always fires
 
     lastRouteKeyRef.current = routeKey;
     lastRouteOriginRef.current = driverPosition;
 
     if (!destination) {
       if (routePolylineRef.current) { routePolylineRef.current.setMap(null); routePolylineRef.current = null; }
+      if (destinationMarkerRef.current) { destinationMarkerRef.current.map = null; destinationMarkerRef.current = null; }
       routePathRef.current = [];
       return;
     }
     if (destinationMarkerRef.current) { destinationMarkerRef.current.map = null; destinationMarkerRef.current = null; }
 
+    const fetchingForKey = routeKey;
     routeFetchInFlightRef.current = true;
     new google.maps.DirectionsService().route(
       { origin: driverPosition, destination, travelMode: google.maps.TravelMode.DRIVING },
       (result, status) => {
         routeFetchInFlightRef.current = false;
+        // Discard stale callbacks — rideStatus changed since this request was fired
+        if (fetchingForKey !== lastRouteKeyRef.current) return;
         if (status !== "OK" || !mapInstanceRef.current) return;
 
         // Decode detailed step-by-step path (much finer than overview_path)
@@ -441,11 +445,12 @@ const DriverLiveTracking = () => {
         // Capture pickup coords so proximity gate can enable "Arrived" button
         const legs = result.routes[0]?.legs;
         const endLatLng = legs?.[legs.length - 1]?.end_location;
-        if (endLatLng && rideStatus === "DRIVER_ASSIGNED") {
+        if (endLatLng && rideStatusRef.current === "DRIVER_ASSIGNED") {
           pickupCoordsRef.current = { lat: endLatLng.lat(), lng: endLatLng.lng() };
         }
 
-        // Destination pin
+        // Destination pin — clear any existing before creating
+        if (destinationMarkerRef.current) { destinationMarkerRef.current.map = null; destinationMarkerRef.current = null; }
         if (endLatLng) {
           const pinEl = document.createElement("div");
           pinEl.style.cssText = "width:14px;height:14px;border-radius:50%;background:#EF4444;border:2px solid #fff;box-shadow:0 0 0 3px rgba(239,68,68,0.3)";
