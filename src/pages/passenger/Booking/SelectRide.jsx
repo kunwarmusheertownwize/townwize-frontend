@@ -979,14 +979,15 @@ navigate("/passenger/trip-summary", {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pickup, dropoff, markerVersion]);
 
-  // 🧭 Auto-draw route when addresses or stop status change
-  // markerVersion intentionally excluded — raw marker drags don't restart the animation;
-  // route only updates when pickup/dropoff address resolves or a stop is added/removed.
+  // 🧭 Auto-draw route when addresses change OR after async marker placement completes.
+  // markerVersion increments in onMarkerUpdated which fires AFTER updateMapMarker awaits
+  // importLibrary("marker") and sets the ref — this closes the race where setDropoff fires
+  // the effect before dropoffMarkerRef.current is non-null, causing the guard to bail.
   useEffect(() => {
     if (!pickupMarkerRef.current || !dropoffMarkerRef.current) return;
     requestRoute();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pickup, dropoff, stop, hasStop]);
+  }, [pickup, dropoff, stop, hasStop, markerVersion]);
 
   return (
     <>

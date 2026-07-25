@@ -93,6 +93,8 @@ const DriverLiveTracking = () => {
   const hasRequest = Boolean(request);
   const pickupAddress = request?.pickup;
   const dropoffAddress = request?.dropoff;
+  const pickupCoords = request?.pickupCoords;
+  const dropoffCoords = request?.dropoffCoords;
   const rideType = request?.rideType;
   const fare = request?.fare;
   const passengerName = request?.passengerName || null;
@@ -291,7 +293,7 @@ const DriverLiveTracking = () => {
         await google.maps.importLibrary("marker");
         const { AdvancedMarkerElement } = await google.maps.importLibrary("marker");
         const iconEl = document.createElement("img");
-        iconEl.src = "/favicon-96x96-light.png";
+        iconEl.src = "/favicon-96x96-wizer-marker.png";
         iconEl.style.cssText = "width:32px;height:32px;border-radius:50%;box-shadow:0 3px 10px rgba(0,0,0,0.45);display:block;";
         driverMarkerRef.current = new AdvancedMarkerElement({
           map: mapInstanceRef.current,
@@ -359,12 +361,16 @@ const DriverLiveTracking = () => {
 
     const stage = poolStageRef.current;
     let destination = null;
+    let destinationPin = null; // exact coords for marker placement
     if (rideStatus === "DRIVER_ASSIGNED") {
-      destination = pickupAddress;
+      destination = pickupCoords ? { lat: pickupCoords.lat, lng: pickupCoords.lng } : pickupAddress;
+      destinationPin = pickupCoords ? { lat: pickupCoords.lat, lng: pickupCoords.lng } : null;
     } else if (rideStatus === "ARRIVED" && isPooled && (stage === 2 || stage === 3) && sp?.pickupAddress) {
       destination = sp.pickupAddress;
+      destinationPin = null;
     } else if (rideStatus === "ON_TRIP") {
-      destination = dropoffAddress;
+      destination = dropoffCoords ? { lat: dropoffCoords.lat, lng: dropoffCoords.lng } : dropoffAddress;
+      destinationPin = dropoffCoords ? { lat: dropoffCoords.lat, lng: dropoffCoords.lng } : null;
     }
 
     const routeKey = `${rideStatus}-${stage}`;
@@ -391,6 +397,7 @@ const DriverLiveTracking = () => {
     if (destinationMarkerRef.current) { destinationMarkerRef.current.map = null; destinationMarkerRef.current = null; }
 
     const fetchingForKey = routeKey;
+    const capturedPin = destinationPin;
     routeFetchInFlightRef.current = true;
     new google.maps.DirectionsService().route(
       { origin: driverPosition, destination, travelMode: google.maps.TravelMode.DRIVING },
@@ -423,25 +430,26 @@ const DriverLiveTracking = () => {
           });
         }
 
-        // Capture pickup coords so proximity gate can enable "Arrived" button
+        // Use road-snapped endLatLng only for pickup proximity gate
         const legs = result.routes[0]?.legs;
         const endLatLng = legs?.[legs.length - 1]?.end_location;
         if (endLatLng && rideStatusRef.current === "DRIVER_ASSIGNED") {
           pickupCoordsRef.current = { lat: endLatLng.lat(), lng: endLatLng.lng() };
         }
 
-        // Destination pin — clear any existing before creating
+        // Destination pin — place at exact ride coords, not road-snapped endLatLng
         if (destinationMarkerRef.current) { destinationMarkerRef.current.map = null; destinationMarkerRef.current = null; }
-        if (endLatLng) {
+        const pinPos = capturedPin || (endLatLng ? { lat: endLatLng.lat(), lng: endLatLng.lng() } : null);
+        if (pinPos) {
           const pinEl = document.createElement("div");
           pinEl.style.cssText = "width:14px;height:14px;border-radius:50%;background:#EF4444;border:2px solid #fff;box-shadow:0 0 0 3px rgba(239,68,68,0.3)";
           destinationMarkerRef.current = new google.maps.marker.AdvancedMarkerElement({
-            map: mapInstanceRef.current, position: endLatLng, content: pinEl,
+            map: mapInstanceRef.current, position: pinPos, content: pinEl,
           });
         }
       }
     );
-  }, [rideStatus, poolPickupStage, driverPosition, mapReady, pickupAddress, dropoffAddress, isPooled, sp]);
+  }, [rideStatus, poolPickupStage, driverPosition, mapReady, pickupAddress, dropoffAddress, pickupCoords, dropoffCoords, isPooled, sp]);
 
   useEffect(() => {
     if (!incomingRide?.status) return;

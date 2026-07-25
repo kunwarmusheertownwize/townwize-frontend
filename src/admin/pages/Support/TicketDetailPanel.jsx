@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import StatusBadge from "../../components/common/StatusBadge";
-import { replySupportTicket, updateSupportTicket } from "../../../api/adminApi";
+import { fetchRideDetail, replySupportTicket, updateSupportTicket } from "../../../api/adminApi";
 
 const PRIORITY_CLS = {
   low:      "bg-gray-100 text-gray-600",
@@ -76,6 +76,11 @@ export default function TicketDetailPanel({ ticket, onUpdated }) {
   const [error, setError] = useState("");
   const [ok, setOk] = useState("");
 
+  const [linkedRide, setLinkedRide] = useState(null);
+  const [linkedRideLoading, setLinkedRideLoading] = useState(false);
+  const [linkInput, setLinkInput] = useState("");
+  const [linking, setLinking] = useState(false);
+
   useEffect(() => {
     setStatus(ticket.status || "open");
     setPriority(ticket.priority || "normal");
@@ -85,7 +90,54 @@ export default function TicketDetailPanel({ ticket, onUpdated }) {
     setNote("");
     setError("");
     setOk("");
+    setLinkedRide(null);
+    setLinkInput("");
   }, [ticket._id, ticket.status, ticket.priority, ticket.assigneeId, ticket.resolutionNote]);
+
+  useEffect(() => {
+    if (ticket.linkedType !== "ride" || !ticket.linkedId) return;
+    let mounted = true;
+    setLinkedRideLoading(true);
+    fetchRideDetail(ticket.linkedId)
+      .then((res) => { if (mounted) setLinkedRide(res?.data || null); })
+      .catch(() => { if (mounted) setLinkedRide(null); })
+      .finally(() => { if (mounted) setLinkedRideLoading(false); });
+    return () => { mounted = false; };
+  }, [ticket._id, ticket.linkedType, ticket.linkedId]);
+
+  const handleLinkRide = async () => {
+    const rideId = linkInput.trim();
+    if (!rideId) return;
+    setLinking(true);
+    setError("");
+    setOk("");
+    try {
+      await updateSupportTicket(ticket._id, { linkedRideId: rideId });
+      setOk("Ride linked.");
+      setLinkInput("");
+      await onUpdated?.();
+    } catch (e) {
+      setError(e?.message || "Failed to link ride");
+    } finally {
+      setLinking(false);
+    }
+  };
+
+  const handleUnlinkRide = async () => {
+    setLinking(true);
+    setError("");
+    setOk("");
+    try {
+      await updateSupportTicket(ticket._id, { linkedRideId: "" });
+      setOk("Ride unlinked.");
+      setLinkedRide(null);
+      await onUpdated?.();
+    } catch (e) {
+      setError(e?.message || "Failed to unlink ride");
+    } finally {
+      setLinking(false);
+    }
+  };
 
   const canSave = useMemo(() => {
     return (
@@ -165,6 +217,67 @@ export default function TicketDetailPanel({ ticket, onUpdated }) {
           )}
         </div>
         <div className="mt-2 text-xs text-gray-400">Updated: {ticket.updatedAt ? new Date(ticket.updatedAt).toLocaleString() : "-"}</div>
+      </div>
+
+      {/* ── Linked Ride ────────────────────────────────────────────────── */}
+      <div className="rounded-xl border border-gray-200 dark:border-gray-700 p-3 space-y-2">
+        <h4 className="font-semibold text-sm">Linked Ride</h4>
+        {ticket.linkedType === "ride" && ticket.linkedId ? (
+          <div className="space-y-2">
+            {linkedRideLoading ? (
+              <div className="h-12 animate-pulse rounded-lg bg-gray-100 dark:bg-gray-700" />
+            ) : linkedRide ? (
+              <div className="rounded-lg bg-gray-50 dark:bg-gray-800 p-2.5 text-xs space-y-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="font-mono text-gray-400 dark:text-gray-500">…{ticket.linkedId.slice(-8)}</span>
+                  <StatusBadge status={linkedRide.status || "-"} />
+                  {(linkedRide.fareEstimate || linkedRide.fare?.final) && (
+                    <span className="ml-auto font-semibold text-gray-700 dark:text-gray-300">
+                      PKR {Number(linkedRide.fare?.final ?? linkedRide.fareEstimate ?? 0).toLocaleString()}
+                    </span>
+                  )}
+                </div>
+                <div className="text-gray-600 dark:text-gray-300 leading-relaxed">
+                  <span className="text-townwize-accent">↑</span> {linkedRide.pickup?.address || "—"}
+                </div>
+                <div className="text-gray-600 dark:text-gray-300 leading-relaxed">
+                  <span className="text-red-400">↓</span> {linkedRide.dropoff?.address || "—"}
+                </div>
+              </div>
+            ) : (
+              <p className="text-xs text-gray-400">Could not load ride details</p>
+            )}
+            <button
+              onClick={handleUnlinkRide}
+              disabled={linking}
+              className="text-xs text-red-500 hover:text-red-700 hover:underline disabled:opacity-50"
+            >
+              {linking ? "Unlinking…" : "× Unlink ride"}
+            </button>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            <p className="text-xs text-gray-400 dark:text-gray-500">
+              Link this ticket to a ride for dispute or investigation context.
+            </p>
+            <div className="flex gap-2">
+              <input
+                className="flex-1 rounded border dark:border-gray-600 dark:bg-gray-800 dark:text-white px-2 py-1.5 text-xs font-mono"
+                placeholder="Paste Ride ID (_id from Rides list)"
+                value={linkInput}
+                onChange={(e) => setLinkInput(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleLinkRide()}
+              />
+              <button
+                onClick={handleLinkRide}
+                disabled={linking || !linkInput.trim()}
+                className="rounded bg-townwize-primary px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50 shrink-0"
+              >
+                {linking ? "Linking…" : "Link"}
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="rounded-xl border border-gray-200 dark:border-gray-700 p-3 space-y-3">

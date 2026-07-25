@@ -486,47 +486,27 @@ const LiveTracking = () => {
     const showSelf = !["ON_TRIP", "COMPLETED", "CANCELLED"].includes(status);
     if (!showSelf || !mapInstanceRef.current || !window.google) return;
 
+    const buildEl = () => {
+      const el = document.createElement("img");
+      el.src = "/favicon-96x96-towner-marker.png";
+      el.style.cssText = "width:24px;height:24px;border-radius:50%;box-shadow:0 3px 10px rgba(0,0,0,0.35);display:block;";
+      return el;
+    };
+
     const watchId = navigator.geolocation.watchPosition(
       (pos) => {
-        const { latitude: lat, longitude: lng, heading } = pos.coords;
+        const { latitude: lat, longitude: lng } = pos.coords;
         const map = mapInstanceRef.current;
         if (!map) return;
 
-        const hasHeading = heading != null && !isNaN(heading);
-
-        const buildIcon = (h) => {
-          if (hasHeading) {
-            return {
-              path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW,
-              rotation: h,
-              scale: 6,
-              fillColor: "#4285F4",
-              fillOpacity: 1,
-              strokeColor: "#ffffff",
-              strokeWeight: 2,
-            };
-          }
-          return {
-            path: google.maps.SymbolPath.CIRCLE,
-            scale: 7,
-            fillColor: "#4285F4",
-            fillOpacity: 1,
-            strokeColor: "#ffffff",
-            strokeWeight: 2,
-          };
-        };
-
         if (!passengerMarkerRef.current) {
-          passengerMarkerRef.current = new google.maps.Marker({
+          passengerMarkerRef.current = new google.maps.marker.AdvancedMarkerElement({
             map,
             position: { lat, lng },
-            icon: buildIcon(heading || 0),
-            title: "Your location",
-            zIndex: 5,
+            content: buildEl(),
           });
         } else {
-          passengerMarkerRef.current.setPosition({ lat, lng });
-          passengerMarkerRef.current.setIcon(buildIcon(heading || 0));
+          passengerMarkerRef.current.position = { lat, lng };
         }
       },
       null,
@@ -536,7 +516,7 @@ const LiveTracking = () => {
     return () => {
       navigator.geolocation.clearWatch(watchId);
       if (passengerMarkerRef.current) {
-        passengerMarkerRef.current.setMap(null);
+        passengerMarkerRef.current.map = null;
         passengerMarkerRef.current = null;
       }
     };
@@ -759,7 +739,7 @@ const LiveTracking = () => {
 
     const buildMarkerEl = () => {
       const el = document.createElement("img");
-      el.src = "/favicon-96x96-dark.png";
+      el.src = "/favicon-96x96-wizer-marker.png";
       el.style.cssText = "width:32px;height:32px;border-radius:50%;box-shadow:0 3px 10px rgba(0,0,0,0.35);display:block;";
       return el;
     };
