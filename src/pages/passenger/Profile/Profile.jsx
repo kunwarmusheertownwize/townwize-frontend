@@ -13,6 +13,9 @@ import {
   FaShareAlt,
   FaUsers,
   FaTicketAlt,
+  FaPhone,
+  FaPlus,
+  FaTrash,
 } from "react-icons/fa";
 import { toast } from "react-toastify";
 import { AuthContext } from "../../../contexts/AuthContextBase";
@@ -40,6 +43,11 @@ export default function Profile() {
   const [guestSlotsRemaining, setGuestSlotsRemaining] = useState(6);
   const [generatingInvite, setGeneratingInvite] = useState(false);
 
+  const [emergencyContacts, setEmergencyContacts] = useState([]);
+  const [ecDraft, setEcDraft] = useState([]);
+  const [ecSaving, setEcSaving] = useState(false);
+  const [ecEditing, setEcEditing] = useState(false);
+
   const fetchReferral = useCallback(async () => {
     try {
       const [codeRes, couponsRes, invitesRes] = await Promise.all([
@@ -60,6 +68,16 @@ export default function Profile() {
   }, []);
 
   useEffect(() => { fetchReferral(); }, [fetchReferral]);
+
+  useEffect(() => {
+    api.get("/passenger/emergency-contacts")
+      .then((res) => {
+        const c = res.data?.data?.contacts || [];
+        setEmergencyContacts(c);
+        setEcDraft(c);
+      })
+      .catch(() => {});
+  }, []);
 
   const handleCopyCode = () => {
     if (!referralData?.code) return;
@@ -91,11 +109,39 @@ export default function Profile() {
     }
   };
 
+  const handleEcSave = async () => {
+    setEcSaving(true);
+    try {
+      const res = await api.put("/passenger/emergency-contacts", { contacts: ecDraft });
+      const saved = res.data?.data?.contacts || ecDraft;
+      setEmergencyContacts(saved);
+      setEcDraft(saved);
+      setEcEditing(false);
+      toast.success("Emergency contacts saved");
+    } catch (err) {
+      toast.error(err?.response?.data?.error?.message || "Could not save contacts");
+    } finally {
+      setEcSaving(false);
+    }
+  };
+
+  const ecAddRow = () => {
+    if (ecDraft.length >= 3) return;
+    setEcDraft((d) => [...d, { name: "", phone: "" }]);
+    setEcEditing(true);
+  };
+
+  const ecRemove = (i) => setEcDraft((d) => d.filter((_, idx) => idx !== i));
+
+  const ecChange = (i, field, val) =>
+    setEcDraft((d) => d.map((c, idx) => (idx === i ? { ...c, [field]: val } : c)));
+
   const tabs = [
     { key: "personal", label: "Personal Info", icon: <FaUser /> },
     { key: "verification", label: "Verification Docs", icon: <FaIdCard /> },
     { key: "history", label: "Ride History", icon: <FaHistory /> },
     { key: "referral", label: "Referral & Rewards", icon: <FaGift /> },
+    { key: "emergency", label: "Emergency Contacts", icon: <FaPhone /> },
     { key: "wallet", label: "Wallet Balance", icon: <FaWallet /> },
     { key: "settings", label: "Settings", icon: <FaCog /> },
   ];
@@ -353,6 +399,50 @@ export default function Profile() {
                         )}
                       </div>
 
+                    </div>
+                  )}
+
+                  {tab.key === "emergency" && (
+                    <div className="space-y-3">
+                      <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
+                        These contacts will be shown on the SOS button during a ride. Up to 3 contacts.
+                      </p>
+                      {ecDraft.map((c, i) => (
+                        <div key={i} className="flex gap-2 items-start">
+                          <div className="flex-1 space-y-1.5">
+                            <input
+                              value={c.name}
+                              onChange={(e) => { ecChange(i, "name", e.target.value); setEcEditing(true); }}
+                              placeholder="Contact name"
+                              className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-red-400"
+                            />
+                            <input
+                              value={c.phone}
+                              onChange={(e) => { ecChange(i, "phone", e.target.value); setEcEditing(true); }}
+                              placeholder="Phone (with country code)"
+                              type="tel"
+                              className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-red-400"
+                            />
+                          </div>
+                          <button onClick={() => { ecRemove(i); setEcEditing(true); }} className="mt-1 p-2 rounded-lg text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition">
+                            <FaTrash size={12} />
+                          </button>
+                        </div>
+                      ))}
+                      {ecDraft.length < 3 && (
+                        <button onClick={ecAddRow} className="flex items-center gap-2 text-xs font-semibold text-townwize-accent hover:underline">
+                          <FaPlus size={10} /> Add contact
+                        </button>
+                      )}
+                      {ecEditing && (
+                        <button
+                          onClick={handleEcSave}
+                          disabled={ecSaving}
+                          className="w-full py-2.5 rounded-xl bg-red-600 text-white text-sm font-bold disabled:opacity-50"
+                        >
+                          {ecSaving ? "Saving…" : "Save Contacts"}
+                        </button>
+                      )}
                     </div>
                   )}
 
@@ -701,6 +791,76 @@ export default function Profile() {
               )}
             </div>
 
+          </div>
+        )}
+
+        {activeTab === "emergency" && (
+          <div className="p-6 rounded-2xl bg-white dark:bg-townwize-primaryDark border border-gray-200 dark:border-gray-700 shadow-sm">
+            <div className="flex items-center gap-2 mb-1">
+              <FaPhone className="text-red-500" />
+              <h3 className="text-lg font-semibold text-townwize-primary dark:text-white">Emergency Contacts</h3>
+            </div>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-5">
+              These contacts appear on the SOS button during a ride — up to 3. Include country code in the phone number (e.g. +92300…).
+            </p>
+            <div className="space-y-4 max-w-lg">
+              {ecDraft.map((c, i) => (
+                <div key={i} className="flex gap-3 items-start p-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
+                  <div className="flex-shrink-0 w-7 h-7 rounded-full bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 flex items-center justify-center text-xs font-bold">
+                    {i + 1}
+                  </div>
+                  <div className="flex-1 grid sm:grid-cols-2 gap-2">
+                    <input
+                      value={c.name}
+                      onChange={(e) => { ecChange(i, "name", e.target.value); setEcEditing(true); }}
+                      placeholder="Full name"
+                      className="px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-red-400"
+                    />
+                    <input
+                      value={c.phone}
+                      onChange={(e) => { ecChange(i, "phone", e.target.value); setEcEditing(true); }}
+                      placeholder="+92300xxxxxxx"
+                      type="tel"
+                      className="px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-red-400"
+                    />
+                  </div>
+                  <button onClick={() => { ecRemove(i); setEcEditing(true); }} className="p-2 rounded-lg text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition" title="Remove">
+                    <FaTrash size={12} />
+                  </button>
+                </div>
+              ))}
+
+              {ecDraft.length < 3 && (
+                <button
+                  onClick={ecAddRow}
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-dashed border-gray-300 dark:border-gray-600 text-sm font-semibold text-gray-500 dark:text-gray-400 hover:border-townwize-accent hover:text-townwize-accent transition w-full justify-center"
+                >
+                  <FaPlus size={11} /> Add contact
+                </button>
+              )}
+
+              {ecEditing && (
+                <div className="flex gap-3 pt-2">
+                  <button
+                    onClick={() => { setEcDraft(emergencyContacts); setEcEditing(false); }}
+                    className="px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-600 text-sm font-semibold text-gray-600 dark:text-gray-300"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleEcSave}
+                    disabled={ecSaving}
+                    className="px-6 py-2 rounded-xl bg-red-600 text-white text-sm font-bold disabled:opacity-50 hover:bg-red-700 transition"
+                  >
+                    {ecSaving ? "Saving…" : "Save Contacts"}
+                  </button>
+                </div>
+              )}
+
+              {emergencyContacts.length === 0 && !ecEditing && (
+                <p className="text-sm text-gray-400 dark:text-gray-500 italic">No emergency contacts saved yet.</p>
+              )}
+            </div>
           </div>
         )}
 

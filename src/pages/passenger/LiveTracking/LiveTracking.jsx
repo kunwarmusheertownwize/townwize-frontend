@@ -88,6 +88,85 @@ const CancelReasonPanel = ({ ride, cancelReason, setCancelReason, cancelling, on
   );
 };
 
+const SOSPanel = ({ contacts, rideId, posRef, onClose }) => {
+  const pos = posRef.current;
+  const mapsLink = pos
+    ? `https://maps.google.com/?q=${pos.lat},${pos.lng}`
+    : null;
+  const msgText = encodeURIComponent(
+    `🚨 Emergency — I need help!\n\nI am on a Townwize ride (Ride ID: ${rideId}).\n📍 My location: ${mapsLink || "Fetching location…"}\n\nPlease respond immediately.`
+  );
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center"
+      style={{ background: "rgba(0,0,0,0.55)" }}
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-md bg-white dark:bg-gray-900 rounded-t-3xl p-6 space-y-4 shadow-2xl"
+        style={{ paddingBottom: "env(safe-area-inset-bottom, 24px)" }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex items-center gap-3">
+          <span className="flex h-9 w-9 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/40">
+            <span className="h-3 w-3 rounded-full bg-red-500 animate-pulse" />
+          </span>
+          <div>
+            <h3 className="font-bold text-base text-gray-900 dark:text-white">Emergency SOS</h3>
+            <p className="text-xs text-gray-500 dark:text-gray-400">Alert your emergency contacts</p>
+          </div>
+        </div>
+
+        {contacts.length === 0 ? (
+          <div className="py-5 text-center space-y-2">
+            <p className="text-sm text-gray-500 dark:text-gray-400">No emergency contacts saved.</p>
+            <p className="text-xs text-gray-400">Add them in Profile → Emergency Contacts.</p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {contacts.map((c, i) => {
+              const digits = c.phone.replace(/\D/g, "");
+              return (
+                <div key={i} className="flex items-center gap-3 rounded-xl border border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-4 py-3">
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-sm text-gray-800 dark:text-gray-100 truncate">{c.name}</p>
+                    <p className="text-xs text-gray-400">{c.phone}</p>
+                  </div>
+                  <div className="flex gap-2 shrink-0">
+                    <a
+                      href={`tel:${c.phone}`}
+                      className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs font-bold"
+                    >
+                      Call
+                    </a>
+                    <a
+                      href={`https://wa.me/${digits}?text=${msgText}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[#25D366]/10 text-[#128C7E] dark:text-[#25D366] text-xs font-bold"
+                    >
+                      WhatsApp
+                    </a>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        <button
+          onClick={onClose}
+          className="w-full py-3 rounded-xl border border-gray-200 dark:border-gray-700 text-sm font-semibold text-gray-600 dark:text-gray-300"
+        >
+          Close
+        </button>
+      </div>
+    </div>
+  );
+};
+
 const getPassengerRideStage = (status) => {
   const normalized = String(status || "").toUpperCase();
   if (normalized === "REQUESTED") {
@@ -195,6 +274,10 @@ const LiveTracking = () => {
   const [tripBlocked, setTripBlocked] = useState(false);
   const [cancelReason, setCancelReason] = useState("");
 
+  const [sosOpen, setSosOpen] = useState(false);
+  const [emergencyContacts, setEmergencyContacts] = useState([]);
+  const passengerPosRef = useRef(null);
+
   // Pool-specific state
   const [poolStage, setPoolStage] = useState(null); // mirrors ride.poolPickupStage
   const [poolBoardingBanner, setPoolBoardingBanner] = useState(null); // "primary" | "secondary" | null
@@ -203,6 +286,13 @@ const LiveTracking = () => {
   const [confirmExitPool, setConfirmExitPool] = useState(false);
   const authRaw = typeof window !== "undefined" ? localStorage.getItem("auth") : null;
   const currentUserId = authRaw ? (() => { try { return JSON.parse(authRaw)?.user?.id; } catch { return null; } })() : null;
+
+  // Fetch emergency contacts once on mount
+  useEffect(() => {
+    api.get("/passenger/emergency-contacts")
+      .then((res) => setEmergencyContacts(res.data?.data?.contacts || []))
+      .catch(() => {});
+  }, []);
 
   // ─────────────────────────────────────────────
   // Keep rideRef in sync with ride state
@@ -496,6 +586,7 @@ const LiveTracking = () => {
     const watchId = navigator.geolocation.watchPosition(
       (pos) => {
         const { latitude: lat, longitude: lng } = pos.coords;
+        passengerPosRef.current = { lat, lng };
         const map = mapInstanceRef.current;
         if (!map) return;
 
@@ -1080,6 +1171,15 @@ const LiveTracking = () => {
               )
             )}
 
+            {/* SOS button */}
+            <button
+              onClick={() => setSosOpen(true)}
+              className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 text-sm font-bold"
+            >
+              <span className="h-2 w-2 rounded-full bg-red-500 animate-pulse" />
+              Emergency SOS
+            </button>
+
             {/* Trip-in-progress block (ARRIVED / ON_TRIP back-button guard) */}
             {tripBlocked && (
               <div className="space-y-2">
@@ -1118,10 +1218,28 @@ const LiveTracking = () => {
             )}
           </div>
         </div>
+        {sosOpen && (
+          <SOSPanel
+            contacts={emergencyContacts}
+            rideId={rideId}
+            posRef={passengerPosRef}
+            onClose={() => setSosOpen(false)}
+          />
+        )}
       </div>,
       document.body
     );
   }
+
+  // Desktop SOS panel rendered into body so it overlays everything
+  const sosPanel = sosOpen ? (
+    <SOSPanel
+      contacts={emergencyContacts}
+      rideId={rideId}
+      posRef={passengerPosRef}
+      onClose={() => setSosOpen(false)}
+    />
+  ) : null;
 
   return (
     <div className="space-y-6 p-6">
@@ -1366,6 +1484,17 @@ const LiveTracking = () => {
           </button>
         )
       )}
+
+      {/* SOS button — desktop */}
+      <button
+        onClick={() => setSosOpen(true)}
+        className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 font-bold hover:bg-red-100 dark:hover:bg-red-900/50 transition-colors"
+      >
+        <span className="h-2 w-2 rounded-full bg-red-500 animate-pulse" />
+        Emergency SOS
+      </button>
+
+      {sosPanel}
     </div>
   );
 };
