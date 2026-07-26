@@ -42,8 +42,8 @@ export const fetchRides = (params) => {
 };
 
 export const fetchRideDetail = (rideId) => call(`/admin/rides/${rideId}`);
-export const updateRideStatus = (rideId, status, reason) =>
-    call(`/admin/rides/${rideId}/status`, { method: "PATCH", body: JSON.stringify({ status, ...(reason ? { reason } : {}) }) });
+export const updateRideStatus = (rideId, status, reason, extras = {}) =>
+    call(`/admin/rides/${rideId}/status`, { method: "PATCH", body: JSON.stringify({ status, ...(reason ? { reason } : {}), ...extras }) });
 export const fetchRideAvailableDrivers = (rideId) =>
     call(`/admin/rides/${rideId}/available-drivers`);
 export const assignRideDriver = (rideId, driverId) =>

@@ -62,6 +62,7 @@ const NEXT_BY_STATUS = {
 export default function RideDetailPanel({ ride, onUpdated }) {
   const [selected, setSelected] = useState("");
   const [cancelReason, setCancelReason] = useState("");
+  const [completionDistance, setCompletionDistance] = useState("");
   const [availableDrivers, setAvailableDrivers] = useState([]);
   const [loadingDrivers, setLoadingDrivers] = useState(false);
   const [assigningDriverId, setAssigningDriverId] = useState("");
@@ -82,6 +83,7 @@ export default function RideDetailPanel({ ride, onUpdated }) {
   useEffect(() => {
     setSelected("");
     setCancelReason("");
+    setCompletionDistance("");
     setError("");
     setOk("");
   }, [ride?._id, ride?.rideId, ride?.status]);
@@ -120,14 +122,26 @@ export default function RideDetailPanel({ ride, onUpdated }) {
       setError("A cancellation reason is required.");
       return;
     }
+    if (selected === "COMPLETED") {
+      const dist = Number(completionDistance);
+      if (completionDistance !== "" && (!Number.isFinite(dist) || dist < 0)) {
+        setError("Actual distance must be a positive number.");
+        return;
+      }
+    }
     setSaving(true);
     setError("");
     setOk("");
     try {
-      await updateRideStatus(ride._id || ride.rideId, selected, cancelReason.trim() || undefined);
+      const extras = {};
+      if (selected === "COMPLETED" && completionDistance !== "") {
+        extras.actualDistanceKm = Number(completionDistance);
+      }
+      await updateRideStatus(ride._id || ride.rideId, selected, cancelReason.trim() || undefined, extras);
       setOk("Ride status updated.");
       setSelected("");
       setCancelReason("");
+      setCompletionDistance("");
       onUpdated?.();
     } catch (e) {
       setError(e.message || "Failed to update ride status");
@@ -353,6 +367,28 @@ export default function RideDetailPanel({ ride, onUpdated }) {
               placeholder="Explain why this ride is being cancelled (required)"
               value={cancelReason}
               onChange={(e) => setCancelReason(e.target.value)}
+              disabled={saving}
+            />
+          </div>
+        )}
+        {selected === "COMPLETED" && (
+          <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-800 p-3">
+            <p className="text-xs font-semibold text-amber-800 dark:text-amber-400 mb-1">Fare will be calculated from this distance</p>
+            <p className="text-xs text-amber-700 dark:text-amber-500 mb-3">
+              Enter the actual distance the driver covered. If left blank, the booking estimate ({ride?.distanceKm ?? "?"} km) is used.
+              Ask the driver or check with the passenger before confirming — early/late dropoffs will be wrong if you use the estimate.
+            </p>
+            <label className="block text-xs font-semibold text-amber-800 dark:text-amber-400 mb-1">
+              Actual distance (km)
+            </label>
+            <input
+              type="number"
+              min="0"
+              step="0.1"
+              className="w-full rounded-md border border-amber-300 bg-white dark:bg-gray-800 dark:text-white dark:border-amber-700 px-3 py-2 text-sm focus:border-amber-500 focus:outline-none"
+              placeholder={`e.g. ${ride?.distanceKm ?? "16.7"} (booking estimate)`}
+              value={completionDistance}
+              onChange={(e) => setCompletionDistance(e.target.value)}
               disabled={saving}
             />
           </div>
