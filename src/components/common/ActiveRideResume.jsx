@@ -5,7 +5,7 @@
 import { useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
-import api from "../../utils/api";
+import api from "../../services/api";
 
 const ACTIVE_STATUSES = ["DRIVER_ASSIGNED", "EN_ROUTE", "ARRIVED", "ON_TRIP"];
 const TRACKING_PATHS  = ["/passenger/live-tracking", "/driver/live-tracking"];

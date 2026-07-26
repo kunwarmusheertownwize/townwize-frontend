@@ -10,5 +10,12 @@ export default defineConfig({
   server: {
     host: true, // expose on LAN so phone can connect via 192.168.100.45:5173
   },
+  build: {
+    rollupOptions: {
+      // Native-only Capacitor plugins have no browser entry — exclude from bundle.
+      // Capacitor's native layer provides them at runtime on device.
+      external: ["@capacitor-community/background-geolocation"],
+    },
+  },
 });
 
