@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { isNative } from "../utils/platform";
+import { getAppRole } from "../utils/appRole";
 
 export default function SplashScreen({ onDone }) {
   const [phase, setPhase] = useState("enter"); // "enter" | "exit"
@@ -37,7 +38,7 @@ export default function SplashScreen({ onDone }) {
       }}
     >
       <img
-        src={import.meta.env.VITE_APP_ROLE === "driver" ? "/images/splash-wizer.gif" : "/images/splash-animated.gif"}
+        src={getAppRole() === "driver" ? "/images/splash-wizer.gif" : "/images/splash-animated.gif"}
         alt=""
         style={{
           width: "100%",

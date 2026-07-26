@@ -10,8 +10,9 @@ import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { ThemeProvider } from './contexts/ThemeProvider';
 import { AuthProvider } from "./contexts/AuthContext";
-import { LanguageProvider } from "./contexts/LanguageContext"; 
+import { LanguageProvider } from "./contexts/LanguageContext";
 import "./i18n";
+import { initAppRole } from "./utils/appRole";
 
 // ✅ Capacitor WebView SPA navigation fix
 if (window.Capacitor && window.Capacitor.Plugins && !window.history.pushState._patched) {
@@ -37,16 +38,18 @@ if (window.Capacitor && window.Capacitor.Plugins && !window.history.pushState._p
   window.history.pushState._patched = true;
 }
 
-createRoot(document.getElementById('root')).render(
-  <StrictMode>
-    <LanguageProvider>
-      <ThemeProvider>
-        <AuthProvider>
-          <App />
-          <ToastContainer position="bottom-center" autoClose={3000} />
-        </AuthProvider>
-      </ThemeProvider>
-    </LanguageProvider>
-  </StrictMode>
-);
+initAppRole().then(() => {
+  createRoot(document.getElementById('root')).render(
+    <StrictMode>
+      <LanguageProvider>
+        <ThemeProvider>
+          <AuthProvider>
+            <App />
+            <ToastContainer position="bottom-center" autoClose={3000} />
+          </AuthProvider>
+        </ThemeProvider>
+      </LanguageProvider>
+    </StrictMode>
+  );
+});
 

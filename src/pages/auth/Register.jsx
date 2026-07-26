@@ -7,6 +7,7 @@ import { FormProvider, useForm } from "react-hook-form";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import api from "../../services/api";
+import { getAppRole } from "../../utils/appRole";
 import AccountInfo from "../../components/auth/AccountInfo";
 import AuthHeader from "../../components/auth/AuthHeader";
 import FaceSection from "../../components/auth/FaceSection";
@@ -166,7 +167,7 @@ export default function Register() {
   const { code: inviteCodeParam } = useParams();
   const mode = inviteCodeParam ? "referral" : "normal";
 
-  const forcedRole = import.meta.env.VITE_APP_ROLE || null;
+  const forcedRole = getAppRole() || null;
   const [selectedRole, setSelectedRole] = useState(forcedRole || (mode === "referral" ? "passenger" : null));
   const [currentStep, setCurrentStep] = useState(0);
   const [referralCodeType, setReferralCodeType] = useState(null);

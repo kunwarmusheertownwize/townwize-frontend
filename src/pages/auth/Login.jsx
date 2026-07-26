@@ -6,6 +6,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "react-toastify";
 import api from "../../services/api";
 import { isNative } from "../../utils/platform";
+import { getAppRole } from "../../utils/appRole";
 
 import AuthHeader from "../../components/auth/AuthHeader";
 import GoogleSignInButton from "../../components/auth/GoogleSignInButton";
@@ -56,7 +57,7 @@ function Login() {
     });
 
     const role = res.data.data.user.role;
-    const appRole = import.meta.env.VITE_APP_ROLE;
+    const appRole = getAppRole();
 
     if (appRole === "driver" && role !== "driver") {
       toast.error("This app is for Wizers (drivers) only. Please use the Towner app.");
@@ -123,7 +124,7 @@ function Login() {
     try {
       const res = await api.post("/auth/google", { credential });
       const role = res.data.data.user.role;
-      const appRole = import.meta.env.VITE_APP_ROLE;
+      const appRole = getAppRole();
       if (appRole === "driver" && role !== "driver") {
         toast.error("This app is for Wizers (drivers) only.");
         setIsSubmitting(false);
@@ -227,7 +228,7 @@ function Login() {
               </button>
 
               {/* Google Sign-In — hidden on Wizer (driver) builds */}
-              {import.meta.env.VITE_APP_ROLE !== "driver" && (
+              {getAppRole() !== "driver" && (
                 <div className="space-y-3">
                   <div className="relative flex items-center gap-3">
                     <div className="flex-1 h-px bg-gray-200 dark:bg-gray-700" />
