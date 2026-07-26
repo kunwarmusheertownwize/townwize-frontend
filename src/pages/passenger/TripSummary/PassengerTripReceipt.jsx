@@ -353,19 +353,26 @@ export default function PassengerTripReceipt() {
   const farePerSeat = ride?.farePerSeat ?? null;
   const hasAdjustment = Math.abs(Number(fare.adjustment || 0)) >= 1;
   const waitMinutes = Number(fare.pickupWaitMinutes || 0) + Number(fare.stopWaitMinutes || 0);
+  const formatDuration = (minutes) => {
+    const m = Math.round(Number(minutes || 0));
+    if (m < 60) return `${m} min`;
+    const h = Math.floor(m / 60);
+    const rem = m % 60;
+    return rem > 0 ? `${h}h ${rem}m` : `${h}h`;
+  };
   const actualTripLabel =
     fare.distanceKm !== null || fare.durationMinutes !== null
       ? [
           fare.distanceKm !== null ? `${Number(fare.distanceKm || 0).toLocaleString()} km` : null,
-          fare.durationMinutes !== null ? `${Number(fare.durationMinutes || 0).toLocaleString()} min` : null,
+          fare.durationMinutes !== null ? formatDuration(fare.durationMinutes) : null,
         ]
           .filter(Boolean)
           .join(", ")
       : "-";
   const adjustmentMessage = hasAdjustment
     ? fare.adjustment > 0
-      ? `Final fare increased by ${toMoney(fare.adjustment)} after the trip was completed.`
-      : `Final fare decreased by ${toMoney(Math.abs(fare.adjustment))} after the trip was completed.`
+      ? `Actual trip fare was ${toMoney(fare.adjustment)} higher than the booking estimate.`
+      : `Actual trip fare was ${toMoney(Math.abs(fare.adjustment))} lower than the booking estimate.`
     : "Final fare matched the estimate shown at booking.";
 
   // ─── Mobile (Capacitor) — simplified stacked receipt ─────────────────────
