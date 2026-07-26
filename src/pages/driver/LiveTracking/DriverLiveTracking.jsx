@@ -9,6 +9,119 @@ import api from "../../../services/api";
 import { getSocket } from "../../../hooks/useRideSocket";
 import { isNative } from "../../../utils/platform";
 
+// Three-layer accidental-tap protection: pointer-capture drag → 8-second undo window.
+const SlideToEndTrip = ({ onConfirm, disabled }) => {
+  const trackRef  = useRef(null);
+  const thumbRef  = useRef(null);
+  const dragging  = useRef(false);
+  const startX    = useRef(0);
+  const offsetRef = useRef(0);
+  const timerRef  = useRef(null);
+
+  const [phase,     setPhase]     = useState("idle"); // "idle" | "countdown"
+  const [countdown, setCountdown] = useState(8);
+
+  const maxSlide = () => (trackRef.current?.offsetWidth || 280) - 56 - 4;
+
+  const snapBack = () => {
+    if (!thumbRef.current) return;
+    thumbRef.current.style.transition = "transform 0.25s ease";
+    thumbRef.current.style.transform  = "translateX(0px)";
+    offsetRef.current = 0;
+    setTimeout(() => { if (thumbRef.current) thumbRef.current.style.transition = ""; }, 260);
+  };
+
+  const startCountdown = () => {
+    setPhase("countdown");
+    let remaining = 8;
+    setCountdown(remaining);
+    timerRef.current = setInterval(() => {
+      remaining -= 1;
+      setCountdown(remaining);
+      if (remaining <= 0) { clearInterval(timerRef.current); onConfirm(); }
+    }, 1000);
+  };
+
+  const handleUndo = () => {
+    clearInterval(timerRef.current);
+    setPhase("idle");
+    setCountdown(8);
+    snapBack();
+  };
+
+  const onPointerDown = (e) => {
+    if (disabled || phase !== "idle") return;
+    dragging.current = true;
+    startX.current   = e.clientX;
+    e.currentTarget.setPointerCapture(e.pointerId);
+  };
+
+  const onPointerMove = (e) => {
+    if (!dragging.current) return;
+    const delta = Math.max(0, Math.min(maxSlide(), e.clientX - startX.current));
+    if (thumbRef.current) {
+      thumbRef.current.style.transition = "none";
+      thumbRef.current.style.transform  = `translateX(${delta}px)`;
+    }
+    offsetRef.current = delta;
+  };
+
+  const onPointerUp = () => {
+    if (!dragging.current) return;
+    dragging.current = false;
+    if (offsetRef.current >= maxSlide() * 0.82) {
+      if (thumbRef.current) {
+        thumbRef.current.style.transition = "transform 0.15s ease";
+        thumbRef.current.style.transform  = `translateX(${maxSlide()}px)`;
+      }
+      startCountdown();
+    } else {
+      snapBack();
+    }
+  };
+
+  useEffect(() => () => clearInterval(timerRef.current), []);
+
+  if (phase === "countdown") {
+    return (
+      <div className="flex items-center gap-3 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 px-4 py-3">
+        <span className="flex-1 text-sm font-semibold text-red-700 dark:text-red-400">
+          Ending trip in {countdown}s…
+        </span>
+        <button
+          onClick={handleUndo}
+          className="rounded-lg border border-red-300 bg-white px-4 py-1.5 text-sm font-semibold text-red-600 dark:border-red-700 dark:bg-gray-800 dark:text-red-400"
+        >
+          Undo
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      ref={trackRef}
+      className={`relative h-14 select-none overflow-hidden rounded-xl bg-red-100 dark:bg-red-900/30 ${disabled ? "pointer-events-none opacity-50" : ""}`}
+    >
+      <span className="pointer-events-none absolute inset-0 flex items-center justify-center text-sm font-semibold text-red-500 dark:text-red-400">
+        Slide to End Trip →
+      </span>
+      <div
+        ref={thumbRef}
+        className="absolute left-0.5 top-0.5 bottom-0.5 flex w-14 cursor-grab touch-none items-center justify-center rounded-lg bg-red-600 text-white shadow-md active:cursor-grabbing"
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        onPointerCancel={onPointerUp}
+      >
+        <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+        </svg>
+      </div>
+    </div>
+  );
+};
+
 const DriverLiveTracking = () => {
   const navigate = useNavigate();
   const { state } = useLocation();
@@ -195,33 +308,61 @@ const DriverLiveTracking = () => {
   }, []);
 
   useEffect(() => {
-    if (!navigator.geolocation) { toast.error("Location services not supported"); return; }
-    const watchId = navigator.geolocation.watchPosition(
-      (pos) => {
-        const coords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-        setDriverPosition(coords);
-        setLastKnownPosition(coords);
-        currentPositionRef.current = coords;
-        const rawHeading = pos.coords.heading;
-        if (rawHeading != null && !isNaN(rawHeading)) {
-          setDriverHeading(rawHeading);
+    let cleanup = () => {};
+
+    const onPosition = (lat, lng, heading) => {
+      const coords = { lat, lng };
+      setDriverPosition(coords);
+      setLastKnownPosition(coords);
+      currentPositionRef.current = coords;
+      if (heading != null && !isNaN(heading)) setDriverHeading(heading);
+      if (rideStatusRef.current === "ON_TRIP") {
+        if (lastTripPositionRef.current) {
+          const distM = haversineM(lastTripPositionRef.current, coords);
+          if (distM > 5) tripDistanceKmRef.current += distM / 1000;
         }
-        if (rideStatusRef.current === "ON_TRIP") {
-          if (lastTripPositionRef.current) {
-            const distM = haversineM(lastTripPositionRef.current, coords);
-            if (distM > 5) tripDistanceKmRef.current += distM / 1000;
+        lastTripPositionRef.current = coords;
+      }
+      if (rideId) {
+        api.post("/driver/location", { rideId, lat, lng, heading: heading ?? null }).catch(() => {});
+      }
+    };
+
+    if (isNative()) {
+      // Background geolocation: keeps GPS alive during phone calls, background, and screen lock.
+      // Shows a persistent foreground-service notification on Android so the OS never kills the process.
+      import("@capacitor-community/background-geolocation").then(({ BackgroundGeolocation }) => {
+        BackgroundGeolocation.addWatcher(
+          {
+            backgroundMessage: "Wizer is tracking your trip location.",
+            backgroundTitle: "Wizer — Trip Active",
+            requestPermissions: true,
+            stale: false,
+            distanceFilter: 3,
+          },
+          (position, error) => {
+            if (error || !position) return;
+            onPosition(position.latitude, position.longitude, position.bearing);
           }
-          lastTripPositionRef.current = coords;
-        }
-        if (rideId) {
-          const heading = pos.coords.heading != null && !isNaN(pos.coords.heading) ? pos.coords.heading : null;
-          api.post("/driver/location", { rideId, lat: coords.lat, lng: coords.lng, heading }).catch(() => {});
-        }
-      },
-      () => toast.error("Enable location permissions"),
-      { enableHighAccuracy: true, maximumAge: 5000, timeout: 10000 }
-    );
-    return () => navigator.geolocation.clearWatch(watchId);
+        ).then((watcherId) => {
+          cleanup = () => BackgroundGeolocation.removeWatcher({ id: watcherId }).catch(() => {});
+        }).catch(() => {
+          toast.error("Enable location permissions");
+        });
+      }).catch(() => {
+        toast.error("Location services not available");
+      });
+    } else {
+      if (!navigator.geolocation) { toast.error("Location services not supported"); return; }
+      const watchId = navigator.geolocation.watchPosition(
+        (pos) => onPosition(pos.coords.latitude, pos.coords.longitude, pos.coords.heading),
+        () => toast.error("Enable location permissions"),
+        { enableHighAccuracy: true, maximumAge: 5000, timeout: 10000 }
+      );
+      cleanup = () => navigator.geolocation.clearWatch(watchId);
+    }
+
+    return () => cleanup();
   }, [rideId]);
 
   useEffect(() => {
@@ -862,13 +1003,7 @@ const DriverLiveTracking = () => {
         </>
       )}
       {rideStatus === "ON_TRIP" && (!isPooled || dropoffStage === 2) && (
-        <button
-          onClick={handleCompleteTrip}
-          disabled={endingTrip}
-          className={`flex-1 rounded-xl py-3 font-semibold ${endingTrip ? "cursor-not-allowed bg-gray-400" : "bg-red-600 text-white"}`}
-        >
-          End Trip
-        </button>
+        <SlideToEndTrip onConfirm={handleCompleteTrip} disabled={endingTrip} />
       )}
       {passengerPhone ? (
         <a

@@ -5,6 +5,7 @@ import AppRoutes from "./routes/AppRoutes";
 import { StrictMode, useState } from "react";
 import OfflineBanner from "./components/OfflineBanner";
 import SplashScreen from "./components/SplashScreen";
+import ActiveRideResume from "./components/common/ActiveRideResume";
 import { isNative } from "./utils/platform";
 
 function App() {
@@ -14,6 +15,7 @@ function App() {
     <StrictMode>
       {!splashDone && <SplashScreen onDone={() => setSplashDone(true)} />}
       <Router>
+        <ActiveRideResume />
         <OfflineBanner />
         <div className="min-h-screen flex flex-col bg-townwize-bgLight dark:bg-townwize-bgDark text-townwize-textPrimary dark:text-white transition-colors">
 
