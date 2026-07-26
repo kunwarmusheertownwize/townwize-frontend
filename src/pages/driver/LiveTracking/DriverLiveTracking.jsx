@@ -142,6 +142,8 @@ const DriverLiveTracking = () => {
   const [mapReady, setMapReady] = useState(false);
   const [nearPickup, setNearPickup] = useState(false);
   const [nearDropoff, setNearDropoff] = useState(true);
+  const [distToDropoffKm, setDistToDropoffKm] = useState(null);
+  const [earlyEndConfirm, setEarlyEndConfirm] = useState(false);
   const [arriving, setArriving] = useState(false);
   const [startingTrip, setStartingTrip] = useState(false);
   const [endingTrip, setEndingTrip] = useState(false);
@@ -569,7 +571,9 @@ const DriverLiveTracking = () => {
     if (rideStatusRef.current === "ON_TRIP") {
       const spCoords = dropoffStageRef.current === 2 ? sp?.dropoffCoords : null;
       const targetCoords = spCoords?.lat ? spCoords : dropoffCoords;
-      setNearDropoff(!targetCoords || haversineM(driverPosition, targetCoords) <= 200);
+      const distM = targetCoords ? haversineM(driverPosition, targetCoords) : 0;
+      setNearDropoff(!targetCoords || distM <= 200);
+      setDistToDropoffKm(targetCoords ? distM / 1000 : null);
     }
 
     // Real-time polyline trimming — consume route from the front as driver advances,
@@ -1127,11 +1131,46 @@ const DriverLiveTracking = () => {
       )}
       {rideStatus === "ON_TRIP" && (!isPooled || dropoffStage === 2) && (
         <>
-          <SlideToEndTrip onConfirm={handleCompleteTrip} disabled={endingTrip || !nearDropoff} />
-          {!nearDropoff && (
-            <p className="text-center text-xs text-gray-400 dark:text-gray-500 -mt-1">
-              Get within 200m of dropoff to end trip
+          <SlideToEndTrip
+            onConfirm={() => {
+              if (nearDropoff) {
+                handleCompleteTrip();
+              } else {
+                setEarlyEndConfirm(true);
+              }
+            }}
+            disabled={endingTrip}
+          />
+          {!nearDropoff && distToDropoffKm !== null && (
+            <p className="text-center text-xs text-amber-600 dark:text-amber-400 -mt-1">
+              {distToDropoffKm.toFixed(1)} km from booked destination
             </p>
+          )}
+          {earlyEndConfirm && (
+            <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 pb-8 px-4">
+              <div className="w-full max-w-md rounded-2xl bg-white dark:bg-gray-900 p-5 shadow-xl">
+                <h3 className="text-base font-bold text-gray-900 dark:text-white mb-2">End trip here?</h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                  You are{" "}
+                  {distToDropoffKm !== null ? `${distToDropoffKm.toFixed(1)} km` : "some distance"}{" "}
+                  from the booked destination. The passenger will only be charged for the actual distance traveled.
+                </p>
+                <div className="flex gap-3">
+                  <button
+                    className="flex-1 rounded-xl border border-gray-300 dark:border-gray-600 py-3 font-semibold text-gray-700 dark:text-gray-300"
+                    onClick={() => setEarlyEndConfirm(false)}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    className="flex-1 rounded-xl bg-townwize-primary py-3 font-semibold text-white"
+                    onClick={() => { setEarlyEndConfirm(false); handleCompleteTrip(); }}
+                  >
+                    End Trip Here
+                  </button>
+                </div>
+              </div>
+            </div>
           )}
         </>
       )}
