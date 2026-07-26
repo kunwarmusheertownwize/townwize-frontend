@@ -8,6 +8,8 @@ import { loadGoogleMaps } from "../../../utils/googleMapsLoader";
 import api from "../../../services/api";
 import { getSocket } from "../../../hooks/useRideSocket";
 import { isNative } from "../../../utils/platform";
+import { registerPlugin } from "@capacitor/core";
+const BackgroundGeolocation = registerPlugin("BackgroundGeolocation");
 
 // Three-layer accidental-tap protection: pointer-capture drag → 8-second undo window.
 const SlideToEndTrip = ({ onConfirm, disabled }) => {
@@ -126,7 +128,7 @@ const DriverLiveTracking = () => {
   const navigate = useNavigate();
   const { state } = useLocation();
 
-  const storedTrip = sessionStorage.getItem("activeDriverTrip");
+  const storedTrip = localStorage.getItem("activeDriverTrip");
   const [activeRequest, setActiveRequest] = useState(() => state?.request || (storedTrip && JSON.parse(storedTrip)));
   const request = activeRequest;
   const rideId = request?.rideId || request?._id;
@@ -207,7 +209,7 @@ const DriverLiveTracking = () => {
 
   const persistActiveTrip = (next) => {
     setActiveRequest(next);
-    sessionStorage.setItem("activeDriverTrip", JSON.stringify(next));
+    localStorage.setItem("activeDriverTrip", JSON.stringify(next));
   };
 
   const hasRequest = Boolean(request);
@@ -246,6 +248,26 @@ const DriverLiveTracking = () => {
     setDriverMode(DRIVER_MODES.ACTIVE_TRIP);
   }, [request, setDriverMode]);
 
+  // Mount-time check: verify the ride is still active to catch the race where
+  // passenger cancelled between navigation and this component mounting/joining the socket room.
+  const mountStatusCheckedRef = useRef(false);
+  useEffect(() => {
+    if (!rideId || mountStatusCheckedRef.current) return;
+    mountStatusCheckedRef.current = true;
+    api.get(`/rides/${rideId}`).then((res) => {
+      const status = String(res?.data?.data?.status || "").toUpperCase();
+      if (!status) return;
+      if (status === "CANCELLED") {
+        localStorage.removeItem("activeDriverTrip");
+        setDriverMode(DRIVER_MODES.ONLINE_IDLE);
+        toast.info("The passenger has cancelled the ride.");
+        navigate("/driver/home", { replace: true });
+      } else {
+        setRideStatus(status);
+      }
+    }).catch(() => {});
+  }, [rideId]);
+
   useEffect(() => {
     if (request) return;
     let mounted = true;
@@ -256,7 +278,7 @@ const DriverLiveTracking = () => {
         const activeRide = res?.data?.data;
         const activeStatuses = ["DRIVER_ASSIGNED", "EN_ROUTE", "ARRIVED", "ON_TRIP"];
         if (!activeRide?.rideId || !activeStatuses.includes(String(activeRide.status).toUpperCase())) {
-          sessionStorage.removeItem("activeDriverTrip");
+          localStorage.removeItem("activeDriverTrip");
           setDriverMode(DRIVER_MODES.ONLINE_IDLE);
           navigate("/driver/trip-requests", { replace: true });
           return;
@@ -359,26 +381,22 @@ const DriverLiveTracking = () => {
     if (isNative()) {
       // Background geolocation: keeps GPS alive during phone calls, background, and screen lock.
       // Shows a persistent foreground-service notification on Android so the OS never kills the process.
-      import("@capacitor-community/background-geolocation").then(({ BackgroundGeolocation }) => {
-        BackgroundGeolocation.addWatcher(
-          {
-            backgroundMessage: "Wizer is tracking your trip location.",
-            backgroundTitle: "Wizer — Trip Active",
-            requestPermissions: true,
-            stale: false,
-            distanceFilter: 3,
-          },
-          (position, error) => {
-            if (error || !position) return;
-            onPosition(position.latitude, position.longitude, position.bearing);
-          }
-        ).then((watcherId) => {
-          cleanup = () => BackgroundGeolocation.removeWatcher({ id: watcherId }).catch(() => {});
-        }).catch(() => {
-          toast.error("Enable location permissions");
-        });
+      BackgroundGeolocation.addWatcher(
+        {
+          backgroundMessage: "Wizer is tracking your trip location.",
+          backgroundTitle: "Wizer — Trip Active",
+          requestPermissions: true,
+          stale: false,
+          distanceFilter: 3,
+        },
+        (position, error) => {
+          if (error || !position) return;
+          onPosition(position.latitude, position.longitude, position.bearing);
+        }
+      ).then((watcherId) => {
+        cleanup = () => BackgroundGeolocation.removeWatcher({ id: watcherId }).catch(() => {});
       }).catch(() => {
-        toast.error("Location services not available");
+        toast.error("Enable location permissions");
       });
     } else {
       if (!navigator.geolocation) { toast.error("Location services not supported"); return; }
@@ -422,7 +440,7 @@ const DriverLiveTracking = () => {
           if (!fresh?.status) return;
           setRideStatus(fresh.status);
           if (String(fresh.status).toUpperCase() === "CANCELLED") {
-            sessionStorage.removeItem("activeDriverTrip");
+            localStorage.removeItem("activeDriverTrip");
             setDriverMode(DRIVER_MODES.ONLINE_IDLE);
             navigate("/driver/home", { replace: true });
           }
@@ -438,14 +456,14 @@ const DriverLiveTracking = () => {
       const status = payload.status;
       setRideStatus(status);
       if (String(status).toUpperCase() === "CANCELLED") {
-        sessionStorage.removeItem("activeDriverTrip");
+        localStorage.removeItem("activeDriverTrip");
         setDriverMode(DRIVER_MODES.ONLINE_IDLE);
         toast.info("The passenger has cancelled the ride.");
         navigate("/driver/home", { replace: true });
         return;
       }
       if (String(status).toUpperCase() === "COMPLETED") {
-        sessionStorage.removeItem("activeDriverTrip");
+        localStorage.removeItem("activeDriverTrip");
         setDriverMode(DRIVER_MODES.ONLINE_IDLE);
         return;
       }
@@ -760,7 +778,7 @@ const DriverLiveTracking = () => {
       });
       toast.success("Trip completed successfully");
       const tripSummaryPayload = { pickup: pickupAddress, dropoff: dropoffAddress, rideType, fare, rideId };
-      sessionStorage.removeItem("activeDriverTrip");
+      localStorage.removeItem("activeDriverTrip");
       setDriverMode(DRIVER_MODES.ONLINE_IDLE);
       setTimeout(() => {
         navigate("/driver/trip-summary", { replace: true, state: { trip: tripSummaryPayload } });
@@ -782,7 +800,7 @@ const DriverLiveTracking = () => {
       setCancelling(false);
       return;
     }
-    sessionStorage.removeItem("activeDriverTrip");
+    localStorage.removeItem("activeDriverTrip");
     setDriverMode(DRIVER_MODES.ONLINE_IDLE);
     navigate("/driver/home", { replace: true });
   };
@@ -796,7 +814,7 @@ const DriverLiveTracking = () => {
       setShowNoShowConfirm(false);
       return;
     }
-    sessionStorage.removeItem("activeDriverTrip");
+    localStorage.removeItem("activeDriverTrip");
     setDriverMode(DRIVER_MODES.ONLINE_IDLE);
     navigate("/driver/home", { replace: true });
   };

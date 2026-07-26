@@ -13,9 +13,13 @@ const getInitialDriverMode = () => {
     const auth = authRaw ? JSON.parse(authRaw) : null;
     if (auth?.user?.role !== "driver") {
       sessionStorage.removeItem(MODE_STORAGE_KEY);
-      sessionStorage.removeItem("activeDriverTrip");
+      localStorage.removeItem("activeDriverTrip");
       return DRIVER_MODES.OFFLINE;
     }
+
+    // If a persisted trip exists in localStorage (survives native app close),
+    // start in ACTIVE_TRIP so DriverLayout immediately routes to live-tracking.
+    if (localStorage.getItem("activeDriverTrip")) return DRIVER_MODES.ACTIVE_TRIP;
 
     const saved = sessionStorage.getItem(MODE_STORAGE_KEY);
     if (saved === DRIVER_MODES.ACTIVE_TRIP) return DRIVER_MODES.OFFLINE;
@@ -72,7 +76,7 @@ export const DriverModeProvider = ({ children }) => {
       const auth = authRaw ? JSON.parse(authRaw) : null;
       if (auth?.user?.role !== "driver") {
         sessionStorage.removeItem(MODE_STORAGE_KEY);
-        sessionStorage.removeItem("activeDriverTrip");
+        localStorage.removeItem("activeDriverTrip");
         setDriverMode(DRIVER_MODES.OFFLINE);
         setIncomingRide(null);
         setActiveRide(null);
@@ -148,16 +152,16 @@ export const DriverModeProvider = ({ children }) => {
         return nextStatus === "REQUESTED" ? { ...prev, status: payload.status } : null;
       });
 
-      const storedRaw = sessionStorage.getItem("activeDriverTrip");
+      const storedRaw = localStorage.getItem("activeDriverTrip");
       const stored = storedRaw ? JSON.parse(storedRaw) : null;
       if (sameId(stored?.rideId, payload.rideId)) {
         if (activeStatuses.includes(nextStatus)) {
           const nextStored = { ...stored, status: payload.status };
-          sessionStorage.setItem("activeDriverTrip", JSON.stringify(nextStored));
+          localStorage.setItem("activeDriverTrip", JSON.stringify(nextStored));
           setActiveRide(nextStored);
           setDriverMode(DRIVER_MODES.ACTIVE_TRIP);
         } else {
-          sessionStorage.removeItem("activeDriverTrip");
+          localStorage.removeItem("activeDriverTrip");
           setActiveRide(null);
           setDriverMode(DRIVER_MODES.ONLINE_IDLE);
         }
@@ -186,7 +190,7 @@ export const DriverModeProvider = ({ children }) => {
       if (driverMode === DRIVER_MODES.OFFLINE) {
         setIncomingRide(null);
         setActiveRide(null);
-        sessionStorage.removeItem("activeDriverTrip");
+        localStorage.removeItem("activeDriverTrip");
       }
     } catch {
       // ignore storage exceptions

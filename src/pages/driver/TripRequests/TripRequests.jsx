@@ -45,7 +45,7 @@ const TripRequests = () => {
             distanceKm: Number(active?.distanceKm || 0),
             etaToPickup: `${Number(active?.etaMinutes || 0)} mins`,
           };
-          sessionStorage.setItem("activeDriverTrip", JSON.stringify(activeTrip));
+          localStorage.setItem("activeDriverTrip", JSON.stringify(activeTrip));
           setIncomingRide(null);
           setDriverMode(DRIVER_MODES.ACTIVE_TRIP);
           navigate("/driver/live-tracking", { replace: true, state: { request: activeTrip } });
@@ -113,7 +113,7 @@ const TripRequests = () => {
     try {
       await api.post(`/rides/${request.rideId}/accept`);
       const activeTrip = { ...request, status: "DRIVER_ASSIGNED" };
-      sessionStorage.setItem("activeDriverTrip", JSON.stringify(activeTrip));
+      localStorage.setItem("activeDriverTrip", JSON.stringify(activeTrip));
       setIncomingRide(null);
       setRequest(null);
       setDriverMode(DRIVER_MODES.ACTIVE_TRIP);

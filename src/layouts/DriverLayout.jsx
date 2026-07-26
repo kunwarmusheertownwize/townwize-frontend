@@ -151,7 +151,7 @@ const DriverLayout = ({ title }) => {
             etaMinutes: activeRide.etaMinutes,
           };
 
-          sessionStorage.setItem("activeDriverTrip", JSON.stringify(activeTrip));
+          localStorage.setItem("activeDriverTrip", JSON.stringify(activeTrip));
           setDriverMode(DRIVER_MODES.ACTIVE_TRIP);
 
           if (location.pathname !== "/driver/live-tracking") {
@@ -163,7 +163,7 @@ const DriverLayout = ({ title }) => {
           return;
         }
 
-        sessionStorage.removeItem("activeDriverTrip");
+        localStorage.removeItem("activeDriverTrip");
         if (driverMode === DRIVER_MODES.ACTIVE_TRIP) {
           setDriverMode(DRIVER_MODES.ONLINE_IDLE);
         }
@@ -185,7 +185,7 @@ const DriverLayout = ({ title }) => {
     if (!location.pathname.startsWith("/driver")) return;
     if (!driverStateChecked) return;
 
-    const activeTrip = sessionStorage.getItem("activeDriverTrip");
+    const activeTrip = localStorage.getItem("activeDriverTrip");
 
     // ACTIVE TRIP always wins
     if (activeTrip) {
@@ -193,7 +193,7 @@ const DriverLayout = ({ title }) => {
         setDriverMode(DRIVER_MODES.ACTIVE_TRIP);
       }
       if (location.pathname !== "/driver/live-tracking") {
-        navigate("/driver/live-tracking", { replace: true });
+        navigate("/driver/live-tracking", { replace: true, state: { request: JSON.parse(activeTrip) } });
       }
       return;
     }
@@ -225,7 +225,7 @@ const DriverLayout = ({ title }) => {
   useEffect(() => {
     if (SAFE_PATHS.includes(location.pathname)) return;
 
-    const activeTrip = sessionStorage.getItem("activeDriverTrip");
+    const activeTrip = localStorage.getItem("activeDriverTrip");
 
     // ❌ Do NOT warn if trip is already persisted (refresh-safe)
     if (
