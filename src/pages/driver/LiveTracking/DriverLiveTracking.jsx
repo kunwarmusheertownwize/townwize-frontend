@@ -248,22 +248,20 @@ const DriverLiveTracking = () => {
     setDriverMode(DRIVER_MODES.ACTIVE_TRIP);
   }, [request, setDriverMode]);
 
-  // Mount-time check: verify the ride is still active to catch the race where
-  // passenger cancelled between navigation and this component mounting/joining the socket room.
+  // Mount-time check: only catches the race where a passenger cancelled between
+  // navigation and this component mounting/joining the socket room.
+  // Never updates rideStatus — doing so would revert driver's local progress.
   const mountStatusCheckedRef = useRef(false);
   useEffect(() => {
     if (!rideId || mountStatusCheckedRef.current) return;
     mountStatusCheckedRef.current = true;
     api.get(`/rides/${rideId}`).then((res) => {
       const status = String(res?.data?.data?.status || "").toUpperCase();
-      if (!status) return;
       if (status === "CANCELLED") {
         localStorage.removeItem("activeDriverTrip");
         setDriverMode(DRIVER_MODES.ONLINE_IDLE);
         toast.info("The passenger has cancelled the ride.");
         navigate("/driver/home", { replace: true });
-      } else {
-        setRideStatus(status);
       }
     }).catch(() => {});
   }, [rideId]);
