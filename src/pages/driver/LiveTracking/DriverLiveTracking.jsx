@@ -139,6 +139,7 @@ const DriverLiveTracking = () => {
   const [driverHeading, setDriverHeading] = useState(null);
   const [mapReady, setMapReady] = useState(false);
   const [nearPickup, setNearPickup] = useState(false);
+  const [nearDropoff, setNearDropoff] = useState(true);
   const [arriving, setArriving] = useState(false);
   const [startingTrip, setStartingTrip] = useState(false);
   const [endingTrip, setEndingTrip] = useState(false);
@@ -154,6 +155,8 @@ const DriverLiveTracking = () => {
   const [dropoffStage, setDropoffStage] = useState(1);
   const [showCoRiderReportConfirm, setShowCoRiderReportConfirm] = useState(false);
   const [coRiderReportSubmitting, setCoRiderReportSubmitting] = useState(false);
+  const [gpsStale, setGpsStale] = useState(false);
+  const [socketDisconnected, setSocketDisconnected] = useState(false);
 
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
@@ -172,6 +175,10 @@ const DriverLiveTracking = () => {
   const currentPositionRef = useRef(null);
   const pickupCoordsRef = useRef(null); // populated from Directions API when en route to pickup
   const routeFetchInFlightRef = useRef(false); // prevents concurrent DirectionsService floods
+  const socketWasConnectedRef = useRef(false); // tracks first connect vs. reconnect for resync
+  const lastGpsTimeRef = useRef(null);          // timestamp of last GPS update (stale detection)
+  const lastPositionForSpeedRef = useRef(null); // { lat, lng, t } for speed sanity filter
+  const dropoffStageRef = useRef(1);            // mirrors dropoffStage for proximity check inside effects
 
   const { setDriverMode, incomingRide } = useDriverMode();
 
@@ -229,6 +236,10 @@ const DriverLiveTracking = () => {
   useEffect(() => {
     poolStageRef.current = poolPickupStage;
   }, [poolPickupStage]);
+
+  useEffect(() => {
+    dropoffStageRef.current = dropoffStage;
+  }, [dropoffStage]);
 
   useEffect(() => {
     if (!request) return;
@@ -311,7 +322,24 @@ const DriverLiveTracking = () => {
     let cleanup = () => {};
 
     const onPosition = (lat, lng, heading) => {
+      const now = Date.now();
       const coords = { lat, lng };
+
+      // Speed sanity filter — discard GPS jumps implying > 150 km/h.
+      // These are always noise: a real 150 km/h vehicle moves ~42 m/s, so any
+      // reading implying faster than that between two consecutive ticks is a GPS artefact.
+      if (lastPositionForSpeedRef.current) {
+        const { lat: pLat, lng: pLng, t: pTime } = lastPositionForSpeedRef.current;
+        const timeDeltaS = (now - pTime) / 1000;
+        if (timeDeltaS > 0) {
+          const distM = haversineM({ lat: pLat, lng: pLng }, coords);
+          const speedKmh = (distM / timeDeltaS) * 3.6;
+          if (speedKmh > 150) return;
+        }
+      }
+      lastPositionForSpeedRef.current = { lat, lng, t: now };
+      lastGpsTimeRef.current = now;
+
       setDriverPosition(coords);
       setLastKnownPosition(coords);
       currentPositionRef.current = coords;
@@ -365,11 +393,45 @@ const DriverLiveTracking = () => {
     return () => cleanup();
   }, [rideId]);
 
+  // Stale GPS detection — checks every 3s; marks stale if no update for 15s
+  useEffect(() => {
+    if (!rideId) return;
+    lastGpsTimeRef.current = Date.now();
+    const check = setInterval(() => {
+      if (!lastGpsTimeRef.current) return;
+      setGpsStale(Date.now() - lastGpsTimeRef.current > 15000);
+    }, 3000);
+    return () => { clearInterval(check); setGpsStale(false); };
+  }, [rideId]);
+
   useEffect(() => {
     if (!rideId) return;
     const socket = getSocket();
     if (!socket.connected) socket.connect();
     socket.emit("join", `ride:${rideId}`);
+
+    const onConnect = () => {
+      // Re-join room on every reconnect (socket.io drops subscriptions on disconnect)
+      socket.emit("join", `ride:${rideId}`);
+      setSocketDisconnected(false);
+      // On reconnect (not the initial connect), resync ride state from REST in case
+      // a status change was missed while the socket was down
+      if (socketWasConnectedRef.current) {
+        api.get(`/rides/${rideId}`).then((res) => {
+          const fresh = res?.data?.data;
+          if (!fresh?.status) return;
+          setRideStatus(fresh.status);
+          if (String(fresh.status).toUpperCase() === "CANCELLED") {
+            sessionStorage.removeItem("activeDriverTrip");
+            setDriverMode(DRIVER_MODES.ONLINE_IDLE);
+            navigate("/driver/home", { replace: true });
+          }
+        }).catch(() => {});
+      }
+      socketWasConnectedRef.current = true;
+    };
+
+    const onDisconnect = () => setSocketDisconnected(true);
 
     const onRideUpdated = (payload) => {
       if (String(payload?.rideId) !== String(rideId) || !payload?.status) return;
@@ -404,13 +466,38 @@ const DriverLiveTracking = () => {
       toast.success("All passengers aboard. You may start the trip.");
     };
 
+    const onDestinationChanged = (payload) => {
+      if (String(payload?.rideId) !== String(rideId)) return;
+      toast.info(`Passenger updated destination to: ${payload.dropoff}`, { autoClose: 4000 });
+      // Update the active trip cache so the new dropoff persists across re-renders
+      const updatedRequest = {
+        ...request,
+        dropoff: payload.dropoff,
+        dropoffCoords: payload.dropoffCoords,
+        fare: payload.fareEstimate ?? request?.fare,
+      };
+      persistActiveTrip(updatedRequest);
+      // Move the destination marker
+      if (destinationMarkerRef.current) {
+        destinationMarkerRef.current.position = payload.dropoffCoords;
+      }
+      // Force route re-fetch
+      lastRouteOriginRef.current = null;
+    };
+
+    socket.on("connect", onConnect);
+    socket.on("disconnect", onDisconnect);
     socket.on("ride:updated", onRideUpdated);
     socket.on("ride:pool_exited", onPoolExited);
     socket.on("ride:pool_all_aboard", onPoolAllAboard);
+    socket.on("ride:destination_changed", onDestinationChanged);
     return () => {
+      socket.off("connect", onConnect);
+      socket.off("disconnect", onDisconnect);
       socket.off("ride:updated", onRideUpdated);
       socket.off("ride:pool_exited", onPoolExited);
       socket.off("ride:pool_all_aboard", onPoolAllAboard);
+      socket.off("ride:destination_changed", onDestinationChanged);
     };
   }, [rideId, request, setDriverMode]);
 
@@ -459,6 +546,14 @@ const DriverLiveTracking = () => {
     // Enable "Arrived" button only when within 300m of pickup
     if (rideStatusRef.current === "DRIVER_ASSIGNED" && pickupCoordsRef.current) {
       setNearPickup(haversineM(driverPosition, pickupCoordsRef.current) <= 300);
+    }
+
+    // Enable "End Trip" slider only when within 200m of the active dropoff.
+    // For pooled stage 2, gate against the co-passenger's dropoff coords if available.
+    if (rideStatusRef.current === "ON_TRIP") {
+      const spCoords = dropoffStageRef.current === 2 ? sp?.dropoffCoords : null;
+      const targetCoords = spCoords?.lat ? spCoords : dropoffCoords;
+      setNearDropoff(!targetCoords || haversineM(driverPosition, targetCoords) <= 200);
     }
 
     // Real-time polyline trimming — consume route from the front as driver advances,
@@ -968,6 +1063,18 @@ const DriverLiveTracking = () => {
     </div>
   ) : null;
 
+  const gpsWarningBanner = rideStatus === "ON_TRIP" && gpsStale ? (
+    <div className="rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 px-3 py-2 text-xs text-amber-700 dark:text-amber-400">
+      📡 GPS signal weak — distance paused until signal is restored.
+    </div>
+  ) : null;
+
+  const connectionWarningBanner = socketDisconnected ? (
+    <div className="rounded-xl bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 px-3 py-2 text-xs text-yellow-700 dark:text-yellow-400">
+      ⚡ Reconnecting to server…
+    </div>
+  ) : null;
+
   // ── Standard action buttons ────────────────────────────────────────────
   const actionButtons = (
     <div className="flex flex-wrap gap-3">
@@ -1003,7 +1110,14 @@ const DriverLiveTracking = () => {
         </>
       )}
       {rideStatus === "ON_TRIP" && (!isPooled || dropoffStage === 2) && (
-        <SlideToEndTrip onConfirm={handleCompleteTrip} disabled={endingTrip} />
+        <>
+          <SlideToEndTrip onConfirm={handleCompleteTrip} disabled={endingTrip || !nearDropoff} />
+          {!nearDropoff && (
+            <p className="text-center text-xs text-gray-400 dark:text-gray-500 -mt-1">
+              Get within 200m of dropoff to end trip
+            </p>
+          )}
+        </>
       )}
       {passengerPhone ? (
         <a
@@ -1048,14 +1162,16 @@ const DriverLiveTracking = () => {
       )}
 
       {!showNoShowConfirm && (
-        showCancelModal ? (
+        rideStatus === "ON_TRIP" ? (
+          <button
+            onClick={() => navigate("/driver/support", { state: { linkedRideId: rideId } })}
+            className="w-full py-2 rounded-xl text-xs font-medium text-amber-600 dark:text-amber-400 hover:underline"
+          >
+            Report Issue
+          </button>
+        ) : showCancelModal ? (
           <div className="rounded-xl border border-red-200 dark:border-red-800 bg-white dark:bg-gray-800 p-3 space-y-2">
             <p className="text-sm font-semibold text-gray-800 dark:text-gray-100">Why are you cancelling?</p>
-            {rideStatus === "ON_TRIP" && (
-              <div className="rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 px-3 py-2 text-xs text-red-700 dark:text-red-400">
-                ⚠️ Cancelling during an active trip may result in a warning or account suspension.
-              </div>
-            )}
             <select
               value={driverCancelReason}
               onChange={(e) => setDriverCancelReason(e.target.value)}
@@ -1128,6 +1244,8 @@ const DriverLiveTracking = () => {
             </div>
             {passengerManifest}
             {dualDropoffInfo}
+            {connectionWarningBanner}
+            {gpsWarningBanner}
             {actionButtons}
             <div className="space-y-2">
               {reportExtraSection}
@@ -1179,6 +1297,8 @@ const DriverLiveTracking = () => {
         <div className="mt-3 space-y-3">
           {passengerManifest}
           {dualDropoffInfo}
+          {connectionWarningBanner}
+          {gpsWarningBanner}
           {actionButtons}
           <div className="space-y-2">
             {reportExtraSection}

@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
+import { useLocation } from "react-router-dom";
 import { FaHeadset, FaChevronDown, FaChevronUp, FaPaperPlane, FaPlus } from "react-icons/fa";
 import api from "../../services/api";
 
@@ -133,6 +134,7 @@ const TicketThread = ({ ticketId, onBack }) => {
 };
 
 const SupportPage = () => {
+  const location = useLocation();
   const [tickets, setTickets]       = useState([]);
   const [loading, setLoading]       = useState(true);
   const [showForm, setShowForm]     = useState(false);
@@ -140,6 +142,18 @@ const SupportPage = () => {
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError]   = useState("");
   const [form, setForm] = useState({ subject: "", description: "", category: "general" });
+
+  useEffect(() => {
+    const linkedRideId = location.state?.linkedRideId;
+    if (linkedRideId) {
+      setShowForm(true);
+      setForm({
+        subject: "Issue during active trip",
+        description: `Ride ID: ${linkedRideId}\n\nPlease describe the issue:`,
+        category: "ride",
+      });
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchTickets = useCallback(() => {
     setLoading(true);

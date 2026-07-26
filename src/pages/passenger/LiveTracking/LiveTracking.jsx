@@ -232,11 +232,110 @@ const getPassengerRideStage = (status) => {
   };
 };
 
+// Inline destination change panel — only mounts on private ON_TRIP rides
+const ChangeDestination = ({ rideId, driverCoords, onSuccess, onCancel }) => {
+  const [input, setInput] = useState("");
+  const [suggestions, setSuggestions] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const debounceRef = useRef(null);
+
+  const fetchSuggestions = (value) => {
+    if (!value.trim() || !window.google?.maps?.places) { setSuggestions([]); return; }
+    clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(async () => {
+      try {
+        const svc = new google.maps.places.AutocompleteService();
+        const result = await svc.getPlacePredictions({
+          input: value,
+          componentRestrictions: { country: "pk" },
+        });
+        setSuggestions(result.predictions.map(p => ({
+          description: p.description,
+          placeId: p.place_id,
+        })));
+      } catch { setSuggestions([]); }
+    }, 300);
+  };
+
+  const handleSelect = async (prediction) => {
+    setLoading(true);
+    setSuggestions([]);
+    try {
+      let coords = null;
+      const placesDiv = document.createElement("div");
+      const placesSvc = new google.maps.places.PlacesService(placesDiv);
+      await new Promise((resolve) => {
+        placesSvc.getDetails(
+          { placeId: prediction.placeId, fields: ["geometry", "formatted_address"] },
+          (result, status) => {
+            if (status === "OK" && result?.geometry) {
+              coords = { lat: result.geometry.location.lat(), lng: result.geometry.location.lng() };
+            }
+            resolve();
+          }
+        );
+      });
+      if (!coords) throw new Error("Location not resolved");
+
+      let distKm = null;
+      if (driverCoords?.lat && coords) {
+        await new Promise((resolve) => {
+          new google.maps.DirectionsService().route(
+            { origin: driverCoords, destination: coords, travelMode: google.maps.TravelMode.DRIVING },
+            (result, status) => {
+              if (status === "OK") {
+                distKm = (result.routes[0]?.legs?.[0]?.distance?.value || 0) / 1000;
+              }
+              resolve();
+            }
+          );
+        });
+      }
+
+      const res = await api.patch(`/rides/${rideId}/destination`, {
+        dropoff: prediction.description,
+        dropoffCoords: coords,
+        newDistanceKm: distKm,
+      });
+      onSuccess(res.data?.data);
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "Could not update destination");
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center gap-2">
+        <input
+          type="text"
+          value={input}
+          // eslint-disable-next-line jsx-a11y/no-autofocus
+          autoFocus
+          onChange={(e) => { setInput(e.target.value); fetchSuggestions(e.target.value); }}
+          placeholder="Search new destination…"
+          className="flex-1 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-townwize-accent"
+        />
+        <button onClick={onCancel} disabled={loading} className="text-xs text-gray-400 px-2 py-2 hover:text-gray-600 disabled:opacity-40">Cancel</button>
+      </div>
+      {suggestions.length > 0 && (
+        <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 overflow-hidden divide-y divide-gray-100 dark:divide-gray-700 shadow-lg">
+          {suggestions.map((s, i) => (
+            <button key={i} onClick={() => handleSelect(s)} disabled={loading}
+              className="w-full text-left px-3 py-2.5 text-sm text-gray-800 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50">
+              {s.description}
+            </button>
+          ))}
+        </div>
+      )}
+      {loading && <p className="text-xs text-center text-gray-400">Updating destination…</p>}
+    </div>
+  );
+};
+
 const LiveTracking = () => {
   const { rideId } = useParams();
   const navigate = useNavigate();
-
-  //const navigate = useNavigate();
 
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
@@ -244,6 +343,7 @@ const LiveTracking = () => {
   const prevDriverPosRef = useRef(null);
   const lastDriverHeadingRef = useRef(null); // heading from GPS or computed bearing
   const pickupMarkerRef = useRef(null);
+  const dropoffMarkerRef = useRef(null);
   const routePolylineRef = useRef(null);  // manual Polyline — replaces DirectionsRenderer
   const routePathRef = useRef([]);         // decoded step-path for real-time trimming
 
@@ -251,6 +351,7 @@ const LiveTracking = () => {
   const rideRef = useRef(null);
   const [fetchError, setFetchError] = useState(false);
   const [mapsError, setMapsError] = useState(false);
+  const [changingDestination, setChangingDestination] = useState(false);
   const [availability, setAvailability] = useState({
     loading: false,
     matchingDrivers: null,
@@ -262,6 +363,7 @@ const LiveTracking = () => {
   const lastRouteStatusRef = useRef(null);
   const lastRouteOriginRef = useRef(null); // lat/lng used for last Directions call during ON_TRIP
   const routeFetchInFlightRef = useRef(false); // prevents concurrent DirectionsService requests
+  const routeRecalcNeededRef = useRef(false); // set when driver goes off-route; cleared after toast
   const hasFitBoundsRef = useRef(false);
   const passengerMarkerRef = useRef(null);
   const altRoutesRef = useRef([]);
@@ -350,10 +452,20 @@ const LiveTracking = () => {
     const intervalId = window.setInterval(fetchRide, 5000);
     window.addEventListener("focus", fetchRide);
 
+    // On native, window "focus" is unreliable when the app comes to foreground.
+    // App.addListener fires instantly and correctly on both Android and iOS.
+    let appStateHandle = null;
+    if (isNative()) {
+      App.addListener("appStateChange", ({ isActive }) => {
+        if (isActive) fetchRide();
+      }).then((h) => { appStateHandle = h; });
+    }
+
     return () => {
       cancelled = true;
       window.clearInterval(intervalId);
       window.removeEventListener("focus", fetchRide);
+      appStateHandle?.remove();
     };
   }, [rideId]);
 
@@ -548,7 +660,7 @@ const LiveTracking = () => {
         dropoffEl.style.background = "#D50000";
         dropoffEl.style.border = "2px solid #000";
 
-        new google.maps.marker.AdvancedMarkerElement({
+        dropoffMarkerRef.current = new google.maps.marker.AdvancedMarkerElement({
           map,
           position: {
             lat: ride.dropoff.lat,
@@ -743,6 +855,10 @@ const LiveTracking = () => {
         // Create or update the manual Polyline
         if (routePolylineRef.current) {
           routePolylineRef.current.setPath(path);
+          if (rideStatus === "ON_TRIP" && routeRecalcNeededRef.current) {
+            routeRecalcNeededRef.current = false;
+            toast.info("Route updated", { toastId: "route-recalc", autoClose: 2500 });
+          }
         } else {
           routePolylineRef.current = new google.maps.Polyline({
             path,
@@ -823,6 +939,7 @@ const LiveTracking = () => {
         routePolylineRef.current.setPath(path.slice(nearestIdx));
       } else if (nearestIdx < path.length - 1) {
         lastRouteOriginRef.current = null; // off-route — force re-fetch on next cycle
+        routeRecalcNeededRef.current = true;
       }
     }
 
@@ -956,6 +1073,20 @@ const LiveTracking = () => {
     setTripBlocked(false);
   };
 
+  const handleDestinationChanged = (data) => {
+    setRide(prev => prev ? {
+      ...prev,
+      dropoff: { ...prev.dropoff, address: data.dropoff, lat: data.dropoffCoords.lat, lng: data.dropoffCoords.lng },
+      fareEstimate: data.fareEstimate,
+    } : prev);
+    setChangingDestination(false);
+    toast.success("Destination updated");
+    lastRouteOriginRef.current = null; // force route re-fetch to new destination
+    if (dropoffMarkerRef.current) {
+      dropoffMarkerRef.current.position = { lat: data.dropoffCoords.lat, lng: data.dropoffCoords.lng };
+    }
+  };
+
   const handleCancelRide = async () => {
     if (!cancelReason) return;
     setCancelling(true);
@@ -1068,12 +1199,29 @@ const LiveTracking = () => {
                   {ride.pickup?.address}
                 </p>
               </div>
-              <div className="flex items-center gap-3 min-w-0">
-                <span className="shrink-0 h-2.5 w-2.5 rounded-full bg-red-500" />
-                <p className="text-sm text-gray-500 dark:text-gray-400 truncate min-w-0">
-                  {ride.dropoff?.address}
-                </p>
-              </div>
+              {changingDestination ? (
+                <ChangeDestination
+                  rideId={rideId}
+                  driverCoords={ride.driver?.lat ? { lat: ride.driver.lat, lng: ride.driver.lng } : null}
+                  onSuccess={handleDestinationChanged}
+                  onCancel={() => setChangingDestination(false)}
+                />
+              ) : (
+                <div className="flex items-center gap-3 min-w-0">
+                  <span className="shrink-0 h-2.5 w-2.5 rounded-full bg-red-500" />
+                  <p className="text-sm text-gray-500 dark:text-gray-400 truncate min-w-0 flex-1">
+                    {ride.dropoff?.address}
+                  </p>
+                  {ride.status === "ON_TRIP" && ride.rideType !== "RIDETOGETHER" && (
+                    <button
+                      onClick={() => setChangingDestination(true)}
+                      className="shrink-0 text-xs text-townwize-accent hover:underline"
+                    >
+                      Change
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Driver info card */}
@@ -1191,6 +1339,12 @@ const LiveTracking = () => {
                   className="w-full py-3 rounded-xl text-sm font-semibold bg-townwize-primary text-white"
                 >
                   Got it
+                </button>
+                <button
+                  onClick={() => navigate("/passenger/support", { state: { linkedRideId: rideId } })}
+                  className="w-full py-3 rounded-xl text-sm font-semibold border border-townwize-primary text-townwize-primary dark:border-townwize-accent dark:text-townwize-accent"
+                >
+                  Get Help
                 </button>
               </div>
             )}
@@ -1398,9 +1552,25 @@ const LiveTracking = () => {
         </div>
         <div className="flex items-start gap-3">
           <span className="mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full bg-red-500" />
-          <div className="min-w-0">
-            <p className="text-[10px] uppercase tracking-wider text-gray-400">Dropoff</p>
-            <p className="text-sm text-gray-600 dark:text-gray-300 truncate">{ride.dropoff?.address}</p>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-[10px] uppercase tracking-wider text-gray-400">Dropoff</p>
+              {ride.status === "ON_TRIP" && ride.rideType !== "RIDETOGETHER" && !changingDestination && (
+                <button onClick={() => setChangingDestination(true)} className="text-xs text-townwize-accent hover:underline shrink-0">
+                  Change
+                </button>
+              )}
+            </div>
+            {changingDestination ? (
+              <ChangeDestination
+                rideId={rideId}
+                driverCoords={ride.driver?.lat ? { lat: ride.driver.lat, lng: ride.driver.lng } : null}
+                onSuccess={handleDestinationChanged}
+                onCancel={() => setChangingDestination(false)}
+              />
+            ) : (
+              <p className="text-sm text-gray-600 dark:text-gray-300 truncate">{ride.dropoff?.address}</p>
+            )}
           </div>
         </div>
         <div className="border-t border-gray-100 dark:border-gray-700 pt-3 flex items-center justify-between">
