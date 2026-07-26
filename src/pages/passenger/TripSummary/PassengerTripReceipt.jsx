@@ -489,11 +489,58 @@ export default function PassengerTripReceipt() {
                   </>
                 )}
               </div>
+              <div className="mt-2 pt-2 border-t border-gray-100 dark:border-gray-800 flex items-center gap-1.5 text-xs text-gray-400">
+                <span>💳</span>
+                <span>Cash on Ride</span>
+              </div>
+              {Number(ride?.cancellationFee || 0) > 0 && (
+                <div className="mt-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 px-3 py-2 text-xs text-amber-700 dark:text-amber-400">
+                  Cancellation fee applied: {toMoney(ride.cancellationFee)}
+                </div>
+              )}
             </div>
+
+            {ride?.driverInfo && (
+              <div className="bg-white dark:bg-gray-900 rounded-2xl p-4 border border-gray-100 dark:border-gray-800">
+                <p className="text-[10px] uppercase tracking-widest text-gray-400 mb-3">Your Wizer</p>
+                <div className="flex items-center gap-3">
+                  {ride.driverInfo.photoUrl ? (
+                    <img src={ride.driverInfo.photoUrl} alt="" className="h-10 w-10 rounded-full object-cover shrink-0 border-2 border-gray-100 dark:border-gray-700" />
+                  ) : (
+                    <div className="h-10 w-10 rounded-full bg-townwize-primary flex items-center justify-center shrink-0">
+                      <span className="text-white font-bold text-sm">{(ride.driverInfo.name || "W")[0].toUpperCase()}</span>
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-gray-800 dark:text-gray-100">{ride.driverInfo.name}</p>
+                    {ride.driverInfo.vehicle && (
+                      <p className="text-xs text-gray-400 truncate">
+                        {[ride.driverInfo.vehicle.color, ride.driverInfo.vehicle.make, ride.driverInfo.vehicle.model].filter(Boolean).join(" ")}
+                        {ride.driverInfo.vehicle.plate ? ` · ${ride.driverInfo.vehicle.plate}` : ""}
+                      </p>
+                    )}
+                    {ride.passengerRating?.stars > 0 && (
+                      <div className="flex items-center gap-0.5 mt-1">
+                        {[1, 2, 3, 4, 5].map((n) => (
+                          <span key={n} className={`text-xs ${n <= ride.passengerRating.stars ? "text-yellow-400" : "text-gray-200 dark:text-gray-700"}`}>★</span>
+                        ))}
+                        <span className="text-[10px] text-gray-400 ml-1">your rating</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
 
             {!loading && !error && (
               <ShareButton ride={ride} fare={fare} className="w-full text-center" />
             )}
+            <button
+              onClick={() => navigate("/passenger/support", { state: { linkedRideId: rideId } })}
+              className="w-full py-3 rounded-xl text-sm font-medium border border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400"
+            >
+              Problem with this trip?
+            </button>
             <button
               className="w-full rounded-xl bg-townwize-primary py-4 text-white font-semibold"
               onClick={() => navigate("/passenger/home", { replace: true })}
@@ -644,11 +691,58 @@ export default function PassengerTripReceipt() {
                 </>
               )}
             </div>
+            <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-600 flex items-center gap-1.5 text-xs text-gray-400 dark:text-gray-500">
+              <span>💳</span>
+              <span>Cash on Ride</span>
+            </div>
+            {Number(ride?.cancellationFee || 0) > 0 && (
+              <div className="mt-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 px-3 py-2 text-xs text-amber-700 dark:text-amber-400">
+                Cancellation fee applied: {toMoney(ride.cancellationFee)}
+              </div>
+            )}
           </div>
+
+          {ride?.driverInfo && (
+            <div className="trip-receipt-summary bg-gray-50 dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700">
+              <h3 className="text-base font-bold text-townwize-primary dark:text-white mb-3">Your Wizer</h3>
+              <div className="flex items-center gap-4">
+                {ride.driverInfo.photoUrl ? (
+                  <img src={ride.driverInfo.photoUrl} alt="" className="h-14 w-14 rounded-full object-cover shrink-0 border-2 border-white dark:border-gray-700 shadow" />
+                ) : (
+                  <div className="h-14 w-14 rounded-full bg-townwize-primary flex items-center justify-center shrink-0">
+                    <span className="text-white font-bold text-lg">{(ride.driverInfo.name || "W")[0].toUpperCase()}</span>
+                  </div>
+                )}
+                <div className="flex-1 min-w-0">
+                  <p className="font-bold text-gray-900 dark:text-white">{ride.driverInfo.name}</p>
+                  {ride.driverInfo.vehicle && (
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                      {[ride.driverInfo.vehicle.color, ride.driverInfo.vehicle.make, ride.driverInfo.vehicle.model].filter(Boolean).join(" ")}
+                      {ride.driverInfo.vehicle.plate ? ` · ${ride.driverInfo.vehicle.plate}` : ""}
+                    </p>
+                  )}
+                  {ride.passengerRating?.stars > 0 && (
+                    <div className="flex items-center gap-1 mt-1">
+                      {[1, 2, 3, 4, 5].map((n) => (
+                        <span key={n} className={`text-sm ${n <= ride.passengerRating.stars ? "text-yellow-400" : "text-gray-200 dark:text-gray-700"}`}>★</span>
+                      ))}
+                      <span className="text-xs text-gray-400 ml-1">your rating</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
         </>
       ) : null}
 
-      <div className="flex justify-end print:hidden">
+      <div className="flex items-center justify-between print:hidden">
+        <button
+          onClick={() => navigate("/passenger/support", { state: { linkedRideId: rideId } })}
+          className="text-sm text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 underline underline-offset-2"
+        >
+          Problem with this trip?
+        </button>
         <button
           className="rounded-lg bg-townwize-primary px-5 py-2.5 text-white font-semibold"
           onClick={() => navigate("/passenger/home", { replace: true })}
