@@ -8,7 +8,7 @@ import {
   updateRideStatus,
 } from "../../../api/adminApi";
 
-const MAPS_KEY = import.meta.env.VITE_GOOGLE_MAPS_KEY || "";
+const MAPS_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "";
 
 function RouteMapCard({ pickup, dropoff }) {
   const mapsUrl = `https://www.google.com/maps/dir/?api=1&origin=${pickup.lat},${pickup.lng}&destination=${dropoff.lat},${dropoff.lng}&travelmode=driving`;
@@ -42,7 +42,7 @@ function RouteMapCard({ pickup, dropoff }) {
           <div className="mb-1 text-lg">🗺️</div>
           <div>Pickup: {pickup.lat?.toFixed(5)}, {pickup.lng?.toFixed(5)}</div>
           <div>Dropoff: {dropoff.lat?.toFixed(5)}, {dropoff.lng?.toFixed(5)}</div>
-          <div className="mt-2 text-[10px] text-gray-300">Set VITE_GOOGLE_MAPS_KEY to show map thumbnail</div>
+          <div className="mt-2 text-[10px] text-gray-300">Set VITE_GOOGLE_MAPS_API_KEY to show map thumbnail</div>
         </div>
       )}
     </div>
