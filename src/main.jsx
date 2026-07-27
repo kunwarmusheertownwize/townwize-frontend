@@ -38,7 +38,7 @@ if (window.Capacitor && window.Capacitor.Plugins && !window.history.pushState._p
   window.history.pushState._patched = true;
 }
 
-initAppRole().then(() => {
+const doRender = () => {
   createRoot(document.getElementById('root')).render(
     <StrictMode>
       <LanguageProvider>
@@ -51,5 +51,7 @@ initAppRole().then(() => {
       </LanguageProvider>
     </StrictMode>
   );
-});
+};
+
+initAppRole().catch(() => {}).then(doRender);
 

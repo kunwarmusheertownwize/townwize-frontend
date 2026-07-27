@@ -51,16 +51,19 @@ const SlideToEndTrip = ({ onConfirm, disabled }) => {
     snapBack();
   };
 
-  const onPointerDown = (e) => {
+  const getClientX = (e) =>
+    e.touches ? e.touches[0]?.clientX ?? e.changedTouches[0]?.clientX : e.clientX;
+
+  const onDragStart = (e) => {
     if (disabled || phase !== "idle") return;
     dragging.current = true;
-    startX.current   = e.clientX;
-    e.currentTarget.setPointerCapture(e.pointerId);
+    startX.current   = getClientX(e);
   };
 
-  const onPointerMove = (e) => {
+  const onDragMove = (e) => {
     if (!dragging.current) return;
-    const delta = Math.max(0, Math.min(maxSlide(), e.clientX - startX.current));
+    if (e.cancelable) e.preventDefault();
+    const delta = Math.max(0, Math.min(maxSlide(), getClientX(e) - startX.current));
     if (thumbRef.current) {
       thumbRef.current.style.transition = "none";
       thumbRef.current.style.transform  = `translateX(${delta}px)`;
@@ -68,7 +71,7 @@ const SlideToEndTrip = ({ onConfirm, disabled }) => {
     offsetRef.current = delta;
   };
 
-  const onPointerUp = () => {
+  const onDragEnd = () => {
     if (!dragging.current) return;
     dragging.current = false;
     if (offsetRef.current >= maxSlide() * 0.82) {
@@ -104,17 +107,21 @@ const SlideToEndTrip = ({ onConfirm, disabled }) => {
     <div
       ref={trackRef}
       className={`relative h-14 w-full select-none overflow-hidden rounded-xl bg-red-100 dark:bg-red-900/30 ${disabled ? "pointer-events-none opacity-50" : ""}`}
+      onTouchStart={onDragStart}
+      onTouchMove={onDragMove}
+      onTouchEnd={onDragEnd}
+      onTouchCancel={onDragEnd}
+      onMouseDown={onDragStart}
+      onMouseMove={onDragMove}
+      onMouseUp={onDragEnd}
+      onMouseLeave={onDragEnd}
     >
       <span className="pointer-events-none absolute inset-0 flex items-center justify-center text-sm font-semibold text-red-500 dark:text-red-400">
         Slide to End Trip →
       </span>
       <div
         ref={thumbRef}
-        className="absolute left-0.5 top-0.5 bottom-0.5 flex w-14 cursor-grab touch-none items-center justify-center rounded-lg bg-red-600 text-white shadow-md active:cursor-grabbing"
-        onPointerDown={onPointerDown}
-        onPointerMove={onPointerMove}
-        onPointerUp={onPointerUp}
-        onPointerCancel={onPointerUp}
+        className="absolute left-0.5 top-0.5 bottom-0.5 flex w-14 cursor-grab items-center justify-center rounded-lg bg-red-600 text-white shadow-md active:cursor-grabbing"
       >
         <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
@@ -343,13 +350,11 @@ const DriverLiveTracking = () => {
   useEffect(() => {
     let cleanup = () => {};
 
-    const onPosition = (lat, lng, heading) => {
+    const onPosition = (lat, lng, heading, gpsSpeedMs = null) => {
       const now = Date.now();
       const coords = { lat, lng };
 
       // Speed sanity filter — discard GPS jumps implying > 150 km/h.
-      // These are always noise: a real 150 km/h vehicle moves ~42 m/s, so any
-      // reading implying faster than that between two consecutive ticks is a GPS artefact.
       if (lastPositionForSpeedRef.current) {
         const { lat: pLat, lng: pLng, t: pTime } = lastPositionForSpeedRef.current;
         const timeDeltaS = (now - pTime) / 1000;
@@ -369,9 +374,21 @@ const DriverLiveTracking = () => {
       if (rideStatusRef.current === "ON_TRIP") {
         if (lastTripPositionRef.current) {
           const distM = haversineM(lastTripPositionRef.current, coords);
-          if (distM > 5) tripDistanceKmRef.current += distM / 1000;
+          // GPS drift filter: a phone sitting still reports small position changes.
+          // Use chip-reported speed when available (most reliable); fall back to a
+          // 30 m minimum-displacement gate so accumulated drift never counts as travel.
+          // The baseline only advances when we actually count the movement — this
+          // prevents "drift reset" where each small jitter resets the starting point.
+          const chipMoving = gpsSpeedMs != null ? gpsSpeedMs >= 0.5 : null;
+          const countIt = chipMoving === true || (chipMoving === null && distM >= 30);
+          if (countIt && distM >= 5) {
+            tripDistanceKmRef.current += distM / 1000;
+            lastTripPositionRef.current = coords;
+          }
+          // else: baseline stays fixed — next reading still measures from this point
+        } else {
+          lastTripPositionRef.current = coords;  // seed on first fix
         }
-        lastTripPositionRef.current = coords;
       }
       if (rideId) {
         api.post("/driver/location", { rideId, lat, lng, heading: heading ?? null }).catch(() => {});
@@ -391,7 +408,8 @@ const DriverLiveTracking = () => {
         },
         (position, error) => {
           if (error || !position) return;
-          onPosition(position.latitude, position.longitude, position.bearing);
+          onPosition(position.latitude, position.longitude, position.bearing,
+            position.speed != null && position.speed >= 0 ? position.speed : null);
         }
       ).then((watcherId) => {
         cleanup = () => BackgroundGeolocation.removeWatcher({ id: watcherId }).catch(() => {});
@@ -401,7 +419,8 @@ const DriverLiveTracking = () => {
     } else {
       if (!navigator.geolocation) { toast.error("Location services not supported"); return; }
       const watchId = navigator.geolocation.watchPosition(
-        (pos) => onPosition(pos.coords.latitude, pos.coords.longitude, pos.coords.heading),
+        (pos) => onPosition(pos.coords.latitude, pos.coords.longitude, pos.coords.heading,
+            pos.coords.speed != null && pos.coords.speed >= 0 ? pos.coords.speed : null),
         () => toast.error("Enable location permissions"),
         { enableHighAccuracy: true, maximumAge: 5000, timeout: 10000 }
       );

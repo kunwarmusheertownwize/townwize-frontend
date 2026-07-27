@@ -339,7 +339,9 @@ export default function PassengerTripReceipt() {
       waitFare: f.waitFare || 0,
       platformFee: f.platformFee || 0,
       taxAmount: f.taxAmount || 0,
-      distanceKm: f.distanceKm ?? ride?.actualDistanceKm ?? ride?.distanceKm ?? null,
+      distanceKm: ride?.status === "CANCELLED"
+        ? null
+        : (f.distanceKm ?? ride?.actualDistanceKm ?? ride?.distanceKm ?? null),
       durationMinutes: f.durationMinutes ?? ride?.actualDurationMinutes ?? null,
       pickupWaitMinutes: f.pickupWaitMinutes ?? ride?.pickupWaitMinutes ?? 0,
       stopWaitMinutes: f.stopWaitMinutes ?? ride?.stopWaitMinutes ?? 0,
