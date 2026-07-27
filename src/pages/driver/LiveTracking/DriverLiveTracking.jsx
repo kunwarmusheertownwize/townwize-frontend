@@ -103,7 +103,7 @@ const SlideToEndTrip = ({ onConfirm, disabled }) => {
   return (
     <div
       ref={trackRef}
-      className={`relative h-14 select-none overflow-hidden rounded-xl bg-red-100 dark:bg-red-900/30 ${disabled ? "pointer-events-none opacity-50" : ""}`}
+      className={`relative h-14 w-full select-none overflow-hidden rounded-xl bg-red-100 dark:bg-red-900/30 ${disabled ? "pointer-events-none opacity-50" : ""}`}
     >
       <span className="pointer-events-none absolute inset-0 flex items-center justify-center text-sm font-semibold text-red-500 dark:text-red-400">
         Slide to End Trip →
