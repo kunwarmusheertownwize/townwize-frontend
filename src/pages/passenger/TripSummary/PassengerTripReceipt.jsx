@@ -338,6 +338,9 @@ export default function PassengerTripReceipt() {
       timeFare: f.timeFare || 0,
       waitFare: f.waitFare || 0,
       platformFee: f.platformFee || 0,
+      // Falls back to ride.tollAmount for rides completed before the toll line
+      // was added to the settled breakdown.
+      tollAmount: f.tollAmount ?? ride?.tollAmount ?? 0,
       taxAmount: f.taxAmount || 0,
       distanceKm: ride?.status === "CANCELLED"
         ? null
@@ -445,6 +448,7 @@ export default function PassengerTripReceipt() {
                   ["Time Fare",    fare.timeFare],
                   ...(Number(fare.waitFare || 0) > 0   ? [["Wait Fare",   fare.waitFare]]   : []),
                   ["Platform Fee", fare.platformFee],
+                  ...(Number(fare.tollAmount || 0) > 0 ? [["Toll",        fare.tollAmount]] : []),
                   ...(Number(fare.taxAmount || 0) > 0  ? [["SST",         fare.taxAmount]]  : []),
                 ].map(([label, value]) => (
                   <div key={label} className="flex justify-between">
@@ -656,6 +660,9 @@ export default function PassengerTripReceipt() {
                 <div className="flex justify-between"><span>Wait Fare</span><span>{toMoney(fare.waitFare)}</span></div>
               ) : null}
               <div className="flex justify-between"><span>Platform Fee</span><span>{toMoney(fare.platformFee)}</span></div>
+              {Number(fare.tollAmount || 0) > 0 ? (
+                <div className="flex justify-between"><span>Toll</span><span>{toMoney(fare.tollAmount)}</span></div>
+              ) : null}
               {Number(fare.taxAmount || 0) > 0 ? (
                 <div className="flex justify-between"><span>Sindh Sales Tax (SST)</span><span>{toMoney(fare.taxAmount)}</span></div>
               ) : null}
