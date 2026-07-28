@@ -69,6 +69,22 @@ import DriverGuard from "../guards/DriverGuard";
 import PassengerGuard from "../guards/PassengerGuard";
 import PassengerToDriverGuard from "../guards/PassengerToDriverGuard";
 
+import ErrorBoundary from "../components/common/ErrorBoundary";
+
+// Live tracking is the highest-stakes screen in the product: it runs for the
+// whole trip, on the most varied data, on the device most likely to be offline
+// or low on memory. It gets its own boundary so a crash there cannot take the
+// rest of the app down with it, and offers a trip-appropriate recovery message.
+const TrackingBoundary = ({ children, homePath }) => (
+  <ErrorBoundary
+    title="Live tracking hit a problem"
+    message="Your trip is still active and your fare is unaffected. Tap Try again to reload the map."
+    homePath={homePath}
+  >
+    {children}
+  </ErrorBoundary>
+);
+
 
 const AppRoutes = () => {
   return (
@@ -113,7 +129,13 @@ const AppRoutes = () => {
           <Route path="/passenger/trip-summary" element={<TripSummary />} />
           <Route path="/passenger/trip-receipt/:rideId" element={<PassengerTripReceipt />} />
           <Route path="/passenger/trip-request" element={<TripRequest />} />
-          <Route path="/passenger/live-tracking/:rideId" element={<LiveTracking />}
+          <Route
+            path="/passenger/live-tracking/:rideId"
+            element={
+              <TrackingBoundary homePath="/passenger/home">
+                <LiveTracking />
+              </TrackingBoundary>
+            }
           />
           <Route path="/passenger/booking" element={<Booking />} />
           <Route path="/passenger/trips" element={<PassengerTrips />} />
@@ -172,7 +194,14 @@ const AppRoutes = () => {
           <Route path="earnings" element={<DriverEarnings />} />
           <Route path="trips" element={<Trips />} />
           <Route path="trip-requests" element={<TripRequests />} />
-          <Route path="live-tracking" element={<DriverLiveTracking />} />
+          <Route
+            path="live-tracking"
+            element={
+              <TrackingBoundary homePath="/driver/home">
+                <DriverLiveTracking />
+              </TrackingBoundary>
+            }
+          />
           <Route path="trip-summary" element={<DriverTripSummary />} />
 
           <Route path="notifications" element={<DriverNotifications />} />
