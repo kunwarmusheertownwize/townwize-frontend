@@ -56,14 +56,6 @@ export const openRideDispute = (rideId, body) =>
 export const resolveRideDispute = (rideId, body) =>
     call(`/admin/rides/${rideId}/resolve-dispute`, { method: "PATCH", body: JSON.stringify(body || {}) });
 
-export const fetchSimPassengers = (q = "") =>
-    call(`/admin/simulation/passengers${q ? `?q=${encodeURIComponent(q)}` : ""}`);
-export const startRideSimulation = (params) =>
-    call("/admin/simulation/start", { method: "POST", body: JSON.stringify(params) });
-export const stopRideSimulation = (rideId) =>
-    call("/admin/simulation/stop", { method: "POST", body: JSON.stringify({ rideId }) });
-export const fetchSimulationStatus = () => call("/admin/simulation/status");
-
 export const fetchSupportTickets = (params) => {
     const q = new URLSearchParams(params || {}).toString();
     return call(`/admin/support${q ? `?${q}` : ""}`);

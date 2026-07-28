@@ -3,12 +3,34 @@
 import { useEffect, useRef } from "react";
 import { io } from "socket.io-client";
 
+// The server authenticates every socket at handshake and authorises each room
+// join. auth is read as a function so socket.io re-evaluates it on every
+// reconnect — otherwise a socket that reconnects after a token refresh would
+// present the old, now-expired token and be rejected.
 const socket = io(
   import.meta.env.VITE_API_BASE_URL?.replace("/api/v1.2", ""),
-  { autoConnect: false }
+  {
+    autoConnect: false,
+    auth: (cb) => cb({ token: localStorage.getItem("_tw_at") || null }),
+  }
 );
 
+// A room join can be refused (e.g. requesting a ride that isn't yours). Surface
+// it in the console rather than failing silently with an empty tracking screen.
+socket.on("join:denied", ({ room }) => {
+  console.warn(`Socket room join denied: ${room}`);
+});
+
 export const getSocket = () => socket;
+
+/**
+ * Force the socket to reconnect with the current token. Call after a token
+ * refresh or a fresh login so the handshake uses the new credentials.
+ */
+export const reauthSocket = () => {
+  if (socket.connected) socket.disconnect();
+  socket.connect();
+};
 
 const getAuth = () => {
   try {

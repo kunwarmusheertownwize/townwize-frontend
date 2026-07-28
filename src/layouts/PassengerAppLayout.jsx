@@ -54,8 +54,9 @@ export default function PassengerAppLayout() {
     };
   }, [location.pathname, navigate]);
 
-  // When a simulation starts the backend emits sim:started to the passenger's socket room.
-  // This listener auto-navigates the passenger app to LiveTracking — no manual action needed.
+  // Keep the passenger in their own socket room for the whole session, and
+  // re-join after a reconnect — otherwise live notifications stop arriving on
+  // any screen that doesn't itself call useRideSocket.
   useEffect(() => {
     let auth;
     try { auth = JSON.parse(localStorage.getItem("auth")); } catch { /* no-op */ }
@@ -63,18 +64,16 @@ export default function PassengerAppLayout() {
     if (!userId) return;
 
     const socket = getSocket();
+    const joinRoom = () => socket.emit("join", `passenger:${userId}`);
+
     if (!socket.connected) socket.connect();
-    socket.emit("join", `passenger:${userId}`);
+    joinRoom();
+    socket.on("connect", joinRoom);
 
-    const onSimStarted = ({ rideId }) => {
-      if (!rideId) return;
-      localStorage.setItem("activePassengerRideId", rideId);
-      navigate(`/passenger/live-tracking/${rideId}`, { replace: true });
+    return () => {
+      socket.off("connect", joinRoom);
     };
-
-    socket.on("sim:started", onSimStarted);
-    return () => socket.off("sim:started", onSimStarted);
-  }, [navigate]);
+  }, []);
 
   return <Outlet />;
 }

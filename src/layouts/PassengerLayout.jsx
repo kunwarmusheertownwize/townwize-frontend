@@ -69,8 +69,9 @@ const PassengerLayout = () => {
     };
   }, [location.pathname, navigate]);
 
-  // Listen for sim:started so the passenger app auto-navigates to LiveTracking
-  // when an admin starts a simulation for this passenger.
+  // Keep the passenger in their own socket room for the whole session.
+  // useRideSocket only joins on ride-related pages, so without this the
+  // passenger would miss live notifications while on Profile, Trips, etc.
   useEffect(() => {
     let auth;
     try { auth = JSON.parse(localStorage.getItem("auth")); } catch { /* no-op */ }
@@ -82,20 +83,12 @@ const PassengerLayout = () => {
 
     if (!socket.connected) socket.connect();
     joinRoom();
-    socket.on("connect", joinRoom); // re-join on reconnect so re-emit fires
+    socket.on("connect", joinRoom); // re-join after a reconnect
 
-    const onSimStarted = ({ rideId }) => {
-      if (!rideId) return;
-      localStorage.setItem("activePassengerRideId", rideId);
-      navigate(`/passenger/live-tracking/${rideId}`, { replace: true });
-    };
-
-    socket.on("sim:started", onSimStarted);
     return () => {
       socket.off("connect", joinRoom);
-      socket.off("sim:started", onSimStarted);
     };
-  }, [navigate]);
+  }, []);
 
   if (isNative()) {
     return <MobilePassengerLayout />;

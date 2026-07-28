@@ -66,7 +66,16 @@ api.interceptors.response.use(
             );
 
             const newToken = refreshRes.data?.data?.accessToken;
-            if (newToken) localStorage.setItem("_tw_at", newToken);
+            if (newToken) {
+                localStorage.setItem("_tw_at", newToken);
+                // The socket authenticates at handshake, so a live socket still
+                // holds the old token. Reconnect with the new one or it will be
+                // rejected the next time it drops — killing live tracking.
+                try {
+                    const { reauthSocket } = await import("../hooks/useRideSocket");
+                    reauthSocket();
+                } catch { /* socket not in use on this screen */ }
+            }
 
             processQueue(null);
             return api(original);

@@ -23,7 +23,6 @@ import PricingSettings from "../pages/Settings/PricingSettings";
 import CancellationPolicy from "../pages/Settings/CancellationPolicy";
 import ReferralDashboard from "../pages/Referral/ReferralDashboard";
 import WaitlistPage from "../pages/Waitlist/WaitlistPage";
-import SimulationPage from "../pages/Simulation/SimulationPage";
 
 export default function AdminRoutes() {
     return (
@@ -50,7 +49,6 @@ export default function AdminRoutes() {
 
             <Route path="referral" element={<ReferralDashboard />} />
             <Route path="waitlist" element={<WaitlistPage />} />
-            <Route path="simulation" element={<SimulationPage />} />
 
             <Route path="audit" element={<AuditLogs />} />
         </Route>
