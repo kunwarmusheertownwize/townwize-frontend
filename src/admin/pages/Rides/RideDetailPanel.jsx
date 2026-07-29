@@ -8,7 +8,26 @@ import {
   updateRideStatus,
 } from "../../../api/adminApi";
 
+import TrailMap from "./TrailMap";
+
 const MAPS_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "";
+
+// Small labelled row used by the distance-provenance card.
+function Line({ k, v, strong, warn }) {
+  return (
+    <div className="flex items-baseline justify-between gap-3">
+      <span className="text-gray-500 dark:text-gray-400">{k}</span>
+      <span
+        className={
+          (strong ? "font-bold " : "font-medium ") +
+          (warn ? "text-amber-600" : "text-gray-900 dark:text-white")
+        }
+      >
+        {v}
+      </span>
+    </div>
+  );
+}
 
 function RouteMapCard({ pickup, dropoff }) {
   const mapsUrl = `https://www.google.com/maps/dir/?api=1&origin=${pickup.lat},${pickup.lng}&destination=${dropoff.lat},${dropoff.lng}&travelmode=driving`;
@@ -249,8 +268,67 @@ export default function RideDetailPanel({ ride, onUpdated }) {
         <div>Car Class: {ride.carType || "economy"}</div>
       </div>
 
-      {(ride.pickup?.lat && ride.dropoff?.lat) ? (
+      {ride.trail?.length ? (
+        <div className="rounded-xl border border-gray-200 dark:border-gray-700 p-3">
+          <div className="mb-2 flex items-center justify-between">
+            <h4 className="font-semibold">Recorded Route (GPS)</h4>
+            {(ride.pickup?.lat && ride.dropoff?.lat) && (
+              <a
+                href={`https://www.google.com/maps/dir/?api=1&origin=${ride.pickup.lat},${ride.pickup.lng}&destination=${ride.dropoff.lat},${ride.dropoff.lng}&travelmode=driving`}
+                target="_blank" rel="noreferrer"
+                className="text-xs font-semibold text-townwize-accent underline underline-offset-2"
+              >
+                Planned route ↗
+              </a>
+            )}
+          </div>
+          <TrailMap
+            trail={ride.trail}
+            gaps={ride.trailGaps || []}
+            pickup={ride.pickup}
+            dropoff={ride.dropoff}
+          />
+        </div>
+      ) : (ride.pickup?.lat && ride.dropoff?.lat) ? (
         <RouteMapCard pickup={ride.pickup} dropoff={ride.dropoff} />
+      ) : null}
+
+      {ride.distanceSource ? (
+        <div className="rounded-xl border border-gray-200 dark:border-gray-700 p-3">
+          <h4 className="mb-2 font-semibold">How the billed distance was derived</h4>
+          <div className="space-y-1 text-xs">
+            <Line k="Billed distance"        v={`${ride.actualDistanceKm ?? "-"} km`} strong />
+            <Line k="Measured from GPS trail" v={`${ride.distanceSource.pointsUsed ?? 0} points`} />
+            <Line k="Route estimate at booking" v={`${ride.distanceSource.routeEstimateKm ?? "-"} km`} />
+            <Line k="Driver device reported"  v={`${ride.distanceSource.clientReportedKm ?? "-"} km`} />
+            <Line
+              k="Added across GPS gaps"
+              v={`${ride.distanceSource.gapKmRecovered ?? 0} km over ${ride.distanceSource.gapsFilled ?? 0} gap(s)`}
+              warn={Number(ride.distanceSource.gapKmRecovered || 0) > 5}
+            />
+            <Line k="Longest single gap"     v={`${ride.distanceSource.longestGapKm ?? 0} km`} />
+            <Line k="Method"                 v={ride.distanceSource.method || "-"} />
+            {ride.fareAdjustment?.distanceCapped && (
+              <p className="pt-1 text-[11px] font-semibold text-amber-600">
+                ⚠ Reported distance exceeded the cap and was clamped
+                (claimed {ride.fareAdjustment.reportedDistanceKm} km).
+              </p>
+            )}
+            {ride.fareAdjustment?.distanceFloored && (
+              <p className="pt-1 text-[11px] font-semibold text-amber-600">
+                ⚠ Measured distance fell below the route floor and was raised
+                (measured {ride.fareAdjustment.reportedDistanceKm} km).
+              </p>
+            )}
+            {Number(ride.distanceSource.gapKmRecovered || 0) > 5 && (
+              <p className="pt-1 text-[11px] text-amber-600">
+                A large share of this fare came from distance inferred across GPS
+                gaps rather than observed. Check the dashed sections on the map
+                before treating the fare as settled.
+              </p>
+            )}
+          </div>
+        </div>
       ) : null}
 
       {(ride.finalFareBreakdown || ride.estimatedFareBreakdown) ? (
