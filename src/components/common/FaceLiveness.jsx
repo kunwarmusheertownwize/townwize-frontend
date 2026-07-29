@@ -37,18 +37,59 @@ export default function FaceLiveness({ control, name, label }) {
 
 
 
+  // getUserMedia fails for several very different reasons, and reporting them all
+  // as "Camera access denied" made a missing Android permission indistinguishable
+  // from a user tapping Deny. Tell the person what to actually do about it.
+  const describeCameraError = (err) => {
+    switch (err?.name) {
+      case "NotAllowedError":
+      case "PermissionDeniedError":
+        return "Camera permission was denied. Open your phone's Settings → Apps → Wizer → Permissions and allow Camera, then try again.";
+      case "NotFoundError":
+      case "DevicesNotFoundError":
+        return "No camera was found on this device.";
+      case "NotReadableError":
+      case "TrackStartError":
+        return "The camera is being used by another app. Close it and try again.";
+      case "SecurityError":
+        return "The camera is blocked on this connection. Please contact support.";
+      case "OverconstrainedError":
+        return "This device's camera is not supported. Please contact support.";
+      default:
+        return err?.message
+          ? `Camera could not start: ${err.message}`
+          : "Camera could not start. Please try again.";
+    }
+  };
+
   const startCamera = async () => {
     try {
       setLoading(true); // show spinner
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-      console.log("🎥 Got stream:", stream);
+
+      if (!navigator.mediaDevices?.getUserMedia) {
+        setStatus("This device or browser does not support camera capture.");
+        return;
+      }
+
+      // Prefer the front camera for a selfie, but never fail because of it —
+      // some devices reject the facingMode constraint outright.
+      let stream;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: "user" },
+        });
+      } catch {
+        stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      }
 
       streamRef.current = stream;
       setCameraActive(true);
       setStatus("Look straight ahead");
     } catch (err) {
-      console.error("Camera access denied:", err);
-      setStatus("Camera access denied");
+      // Keep the real error in the console for diagnosis; show the user the
+      // specific, actionable version.
+      console.error("Camera start failed:", err?.name, err?.message, err);
+      setStatus(describeCameraError(err));
     } finally {
       setLoading(false); // hide spinner
     }
