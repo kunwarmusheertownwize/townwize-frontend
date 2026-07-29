@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { FaCheckCircle, FaStar } from "react-icons/fa";
 import api from "../../../services/api";
+import RouteThumb from "../../../components/common/RouteThumb";
 
 const DriverTripSummary = () => {
     const navigate = useNavigate();
@@ -67,6 +68,13 @@ const DriverTripSummary = () => {
 
             {/* Route */}
             <div className="bg-white dark:bg-townwize-primaryDark border border-gray-200 dark:border-gray-700 rounded-2xl p-5 space-y-3">
+                <RouteThumb
+                    polyline={rideData?.routePolyline}
+                    pickup={rideData?.pickup}
+                    dropoff={rideData?.dropoff}
+                    height={150}
+                    className="-mx-5 -mt-5 mb-1 overflow-hidden rounded-t-2xl"
+                />
                 <div className="flex items-start gap-3">
                     <div className="mt-1.5 w-2.5 h-2.5 rounded-full bg-townwize-accent shrink-0" />
                     <div>

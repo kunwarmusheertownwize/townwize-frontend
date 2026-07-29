@@ -3,6 +3,7 @@ import { FaStar } from "react-icons/fa";
 import { useNavigate, useParams } from "react-router-dom";
 import { authFetch } from "../../../utils/authFetch";
 import { isNative } from "../../../utils/platform";
+import RouteThumb from "../../../components/common/RouteThumb";
 
 const buildShareText = (ride, fare) => {
   const toMoney = (n) => `${Number(n || 0).toLocaleString()} PKR`;
@@ -410,6 +411,13 @@ export default function PassengerTripReceipt() {
           <div className="px-4 py-5 space-y-4">
             {/* Route card */}
             <div className="bg-white dark:bg-gray-900 rounded-2xl p-4 space-y-3 border border-gray-100 dark:border-gray-800">
+              <RouteThumb
+                polyline={ride?.routePolyline}
+                pickup={ride?.pickup}
+                dropoff={ride?.dropoff}
+                height={150}
+                className="-mx-4 -mt-4 mb-1 overflow-hidden rounded-t-2xl"
+              />
               <div>
                 <p className="text-[10px] uppercase tracking-widest text-gray-400">Pickup</p>
                 <p className="text-sm font-semibold mt-0.5 text-gray-800 dark:text-gray-100">
@@ -608,6 +616,13 @@ export default function PassengerTripReceipt() {
         <>
           <div className="trip-receipt-shell grid gap-4 md:grid-cols-[1fr_280px]">
             <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700 space-y-3">
+              <RouteThumb
+                polyline={ride?.routePolyline}
+                pickup={ride?.pickup}
+                dropoff={ride?.dropoff}
+                height={170}
+                className="-mx-4 -mt-4 mb-1 overflow-hidden rounded-t-xl"
+              />
               <div>
                 <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Pickup</p>
                 <p className="font-semibold dark:text-white">{toLocationText(ride?.pickup)}</p>
