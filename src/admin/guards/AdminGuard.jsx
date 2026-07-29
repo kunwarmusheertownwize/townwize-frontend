@@ -6,7 +6,13 @@ import useAuth from "../../hooks/useAuth";
 // .env.production — exposing the whole admin panel publicly. Never reintroduce
 // an env-controlled path that skips these checks.
 export default function AdminGuard() {
-    const { isAuthenticated, role } = useAuth();
+    const { isAuthenticated, role, loading } = useAuth();
+
+    // AuthContext restores the session from localStorage inside a useEffect,
+    // which runs AFTER the first render. Without this the guard sees
+    // isAuthenticated as false on that first pass and bounces a signed-in admin
+    // to /login on every refresh. PassengerGuard and DriverGuard already do this.
+    if (loading) return null;
 
     if (!isAuthenticated) {
         return <Navigate to="/login" replace />;
