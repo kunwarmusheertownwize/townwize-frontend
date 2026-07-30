@@ -1,5 +1,4 @@
-import { getToken, onMessage } from "firebase/messaging";
-import { messaging } from "../config/firebase.js";
+import { firebaseApp, pushSupportedHere } from "../config/firebase.js";
 import api from "../services/api.js";
 import { toast } from "react-toastify";
 
@@ -9,14 +8,27 @@ const VAPID_KEY = import.meta.env.VITE_FIREBASE_VAPID_KEY;
  * Registers the service worker, requests notification permission,
  * gets the FCM token, and sends it to the backend.
  * Safe to call multiple times — no-ops if already done.
+ *
+ * `firebase/messaging` is imported DYNAMICALLY and only after the support check
+ * passes. A static import pulls the module into the startup graph, where it is
+ * evaluated on every browser including ones that cannot support push — and a
+ * throw there takes down the entire app before it renders. Push is optional;
+ * it must never be able to do that.
  */
 export async function initFCM() {
-    if (!messaging || !VAPID_KEY) return;
-    if (!("Notification" in window) || !("serviceWorker" in navigator)) return;
+    if (!VAPID_KEY || !pushSupportedHere()) return;
 
     try {
         const permission = await Notification.requestPermission();
         if (permission !== "granted") return;
+
+        const { getToken, onMessage, getMessaging, isSupported } =
+            await import("firebase/messaging");
+
+        // Firebase's own capability probe, on top of ours.
+        if (!(await isSupported())) return;
+
+        const messaging = getMessaging(firebaseApp);
 
         // Register service worker
         const reg = await navigator.serviceWorker.register("/firebase-messaging-sw.js");

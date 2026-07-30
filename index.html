@@ -71,6 +71,49 @@
   <body class="bg-bgLight dark:bg-bgDark text-textPrimary">
     <div id="root"></div>
 
+    <!--
+      Startup error trap. A failure BEFORE React mounts — a module that throws on
+      import, a syntax feature the browser does not support — leaves a blank white
+      page with nothing to go on, and on a phone there are no devtools to open.
+      This paints the actual error onto the page instead. It only ever renders
+      when something has already gone wrong.
+    -->
+    <script>
+      (function () {
+        var shown = false;
+        function show(title, detail) {
+          if (shown) return;
+          var root = document.getElementById('root');
+          if (!root || root.childElementCount > 0) return;
+          shown = true;
+          root.innerHTML =
+            '<div style="font:14px/1.5 system-ui,sans-serif;padding:24px;max-width:640px;margin:0 auto;color:#1a1a1a">' +
+            '<h1 style="font-size:16px;margin:0 0 8px">Townwize could not start</h1>' +
+            '<p style="margin:0 0 12px;color:#666">' + title + '</p>' +
+            '<pre style="white-space:pre-wrap;word-break:break-word;background:#f4f4f5;padding:12px;' +
+            'border-radius:8px;font-size:12px;margin:0">' + detail + '</pre></div>';
+        }
+        function esc(v) {
+          return String(v == null ? '' : v)
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        }
+        window.addEventListener('error', function (e) {
+          show('A script failed to load or run.',
+               esc(e.message) + '\n' + esc(e.filename || '') + ':' + esc(e.lineno || ''));
+        }, true);
+        window.addEventListener('unhandledrejection', function (e) {
+          var r = e.reason;
+          show('A startup task failed.', esc((r && (r.stack || r.message)) || r));
+        });
+        // Nothing threw, but nothing rendered either — the symptom that is
+        // otherwise indistinguishable from a hang.
+        setTimeout(function () {
+          show('The app loaded but rendered nothing within 8 seconds.',
+               'No error was reported. This usually means a module never finished loading.');
+        }, 8000);
+      })();
+    </script>
+
     <!-- Main React Entry -->
     <script type="module" src="/src/main.jsx"></script>
 </body>
