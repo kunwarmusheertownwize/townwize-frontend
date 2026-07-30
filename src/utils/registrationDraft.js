@@ -71,6 +71,16 @@ export const saveDraft = async (role, stepKey, values, fileFields, phoneVerifica
     }
   }
 
+  // The five liveness frames are ~650 KB of base64. localStorage is a shared
+  // 5 MB origin budget and setItem throws all-or-nothing, so putting them there
+  // risks losing the ENTIRE draft — step position and phone token included — to
+  // a quota error. IndexedDB stores any structured-cloneable value, and
+  // loadDraft spreads this store straight into the form, so it restores itself.
+  if (text.selfieAngles && typeof text.selfieAngles === "object") {
+    files.selfieAngles = text.selfieAngles;
+  }
+  delete text.selfieAngles;
+
   try {
     localStorage.setItem(
       META_KEY,

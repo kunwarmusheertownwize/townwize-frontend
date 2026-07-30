@@ -2,8 +2,11 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { useForm, FormProvider } from "react-hook-form";
 import FaceLiveness from "../../components/common/FaceLiveness";
+import { apiBase, cameraBlockedByInsecureContext } from "../../utils/publicOrigin";
 
-const BASE = import.meta.env.VITE_API_BASE_URL;
+// Resolved per-load, not at module scope: this page is the one place the device
+// running it may not be the device the bundle was configured for.
+const BASE = apiBase();
 
 /**
  * The page a phone lands on after scanning the QR shown on the desktop.
@@ -14,7 +17,7 @@ const BASE = import.meta.env.VITE_API_BASE_URL;
  */
 export default function FaceVerifyHandoff() {
   const { token } = useParams();
-  const methods = useForm({ defaultValues: { selfie: "" } });
+  const methods = useForm({ defaultValues: { selfie: "", selfieAngles: null } });
   const selfie = methods.watch("selfie");
 
   const [state, setState] = useState("checking"); // checking|ready|sending|done|error
@@ -22,6 +25,20 @@ export default function FaceVerifyHandoff() {
 
   // Tell the desktop a phone has picked it up, so it can stop saying "waiting".
   useEffect(() => {
+    // Say this before anything else. On a plain-http LAN address the browser
+    // withholds the camera entirely, and the liveness component can only report
+    // a generic permission failure — which sends people into their phone
+    // settings looking for a permission that was never asked for.
+    if (cameraBlockedByInsecureContext()) {
+      setState("error");
+      setMessage(
+        "Your browser only allows camera access over a secure (https) connection. " +
+        "This link is plain http, so the camera cannot open. Use the Townwize app, " +
+        "or continue on your computer."
+      );
+      return;
+    }
+
     let cancelled = false;
     (async () => {
       try {
@@ -57,7 +74,7 @@ export default function FaceVerifyHandoff() {
         const res = await fetch(`${BASE}/auth/face-session/${token}`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ selfie }),
+          body: JSON.stringify({ selfie, angles: methods.getValues("selfieAngles") }),
         });
         const body = await res.json();
         if (!res.ok) throw new Error(body?.message || "Upload failed");
@@ -106,7 +123,11 @@ export default function FaceVerifyHandoff() {
             </p>
             <div className="mt-6">
               <FormProvider {...methods}>
-                <FaceLiveness control={methods.control} name="selfie" />
+                <FaceLiveness
+                  control={methods.control}
+                  name="selfie"
+                  onAngles={(a) => methods.setValue("selfieAngles", a || null)}
+                />
               </FormProvider>
             </div>
             {state === "sending" && (

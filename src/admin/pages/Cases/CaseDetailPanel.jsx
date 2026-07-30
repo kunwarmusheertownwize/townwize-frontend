@@ -93,6 +93,14 @@ const PendingBadge = () => (
   </span>
 );
 
+const FACE_POSES = [
+  ["front", "front"],
+  ["left",  "turn left"],
+  ["right", "turn right"],
+  ["up",    "look up"],
+  ["down",  "look down"],
+];
+
 const DriverDocs = ({ profile, referrer }) => {
   const v    = profile?.vehicle          || {};
   const id   = profile?.identity         || {};
@@ -124,8 +132,21 @@ const DriverDocs = ({ profile, referrer }) => {
         <DocLink url={id.cnicFrontUrl} label="CNIC Front" />
         <DocLink url={id.cnicBackUrl}  label="CNIC Back"  />
         <DocLink url={face.selfieUrl}  label="Selfie"     />
+        {/* The liveness frames are the evidence that a live person performed the
+            movements rather than holding up a photograph. Storing them without
+            showing them to the reviewer would make them pointless. */}
+        {FACE_POSES.map(([key, label]) =>
+          face.angleUrls?.[key]
+            ? <DocLink key={key} url={face.angleUrls[key]} label={`Liveness — ${label}`} />
+            : null
+        )}
         {id.cnicNumber && (
           <div className="text-xs text-gray-500">CNIC: {id.cnicNumber}</div>
+        )}
+        {face.capturedAt && (
+          <div className="text-xs text-gray-500">
+            Face captured: {new Date(face.capturedAt).toLocaleString()}
+          </div>
         )}
       </DocSection>
 

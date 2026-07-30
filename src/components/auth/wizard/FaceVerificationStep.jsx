@@ -2,7 +2,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useFormContext } from "react-hook-form";
 import { QRCodeCanvas } from "qrcode.react";
 import FaceLiveness from "../../common/FaceLiveness";
-import { isNative } from "../../../utils/platform";
+import { hasUsableCamera } from "../../../utils/platform";
+import { qrOrigin, qrOriginIsUnreachable } from "../../../utils/publicOrigin";
 
 const BASE = import.meta.env.VITE_API_BASE_URL;
 const POLL_MS = 2500;
@@ -23,7 +24,11 @@ export default function FaceVerificationStep() {
   const { watch, setValue, trigger, formState: { errors } } = useFormContext();
   const selfie = watch("selfie");
 
-  const [mode, setMode] = useState(isNative() ? "camera" : "qr");
+  // Anyone already holding a phone — native app or mobile browser — goes
+  // straight to the camera. The QR hand-off exists only to get a desktop user
+  // onto a phone, so showing it ON a phone would ask them to scan their own
+  // screen with the device displaying it.
+  const [mode, setMode] = useState(hasUsableCamera() ? "camera" : "qr");
   const [session, setSession] = useState(null);   // { token, url }
   const [handoff, setHandoff] = useState("idle"); // idle|waiting|scanned|expired|error
   const pollRef = useRef(null);
@@ -37,7 +42,9 @@ export default function FaceVerificationStep() {
       const body = await res.json();
       const token = body?.data?.token;
       if (!token) throw new Error();
-      setSession({ token, url: `${window.location.origin}/face-verify/${token}` });
+      // NOT window.location.origin — on a dev machine that is `localhost`,
+      // which resolves to the phone itself and loads nothing.
+      setSession({ token, url: `${qrOrigin()}/face-verify/${token}` });
     } catch {
       setHandoff("error");
     }
@@ -61,6 +68,7 @@ export default function FaceVerificationStep() {
         if (status === "expired") { setHandoff("expired"); stopPolling(); }
         if (status === "completed" && body.data.selfie) {
           setValue("selfie", body.data.selfie, { shouldValidate: true });
+          if (body.data.angles) setValue("selfieAngles", body.data.angles);
           trigger("selfie");
           stopPolling();
         }
@@ -87,6 +95,7 @@ export default function FaceVerificationStep() {
             type="button"
             onClick={() => {
               setValue("selfie", "", { shouldValidate: true });
+              setValue("selfieAngles", null);
               setSession(null); setHandoff("idle");
             }}
             className="text-xs font-medium text-gray-500 underline-offset-2 hover:text-red-600 hover:underline"
@@ -102,9 +111,12 @@ export default function FaceVerificationStep() {
   if (mode === "camera") {
     return (
       <div className="space-y-4">
-        <FaceLiveness name="selfie" />
+        <FaceLiveness
+          name="selfie"
+          onAngles={(a) => setValue("selfieAngles", a || null)}
+        />
         {errors?.selfie && <p className="text-center text-xs !text-townwize-error">{errors.selfie.message}</p>}
-        {!isNative() && (
+        {!hasUsableCamera() && (
           <button
             type="button"
             onClick={() => { setMode("qr"); setHandoff("idle"); }}
@@ -126,6 +138,19 @@ export default function FaceVerificationStep() {
           Scan this with your phone camera. Your phone's front camera gives a far
           more reliable match against your CNIC photo.
         </p>
+
+        {qrOriginIsUnreachable() && (
+          <div className="mx-auto mt-4 max-w-xs rounded-lg border border-amber-300 bg-amber-50 p-3 text-left dark:border-amber-700 dark:bg-amber-900/20">
+            <p className="text-[11px] font-semibold text-amber-800 dark:text-amber-300">
+              Development only
+            </p>
+            <p className="mt-1 text-[11px] leading-relaxed text-amber-700 dark:text-amber-400">
+              This QR points at <code>localhost</code>, which a phone cannot reach.
+              Open this page on your machine's LAN address instead, or set
+              <code> VITE_PUBLIC_ORIGIN</code>. Not shown in production.
+            </p>
+          </div>
+        )}
 
         <div className="mx-auto mt-5 w-fit rounded-xl bg-white p-3 ring-1 ring-gray-200 dark:ring-gray-600">
           {session?.url ? (

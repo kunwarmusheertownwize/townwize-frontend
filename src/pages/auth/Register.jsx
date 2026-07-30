@@ -102,7 +102,7 @@ const defaultValues = {
   vehicleReg: null, licenseFront: null, licenseBack: null,
   vehiclePhotoFront: null, vehiclePhotoRear: null, vehiclePhotoLeft: null, vehiclePhotoRight: null,
   vehiclePhotoInteriorFront: null, vehiclePhotoInteriorRear: null, vehiclePhotoOdometer: null,
-  cnicFront: null, cnicBack: null, selfie: "",
+  cnicFront: null, cnicBack: null, selfie: "", selfieAngles: null,
 };
 
 // ─── phone OTP block ──────────────────────────────────────────────────────────
@@ -253,6 +253,7 @@ export default function Register() {
   const [otpLoadingSend, setOtpLoadingSend] = useState(false);
   const [otpLoadingVerify, setOtpLoadingVerify] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [checkingEmail, setCheckingEmail] = useState(false);
   const [showResidency, setShowResidency] = useState(true);
   const [showIdentity, setShowIdentity] = useState(true);
   const draftRestored = useRef(false);
@@ -303,7 +304,10 @@ export default function Register() {
 
       setCurrentStep(idx);
 
-      const restoredFiles = Object.keys(draft.files || {}).length;
+      // Count real uploads only — the store also holds the liveness frames,
+      // which are not a "file" the user recognises having uploaded.
+      const restoredFiles = Object.values(draft.files || {})
+        .filter((v) => v instanceof File || v instanceof Blob).length;
       if (idx > 0) {
         toast.info(
           restoredFiles > 0
@@ -399,6 +403,42 @@ export default function Register() {
       }
     }
 
+    // Catch a taken email HERE, not at submit. The server only reaches its own
+    // duplicate check after multer has uploaded every document to S3, so the
+    // applicant otherwise fills six more steps and waits out a multi-megabyte
+    // upload before being told an address they typed at step two is in use.
+    if (key === "account") {
+      const email = methods.getValues("email");
+      if (email) {
+        setCheckingEmail(true);
+        try {
+          const { data } = await api.get("/auth/availability", { params: { email } });
+          if (data?.data?.available === false) {
+            methods.setError("email", { type: "manual", message: "This email is already registered" });
+            toast.error(
+              <span>
+                That email is already registered.{" "}
+                <button
+                  type="button"
+                  onClick={() => navigate("/login", { state: location.state || null })}
+                  className="font-semibold underline underline-offset-2"
+                >
+                  Sign in instead
+                </button>
+              </span>,
+              { autoClose: 9000 }
+            );
+            return;
+          }
+        } catch {
+          // Network trouble or a 429 must not block registration — the server
+          // still enforces uniqueness at submit.
+        } finally {
+          setCheckingEmail(false);
+        }
+      }
+    }
+
     const nextStep = currentStep + 1;
     setCurrentStep(nextStep);
     if (mode !== "referral") {
@@ -406,7 +446,7 @@ export default function Register() {
         FILE_FIELDS, phoneVerificationToken);
     }
     window.scrollTo({ top: 0, behavior: "smooth" });
-  }, [currentStep, currentStepDef, methods, mode, phoneVerificationToken, selectedRole, steps]);
+  }, [currentStep, currentStepDef, methods, mode, phoneVerificationToken, selectedRole, steps, navigate, location.state]);
 
   // Jump straight back to an already-completed step. Backwards only: a later
   // step may depend on fields not yet filled, and skipping forward would bypass
@@ -465,7 +505,13 @@ export default function Register() {
           if (values.btkIdFront)   formData.append("btkIdFront", values.btkIdFront);
           if (values.btkIdBack)    formData.append("btkIdBack",  values.btkIdBack);
         }
-        if (values.selfie?.startsWith?.("data:")) formData.append("selfieData", values.selfie);
+        if (values.selfie?.startsWith?.("data:")) {
+          // Field name must be `selfie` — the backend reads req.body.selfie.
+          // It was `selfieData`, which matched nothing, so no face photo has
+          // ever been saved on any registration.
+          formData.append("selfie", values.selfie);
+          if (values.selfieAngles) formData.append("selfieAngles", JSON.stringify(values.selfieAngles));
+        }
       }
 
       if (activeRole === "driver") {
@@ -494,7 +540,13 @@ export default function Register() {
         if (values.vehiclePhotoOdometer)      formData.append("vehiclePhotoOdometer",       values.vehiclePhotoOdometer);
         if (values.cnicFront) formData.append("cnicFront", values.cnicFront);
         if (values.cnicBack)  formData.append("cnicBack",  values.cnicBack);
-        if (values.selfie?.startsWith?.("data:")) formData.append("selfieData", values.selfie);
+        if (values.selfie?.startsWith?.("data:")) {
+          // Field name must be `selfie` — the backend reads req.body.selfie.
+          // It was `selfieData`, which matched nothing, so no face photo has
+          // ever been saved on any registration.
+          formData.append("selfie", values.selfie);
+          if (values.selfieAngles) formData.append("selfieAngles", JSON.stringify(values.selfieAngles));
+        }
       }
 
       await api.post(`/auth/register?role=${activeRole}`, formData, {
@@ -652,7 +704,10 @@ export default function Register() {
 
       {/* Step card */}
       <FormProvider {...methods}>
-        <form onSubmit={methods.handleSubmit(onSubmit)} className="max-w-xl mx-auto px-4 pb-12">
+        {/* Submission is driven by the Submit button's onClick, not by the form.
+            A multi-step wizard must never submit implicitly — pressing Enter on
+            step three should not send a half-filled application. */}
+        <form onSubmit={(e) => e.preventDefault()} className="max-w-xl mx-auto px-4 pb-12">
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow p-6 space-y-6">
 
             {/* Step header */}
@@ -781,17 +836,31 @@ export default function Register() {
                   ← {currentStep === 0 ? "Change role" : "Back"}
                 </button>
               )}
+              {/* Distinct keys, and NEITHER is type="submit".
+                  The click that moved you onto the review step used to submit
+                  the application by itself: both branches render a <button>, so
+                  React reconciled them as the same DOM node and merely patched
+                  `type` from "button" to "submit" — synchronously, mid-click.
+                  The browser then ran the default action of the element as it
+                  stood when the click finished, which was now a submit button.
+                  Separate keys force a fresh node, and driving submission from
+                  onClick removes the implicit-submission path altogether — so
+                  Enter in a text field cannot fire it either. */}
               {!isLastStep ? (
                 <button
+                  key="continue"
                   type="button"
                   onClick={handleNext}
-                  className="flex-1 py-3 rounded-xl bg-townwize-primary text-white font-semibold hover:bg-townwize-primaryDark transition text-sm"
+                  disabled={checkingEmail}
+                  className={`flex-1 py-3 rounded-xl font-semibold text-white transition text-sm ${checkingEmail ? "bg-gray-400 cursor-not-allowed" : "bg-townwize-primary hover:bg-townwize-primaryDark"}`}
                 >
-                  Continue →
+                  {checkingEmail ? "Checking…" : "Continue →"}
                 </button>
               ) : (
                 <button
-                  type="submit"
+                  key="submit"
+                  type="button"
+                  onClick={methods.handleSubmit(onSubmit)}
                   disabled={isSubmitting}
                   className={`flex-1 py-3 rounded-xl font-semibold text-white transition text-sm ${isSubmitting ? "bg-gray-400 cursor-not-allowed" : "bg-townwize-primary hover:bg-townwize-primaryDark"}`}
                 >

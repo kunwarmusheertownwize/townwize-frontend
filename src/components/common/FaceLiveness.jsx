@@ -18,7 +18,10 @@ const PROMPTS = {
   down:  "Tilt your head down",
 };
 
-export default function FaceLiveness({ control, name, label = "Face verification" }) {
+export default function FaceLiveness({ control, name, onAngles }) {
+  // Kept in a ref so changing the callback does not re-run detection effects.
+  const onAnglesRef = useRef(onAngles);
+  useEffect(() => { onAnglesRef.current = onAngles; }, [onAngles]);
   // Whether this device has a camera at all, so a laptop user is told to switch
   // to their phone instead of tapping a button that can only fail.
   const [hasCamera, setHasCamera] = useState(true);
@@ -48,6 +51,9 @@ export default function FaceLiveness({ control, name, label = "Face verification
   const [cameraActive, setCameraActive] = useState(false);
   const [loading, setLoading] = useState(false); // add this state near other useState
 
+  // One frame per pose, keyed by step name. The front frame becomes the stored
+  // selfie; the rest are liveness evidence.
+  const framesRef = useRef({});
   const streamRef = useRef(null);
   const onChangeRef = useRef(null);
 
@@ -147,31 +153,43 @@ export default function FaceLiveness({ control, name, label = "Face verification
   };
 
 
-  const capture = useCallback((onChange) => {
-
-    // 🟡 TODO: Backend Integration
-    // After capture, send `imageData` to backend API for verification.
-    // Backend should compare with stored reference image (embeddings / Rekognition).
-    // Update status + borderColor based on API response.
-    if (!videoRef.current || !canvasRef.current) return;
+  /** Grab the current video frame as a JPEG data URL. */
+  const grabFrame = useCallback(() => {
+    if (!videoRef.current || !canvasRef.current) return null;
     const ctx = canvasRef.current.getContext("2d");
-    ctx.drawImage(
-      videoRef.current,
-      0,
-      0,
-      canvasRef.current.width,
-      canvasRef.current.height
-    );
-    const imageData = canvasRef.current.toDataURL("image/png");
-    setCapturedImage(imageData);
-    onChange(imageData);
-    // 🟡 Temporary placeholder until backend verification
-    setStatus("🔄 Verification pending (UI only)");
-    setBorderColor("border-yellow-500");
-
-    // stop camera after capture
-    stopCamera();
+    ctx.drawImage(videoRef.current, 0, 0, canvasRef.current.width, canvasRef.current.height);
+    // JPEG, not PNG: a PNG frame is several times larger for no benefit on a
+    // photograph, and these are posted over a phone connection.
+    return canvasRef.current.toDataURL("image/jpeg", 0.85);
   }, []);
+
+  /**
+   * Finish: the FRONT frame becomes the stored selfie, and every angle is kept.
+   *
+   * Previously a single frame was taken only after the LAST step — "down" — so
+   * the saved photo was the user tilting their head downwards, which is close to
+   * useless for matching against a CNIC portrait. The front-facing frame is the
+   * one a reviewer needs; the others are the evidence that a live person, not a
+   * held-up photograph, performed the movements.
+   */
+  const capture = useCallback((onChange) => {
+    const frames = framesRef.current;
+    const front = frames.front || grabFrame();
+    if (!front) return;
+
+    setCapturedImage(front);
+
+    // `selfie` stays a plain data-URL string — the draft store, the submit
+    // payload and every existing reader depend on that. The other poses go out
+    // through a separate channel so nothing downstream has to change shape.
+    onChange(front);
+    onAnglesRef.current?.({ ...frames });
+
+    setStatus("✅ Face verified");
+    setBorderColor("border-green-500");
+    setGuideColor("green");
+    stopCamera();
+  }, [grabFrame]);
 
   const runDetection = useCallback(
     async (onChange) => {
@@ -222,7 +240,12 @@ export default function FaceLiveness({ control, name, label = "Face verification
         setPassCount((c) => c + 1);
 
         if (passCount + 1 >= 3) {
-          setStatus(`✅ ${step} verified`);
+          // Keep THIS pose while the face is still in it. Waiting until the end
+          // meant only the final "down" frame ever existed.
+          const frame = grabFrame();
+          if (frame) framesRef.current[step] = frame;
+
+          setStatus("✅ Good");
           setBorderColor("pulse-green");
           setGuideColor("green");
           setPassCount(0);
@@ -230,7 +253,7 @@ export default function FaceLiveness({ control, name, label = "Face verification
           setTimeout(() => {
             if (currentStep + 1 < STEPS.length) {
               setCurrentStep((s) => s + 1);
-              setStatus(`Now turn ${STEPS[currentStep + 1]}`);
+              setStatus(PROMPTS[STEPS[currentStep + 1]]);
               setBorderColor("border-gray-300");
               setGuideColor("white");
             } else {
@@ -264,6 +287,7 @@ export default function FaceLiveness({ control, name, label = "Face verification
     return () => clearInterval(interval);
   }, [cameraActive, capturedImage, runDetection]);
 
+  // eslint-disable-next-line no-unused-vars
   const retake = async (onChange) => {
     setCapturedImage(null);
     onChange(null);
@@ -292,7 +316,7 @@ export default function FaceLiveness({ control, name, label = "Face verification
     <Controller
       control={control}
       name={name}
-      rules={{ required: `${label || "Selfie"} is required` }}
+      rules={{ required: "Face verification is required" }}
       render={({ field: { onChange }, fieldState: { error } }) => {
         onChangeRef.current = onChange;
         return (
