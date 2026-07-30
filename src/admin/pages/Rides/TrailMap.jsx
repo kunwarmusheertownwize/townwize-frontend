@@ -85,13 +85,44 @@ export default function TrailMap({ trail = [], gaps = [], pickup, dropoff }) {
           scale: 3,
         };
         gaps.forEach((gp, idx) => {
-          const stationary = gp.stationary;
+          if (gp.stationary) {
+            // The vehicle did not move, so there is no line to draw. A dot with
+            // the duration says "stopped here" honestly; a dashed line between
+            // two points a few metres apart just looks like a rendering fault.
+            new g.Marker({
+              map,
+              position: gp.from,
+              title: `Stopped ${Math.round(gp.seconds)}s (moved ${gp.metres} m)`,
+              icon: {
+                path: g.SymbolPath.CIRCLE,
+                scale: 6,
+                fillColor: "#9AA5A3",
+                fillOpacity: 1,
+                strokeColor: "#ffffff",
+                strokeWeight: 2,
+              },
+              zIndex: 50,
+            });
+            return;
+          }
+
+          // GPS gap. Draw the ROAD route recorded at settlement — the same path
+          // the fare was calculated from. Falling back to a straight line when
+          // routing was unavailable is why these used to cut across the map.
+          let path = [gp.from, gp.to];
+          if (gp.polyline && g.geometry?.encoding) {
+            try {
+              const decoded = g.geometry.encoding.decodePath(gp.polyline);
+              if (decoded.length > 1) path = decoded;
+            } catch { /* keep the straight fallback */ }
+          }
+
           new g.Polyline({
             map,
-            path: [gp.from, gp.to],
+            path,
             strokeOpacity: 0,
             icons: [{
-              icon: { ...dash, strokeColor: stationary ? "#9AA5A3" : "#D92D20" },
+              icon: { ...dash, strokeColor: "#D92D20" },
               offset: "0",
               repeat: "12px",
             }],
@@ -100,12 +131,12 @@ export default function TrailMap({ trail = [], gaps = [], pickup, dropoff }) {
             map,
             position: gp.from,
             title:
-              `Gap ${idx + 1}: ${gp.metres} m over ${gp.seconds}s` +
-              (stationary ? " — vehicle stationary" : " — GPS lost while moving"),
+              `GPS gap ${idx + 1}: ${gp.metres} m apart over ${gp.seconds}s` +
+              (gp.polyline ? " — drawn along the road route" : " — straight line, routing unavailable"),
             icon: {
               path: g.SymbolPath.CIRCLE,
               scale: 6,
-              fillColor: stationary ? "#9AA5A3" : "#D92D20",
+              fillColor: "#D92D20",
               fillOpacity: 1,
               strokeColor: "#ffffff",
               strokeWeight: 2,
@@ -163,10 +194,10 @@ export default function TrailMap({ trail = [], gaps = [], pickup, dropoff }) {
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-gray-500 dark:text-gray-400">
           <span><span className="mr-1 inline-block h-[3px] w-4 align-middle bg-[#17BEBB]" />Recorded route ({trail.length} points)</span>
           {movingGaps > 0 && (
-            <span><span className="mr-1 inline-block h-[3px] w-4 align-middle bg-[#D92D20]" />GPS lost while moving ({movingGaps})</span>
+            <span><span className="mr-1 inline-block h-[3px] w-4 align-middle bg-[#D92D20]" />GPS gap, road route ({movingGaps})</span>
           )}
           {stoppedGaps > 0 && (
-            <span><span className="mr-1 inline-block h-[3px] w-4 align-middle bg-[#9AA5A3]" />Stationary ({stoppedGaps})</span>
+            <span><span className="mr-1 inline-block h-2 w-2 rounded-full align-middle bg-[#9AA5A3]" />Stopped ({stoppedGaps})</span>
           )}
         </div>
       )}
