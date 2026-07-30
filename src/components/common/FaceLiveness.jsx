@@ -2,9 +2,21 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { Controller } from "react-hook-form";
 import * as faceapi from "face-api.js";
 import { isNative } from "../../utils/platform";
+import FaceProgressRing from "./FaceProgressRing";
 
 // stable constant
 const STEPS = ["front", "left", "right", "up", "down"];
+
+// Plain-language instruction per step. "Now turn front" is not an instruction
+// anyone can act on; these are what the user actually reads while the camera is
+// running, so they carry the whole interaction.
+const PROMPTS = {
+  front: "Look straight at the camera",
+  left:  "Slowly turn your head left",
+  right: "Slowly turn your head right",
+  up:    "Tilt your head up",
+  down:  "Tilt your head down",
+};
 
 export default function FaceLiveness({ control, name, label = "Face verification" }) {
   // Whether this device has a camera at all, so a laptop user is told to switch
@@ -331,49 +343,46 @@ export default function FaceLiveness({ control, name, label = "Face verification
                 )}
               </div>
             ) : !capturedImage ? (
-              <div className="relative flex flex-col items-center">
-                <div
-                  className={`w-30 h-34 rounded-full overflow-hidden border-4 transition-colors ${borderColor} relative bg-black`}
+              <div className="relative flex flex-col items-center gap-3">
+                {/* The ring reports progress through the five head movements.
+                    Previously this was a line of text only, so people had no
+                    sense of how far through they were and often stopped early. */}
+                <FaceProgressRing
+                  progress={currentStep / STEPS.length}
+                  state={
+                    guideColor === "green" ? "success"
+                      : guideColor === "red" ? "error"
+                        : "active"
+                  }
+                  size={232}
                 >
                   {loading && (
-                    <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center z-30">
-                      <div className="w-12 h-12 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
+                    <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/50">
+                      <div className="h-10 w-10 animate-spin rounded-full border-4 border-white border-t-transparent" />
                     </div>
                   )}
-
                   <video
                     ref={videoRef}
                     autoPlay
                     playsInline
                     muted
-                    className="w-full h-full object-cover relative z-10"
+                    className="relative z-10 h-full w-full scale-x-[-1] object-cover"
                     onLoadedMetadata={() => {
-                      if (videoRef.current) {
-                        videoRef.current
-                          .play()
-                          .then(() => console.log("✅ Video playing"))
-                          .catch((err) =>
-                            console.error("Video play failed:", err)
-                          );
-                      }
+                      videoRef.current?.play().catch((err) =>
+                        console.error("Video play failed:", err)
+                      );
                     }}
                   />
-                  {/* guide overlay */}
-                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
-                    <div
-                      className={`w-56 h-56 rounded-full border-2 guide-circle ${guideColor === "green"
-                        ? "green"
-                        : guideColor === "red"
-                          ? "red"
-                          : ""
-                        }`}
-                    />
-                  </div>
-                </div>
+                </FaceProgressRing>
 
-                <p className="text-xs text-gray-500 mt-2">
-                  Step {currentStep + 1} of {STEPS.length}
-                </p>
+                <div className="text-center">
+                  <p className="text-base font-semibold text-gray-800 dark:text-gray-100">
+                    {PROMPTS[STEPS[currentStep]] || "Hold still"}
+                  </p>
+                  <p className="mt-0.5 text-xs text-gray-400">
+                    {currentStep} of {STEPS.length} complete
+                  </p>
+                </div>
               </div>
             ) : (
               <div className="flex flex-col items-center">

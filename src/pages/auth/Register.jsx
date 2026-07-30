@@ -17,6 +17,7 @@ import WizardProgress from "../../components/auth/wizard/WizardProgress";
 import VehicleDetailsStep from "../../components/auth/wizard/VehicleDetailsStep";
 import VehiclePhotosStep from "../../components/auth/wizard/VehiclePhotosStep";
 import WizerIdentityStep from "../../components/auth/wizard/WizerIdentityStep";
+import FaceVerificationStep from "../../components/auth/wizard/FaceVerificationStep";
 import { saveDraft, loadDraft, clearDraft, isTokenExpired } from "../../utils/registrationDraft";
 import { enforceBusinessRules, schema } from "../../validation/fields";
 
@@ -47,7 +48,8 @@ const PASSENGER_GUEST_STEPS = [
 const WIZER_STEPS = [
   { key: "phone",         label: "Phone",     fields: ["phone"] },
   { key: "account",       label: "Account",   fields: ["name", "email", "password"] },
-  { key: "identity",      label: "Identity",  fields: ["cnicNumber", "cnicFront", "cnicBack", "licenseFront", "licenseBack", "selfie"] },
+  { key: "identity",      label: "Identity",  fields: ["cnicNumber", "cnicFront", "cnicBack", "licenseFront", "licenseBack"] },
+  { key: "faceCheck",     label: "Face",      fields: ["selfie"] },
   { key: "residency",     label: "Residency", fields: ["btkAddress", "residencyType", "btkProofFile", "btkIdFront", "btkIdBack"] },
   { key: "vehicle",       label: "Vehicle",   fields: ["vehicleType", "carType", "vehicleMake", "vehicleModel", "vehicleYear", "vehicleSeats", "vehicleNumber", "vehicleColor", "vehicleReg"] },
   { key: "vehiclePhotos", label: "Photos",    fields: ["vehiclePhotoFront", "vehiclePhotoRear", "vehiclePhotoLeft", "vehiclePhotoRight", "vehiclePhotoInteriorFront", "vehiclePhotoInteriorRear", "vehiclePhotoOdometer"] },
@@ -602,6 +604,7 @@ export default function Register() {
     identity:       selectedRole === "driver"
       ? { title: "Verify Your Identity", sub: "CNIC, driving licence and a quick face check." }
       : { title: "Identity Verification", sub: "CNIC is required to verify your identity." },
+    faceCheck:      { title: "Face Verification", sub: "One quick check that you match your CNIC photo." },
     vehicle:        { title: "Your Vehicle", sub: "Vehicle details and registration document." },
     vehiclePhotos:  { title: "Vehicle Photos", sub: "Upload condition photos from all required angles." },
     review:         { title: "Review & Submit", sub: "Double-check your details before submitting." },
@@ -728,9 +731,7 @@ export default function Register() {
                 <WizerIdentityStep
                   showIdentity={showIdentity}
                   setShowIdentity={setShowIdentity}
-                  control={methods.control}
-                  errors={methods.formState.errors}
-                />
+                  />
               ) : (
                 <IdentitySection
                   showIdentity={showIdentity}
@@ -740,6 +741,8 @@ export default function Register() {
                 />
               )
             )}
+
+            {stepKey === "faceCheck" && <FaceVerificationStep />}
 
             {/* ── Step: Vehicle Details + Docs (Wizer) ── */}
             {stepKey === "vehicle" && (

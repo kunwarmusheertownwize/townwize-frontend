@@ -1,7 +1,6 @@
 import { useFormContext } from "react-hook-form";
 import UploadPreview from "../../common/UploadPreview";
 import IdentitySection from "../IdentitySection";
-import FaceSection from "../FaceSection";
 
 /**
  * Wizer identity: everything that proves who the person is.
@@ -14,9 +13,7 @@ import FaceSection from "../FaceSection";
  *
  * It now runs third, straight after the account is created.
  */
-export default function WizerIdentityStep({
-  showIdentity, setShowIdentity, control, errors: formErrors,
-}) {
+export default function WizerIdentityStep({ showIdentity, setShowIdentity }) {
   const { watch, setValue, trigger, formState: { errors } } = useFormContext();
 
   const licenseFront = watch("licenseFront");
@@ -77,8 +74,6 @@ export default function WizerIdentityStep({
         {errors.licenseFront && <p className={err}>{errors.licenseFront.message}</p>}
         {errors.licenseBack && <p className={err}>{errors.licenseBack.message}</p>}
       </div>
-
-      <FaceSection control={control} errors={formErrors} />
     </div>
   );
 }

@@ -40,6 +40,7 @@ import ForgotPassword from "../pages/auth/ForgotPassword";
 import ResetPassword from "../pages/auth/ResetPassword";
 import OTPVerify from "../pages/auth/OTPVerify";
 import VerifyEmail from "../pages/auth/VerifyEmail";
+import FaceVerifyHandoff from "../pages/auth/FaceVerifyHandoff";
 import Booking from "../pages/passenger/Booking/Booking";
 import PassengerDashboard from "../pages/passenger/Dashboard/PassengerDashboard";
 import PassengerAccount from "../pages/passenger/Account/Account";
@@ -153,6 +154,10 @@ const AppRoutes = () => {
         <Route path="/verify-email" element={<VerifyEmail />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
+        {/* Face verification hand-off — opened by scanning the QR on desktop.
+            Public: it runs before the account exists. */}
+        <Route path="/face-verify/:token" element={<FaceVerifyHandoff />} />
+
         {/*Driver Registration */}
         <Route path="/driver/register" element={<DriverRegister />} />
 
