@@ -10,12 +10,13 @@ import api from "../../services/api";
 import { getAppRole } from "../../utils/appRole";
 import AccountInfo from "../../components/auth/AccountInfo";
 import AuthHeader from "../../components/auth/AuthHeader";
-import FaceSection from "../../components/auth/FaceSection";
 import IdentitySection from "../../components/auth/IdentitySection";
 import ResidencySection from "../../components/auth/ResidencySection";
 import WizardProgress from "../../components/auth/wizard/WizardProgress";
 import VehicleDetailsStep from "../../components/auth/wizard/VehicleDetailsStep";
 import VehiclePhotosStep from "../../components/auth/wizard/VehiclePhotosStep";
+import WizerIdentityStep from "../../components/auth/wizard/WizerIdentityStep";
+import { saveDraft, loadDraft, clearDraft, isTokenExpired } from "../../utils/registrationDraft";
 import { enforceBusinessRules, schema } from "../../validation/fields";
 
 // ─── step definitions ────────────────────────────────────────────────────────
@@ -34,32 +35,31 @@ const PASSENGER_GUEST_STEPS = [
   { key: "review",   label: "Review",   fields: [] },
 ];
 
+// Ordered by ascending effort, so the cheapest disqualifying checks come first
+// and the heaviest ask (seven vehicle photos) lands where abandoning costs least.
+// Uploads per step: 0, 0, 5, 3, 1, 7.
+//
+// Identity was previously step 6 of 7 — a driver uploaded everything including
+// seven vehicle photos before we asked who they were. The CNIC number sat in the
+// Vehicle step while its images sat two steps away, and the driving licence, a
+// personal document, was filed under Vehicle.
 const WIZER_STEPS = [
-  { key: "phone",          label: "Phone",    fields: ["phone"] },
-  { key: "account",        label: "Account",  fields: ["name", "email", "password"] },
-  { key: "residency",      label: "Residency",fields: ["btkAddress", "residencyType", "btkProofFile", "btkIdFront", "btkIdBack"] },
-  { key: "vehicle",        label: "Vehicle",  fields: ["vehicleType", "carType", "vehicleMake", "vehicleModel", "vehicleYear", "vehicleSeats", "vehicleNumber", "vehicleColor", "cnicNumber", "vehicleReg", "licenseFront", "licenseBack"] },
-  { key: "vehiclePhotos",  label: "Photos",   fields: ["vehiclePhotoFront", "vehiclePhotoRear", "vehiclePhotoLeft", "vehiclePhotoRight", "vehiclePhotoInteriorFront", "vehiclePhotoInteriorRear", "vehiclePhotoOdometer"] },
-  { key: "licenseIdentity",label: "Identity", fields: ["cnicFront", "cnicBack"] },
-  { key: "review",         label: "Review",   fields: [] },
+  { key: "phone",         label: "Phone",     fields: ["phone"] },
+  { key: "account",       label: "Account",   fields: ["name", "email", "password"] },
+  { key: "identity",      label: "Identity",  fields: ["cnicNumber", "cnicFront", "cnicBack", "licenseFront", "licenseBack", "selfie"] },
+  { key: "residency",     label: "Residency", fields: ["btkAddress", "residencyType", "btkProofFile", "btkIdFront", "btkIdBack"] },
+  { key: "vehicle",       label: "Vehicle",   fields: ["vehicleType", "carType", "vehicleMake", "vehicleModel", "vehicleYear", "vehicleSeats", "vehicleNumber", "vehicleColor", "vehicleReg"] },
+  { key: "vehiclePhotos", label: "Photos",    fields: ["vehiclePhotoFront", "vehiclePhotoRear", "vehiclePhotoLeft", "vehiclePhotoRight", "vehiclePhotoInteriorFront", "vehiclePhotoInteriorRear", "vehiclePhotoOdometer"] },
+  { key: "review",        label: "Review",    fields: [] },
 ];
 
 // ─── draft helpers ────────────────────────────────────────────────────────────
 
 const FILE_FIELDS = ["btkProofFile", "btkIdFront", "btkIdBack", "cnicFront", "cnicBack", "vehicleReg", "licenseFront", "licenseBack", "vehiclePhotoFront", "vehiclePhotoRear", "vehiclePhotoLeft", "vehiclePhotoRight", "vehiclePhotoInteriorFront", "vehiclePhotoInteriorRear", "vehiclePhotoOdometer", "selfie"];
-const DRAFT_KEY = "tw_reg_draft";
-
-const saveDraft = (role, step, values) => {
-  const clean = { ...values };
-  FILE_FIELDS.forEach(f => delete clean[f]);
-  try { localStorage.setItem(DRAFT_KEY, JSON.stringify({ role, step, data: clean })); } catch {}
-};
-
-const loadDraft = () => {
-  try { return JSON.parse(localStorage.getItem(DRAFT_KEY) || "null"); } catch { return null; }
-};
-
-const clearDraft = () => { try { localStorage.removeItem(DRAFT_KEY); } catch {} };
+// Draft persistence lives in utils/registrationDraft.js — it keeps uploaded
+// files in IndexedDB (localStorage cannot hold 16 images), stores the step KEY
+// rather than an index so reordering steps cannot strand anyone, and persists
+// the phone verification token so reopening does not dead-end at submit.
 
 // ─── default form values ──────────────────────────────────────────────────────
 
@@ -189,13 +189,53 @@ export default function Register() {
   // ── restore draft ──
   useEffect(() => {
     if (mode === "referral" || draftRestored.current) return;
-    const draft = loadDraft();
-    if (!draft) return;
-    draftRestored.current = true;
-    setSelectedRole(draft.role);
-    setCurrentStep(draft.step || 0);
-    methods.reset({ ...defaultValues, ...draft.data });
-    toast.info("Progress restored. Files will need re-uploading.", { autoClose: 5000 });
+    let cancelled = false;
+    (async () => {
+      const draft = await loadDraft();
+      if (!draft || cancelled) return;
+      draftRestored.current = true;
+
+      setSelectedRole(draft.role);
+
+      // Files come back from IndexedDB as real File objects, so UploadPreview
+      // and the submit FormData see exactly what they saw before.
+      methods.reset({ ...defaultValues, ...draft.data, ...(draft.files || {}) });
+
+      const stepList =
+        draft.role === "driver" ? WIZER_STEPS
+          : mode === "referral" ? PASSENGER_GUEST_STEPS
+            : PASSENGER_TOWNER_STEPS;
+
+      // Resolve the saved step KEY. Unknown key (an older draft, or a step that
+      // no longer exists) falls back to the start rather than a wrong screen.
+      let idx = stepList.findIndex((s) => s.key === draft.stepKey);
+      if (idx < 0) idx = 0;
+
+      // The phone token is short-lived. If it is gone or expired, send them back
+      // to the phone step now with a reason, instead of letting them finish the
+      // whole form and hit "Phone verification is required" at submit with no
+      // route back — which is what used to happen.
+      const token = draft.phoneVerificationToken || "";
+      if (token && !isTokenExpired(token)) {
+        setPhoneVerificationToken(token);
+      } else if (idx > 0) {
+        idx = 0;
+        toast.info("Your phone verification expired — please verify again to continue.", { autoClose: 6000 });
+      }
+
+      setCurrentStep(idx);
+
+      const restoredFiles = Object.keys(draft.files || {}).length;
+      if (idx > 0) {
+        toast.info(
+          restoredFiles > 0
+            ? `Progress restored, including ${restoredFiles} uploaded file${restoredFiles === 1 ? "" : "s"}.`
+            : "Progress restored.",
+          { autoClose: 4000 }
+        );
+      }
+    })();
+    return () => { cancelled = true; };
   }, [mode, methods]);
 
   // ── validate referral code ──
@@ -266,16 +306,22 @@ export default function Register() {
 
     const nextStep = currentStep + 1;
     setCurrentStep(nextStep);
-    if (mode !== "referral") saveDraft(selectedRole, nextStep, methods.getValues());
+    if (mode !== "referral") {
+      saveDraft(selectedRole, steps[nextStep]?.key || "review", methods.getValues(),
+        FILE_FIELDS, phoneVerificationToken);
+    }
     window.scrollTo({ top: 0, behavior: "smooth" });
-  }, [currentStep, currentStepDef, methods, mode, phoneVerificationToken, selectedRole]);
+  }, [currentStep, currentStepDef, methods, mode, phoneVerificationToken, selectedRole, steps]);
 
   const handleBack = useCallback(() => {
     const prev = currentStep - 1;
     setCurrentStep(prev);
-    if (mode !== "referral") saveDraft(selectedRole, prev, methods.getValues());
+    if (mode !== "referral") {
+      saveDraft(selectedRole, steps[prev]?.key || "phone", methods.getValues(),
+        FILE_FIELDS, phoneVerificationToken);
+    }
     window.scrollTo({ top: 0, behavior: "smooth" });
-  }, [currentStep, mode, methods, selectedRole]);
+  }, [currentStep, mode, methods, selectedRole, steps, phoneVerificationToken]);
 
   // ── submit ──
   const onSubmit = async (values) => {
@@ -406,10 +452,11 @@ export default function Register() {
     phone:          { title: "Verify Your Phone", sub: "We'll send a one-time code via WhatsApp." },
     account:        { title: "Create Your Account", sub: "Your name and email for login and notifications." },
     residency:      { title: "BTK Residency", sub: "Provide your BTK address and supporting documents." },
-    identity:       { title: "Identity Verification", sub: "CNIC is required to verify your identity." },
-    vehicle:        { title: "Your Vehicle", sub: "Enter your vehicle details and upload registration documents." },
+    identity:       selectedRole === "driver"
+      ? { title: "Verify Your Identity", sub: "CNIC, driving licence and a quick face check." }
+      : { title: "Identity Verification", sub: "CNIC is required to verify your identity." },
+    vehicle:        { title: "Your Vehicle", sub: "Vehicle details and registration document." },
     vehiclePhotos:  { title: "Vehicle Photos", sub: "Upload condition photos from all required angles." },
-    licenseIdentity:{ title: "Your Identity", sub: "Upload your CNIC and complete face verification." },
     review:         { title: "Review & Submit", sub: "Double-check your details before submitting." },
   }[stepKey] || { title: stepKey, sub: "" };
 
@@ -517,14 +564,27 @@ export default function Register() {
               />
             )}
 
-            {/* ── Step: Identity (GuestTowner CNIC) ── */}
+            {/* ── Step: Identity ──
+                Wizer gets the full set: CNIC number + images, licence, face
+                verification. GuestTowner is lighter KYC — CNIC images only. */}
             {stepKey === "identity" && (
-              <IdentitySection
-                showIdentity={showIdentity}
-                setShowIdentity={setShowIdentity}
-                setCnicFrontProgress={() => {}}
-                setCnicBackProgress={() => {}}
-              />
+              selectedRole === "driver" ? (
+                <WizerIdentityStep
+                  showIdentity={showIdentity}
+                  setShowIdentity={setShowIdentity}
+                  showFace={showFace}
+                  setShowFace={setShowFace}
+                  control={methods.control}
+                  errors={methods.formState.errors}
+                />
+              ) : (
+                <IdentitySection
+                  showIdentity={showIdentity}
+                  setShowIdentity={setShowIdentity}
+                  setCnicFrontProgress={() => {}}
+                  setCnicBackProgress={() => {}}
+                />
+              )
             )}
 
             {/* ── Step: Vehicle Details + Docs (Wizer) ── */}
@@ -538,24 +598,6 @@ export default function Register() {
 
             {/* ── Step: Vehicle Condition Photos (Wizer) ── */}
             {stepKey === "vehiclePhotos" && <VehiclePhotosStep />}
-
-            {/* ── Step: Wizer Identity (CNIC + Selfie) ── */}
-            {stepKey === "licenseIdentity" && (
-              <div className="space-y-6">
-                <IdentitySection
-                  showIdentity={showIdentity}
-                  setShowIdentity={setShowIdentity}
-                  setCnicFrontProgress={() => {}}
-                  setCnicBackProgress={() => {}}
-                />
-                <FaceSection
-                  showFace={showFace}
-                  setShowFace={setShowFace}
-                  control={methods.control}
-                  errors={methods.formState.errors}
-                />
-              </div>
-            )}
 
             {/* ── Step: Review ── */}
             {stepKey === "review" && (

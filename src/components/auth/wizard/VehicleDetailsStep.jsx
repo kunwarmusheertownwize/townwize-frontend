@@ -5,8 +5,6 @@ export default function VehicleDetailsStep({ setVehicleProgress, setLicenseFront
   const { register, watch, setValue, trigger, formState: { errors } } = useFormContext();
 
   const vehicleReg = watch("vehicleReg");
-  const licenseFront = watch("licenseFront");
-  const licenseBack = watch("licenseBack");
 
   const mkHandler = (field, setter) => (file) => {
     setValue(field, file, { shouldValidate: true });
@@ -72,16 +70,6 @@ export default function VehicleDetailsStep({ setVehicleProgress, setLicenseFront
           <input {...register("vehicleColor")} className={input} placeholder="White" />
           {errors.vehicleColor && <p className={err}>{errors.vehicleColor.message}</p>}
         </div>
-        <div>
-          <label className="text-sm text-gray-600 dark:text-gray-300">CNIC Number</label>
-          <input
-            {...register("cnicNumber")}
-            className={input}
-            placeholder="XXXXX-XXXXXXX-X"
-            maxLength={15}
-          />
-          {errors.cnicNumber && <p className={err}>{errors.cnicNumber.message}</p>}
-        </div>
       </div>
 
       <div className="rounded-lg border border-gray-100 dark:border-gray-700 p-4">
@@ -100,8 +88,10 @@ export default function VehicleDetailsStep({ setVehicleProgress, setLicenseFront
         </label>
       </div>
 
+      {/* Licence and CNIC moved to the Identity step — they identify the person,
+          not the vehicle. Only the registration document belongs here. */}
       <div className="rounded-lg border border-gray-100 dark:border-gray-700 p-4 space-y-4">
-        <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">Vehicle Documents</p>
+        <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">Vehicle Document</p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <UploadPreview
             id="veh-reg-upload"
@@ -111,26 +101,8 @@ export default function VehicleDetailsStep({ setVehicleProgress, setLicenseFront
             minWidth={600} minHeight={400} maxSizeMB={5}
             onProgress={setVehicleProgress}
           />
-          <UploadPreview
-            id="lic-front-upload"
-            label="License Front"
-            file={licenseFront}
-            onFileChange={mkHandler("licenseFront", setLicenseFrontProgress)}
-            minWidth={600} minHeight={400} maxSizeMB={5}
-            onProgress={setLicenseFrontProgress}
-          />
-          <UploadPreview
-            id="lic-back-upload"
-            label="License Back"
-            file={licenseBack}
-            onFileChange={mkHandler("licenseBack", setLicenseBackProgress)}
-            minWidth={600} minHeight={400} maxSizeMB={5}
-            onProgress={setLicenseBackProgress}
-          />
         </div>
-        {errors.vehicleReg    && <p className={err}>{errors.vehicleReg.message}</p>}
-        {errors.licenseFront  && <p className={err}>{errors.licenseFront.message}</p>}
-        {errors.licenseBack   && <p className={err}>{errors.licenseBack.message}</p>}
+        {errors.vehicleReg && <p className={err}>{errors.vehicleReg.message}</p>}
       </div>
     </div>
   );
