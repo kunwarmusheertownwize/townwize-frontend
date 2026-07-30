@@ -61,6 +61,32 @@ const FILE_FIELDS = ["btkProofFile", "btkIdFront", "btkIdBack", "cnicFront", "cn
 // rather than an index so reordering steps cannot strand anyone, and persists
 // the phone verification token so reopening does not dead-end at submit.
 
+// Human names for every field, so a failed step can say WHAT is missing instead
+// of "Please complete all required fields" on a screen with six of them.
+const FIELD_LABELS = {
+  phone: "Phone number", name: "Full name", email: "Email", password: "Password",
+  btkAddress: "BTK address", residencyType: "Owner or tenant",
+  btkProofFile: "Proof of residency", btkIdFront: "BTK ID (front)", btkIdBack: "BTK ID (back)",
+  cnicNumber: "CNIC number", cnicFront: "CNIC (front)", cnicBack: "CNIC (back)",
+  licenseFront: "Licence (front)", licenseBack: "Licence (back)", selfie: "Face verification",
+  vehicleType: "Vehicle type", carType: "Vehicle class", vehicleMake: "Make",
+  vehicleModel: "Model", vehicleYear: "Year", vehicleSeats: "Seats",
+  vehicleNumber: "Number plate", vehicleColor: "Colour", vehicleReg: "Vehicle registration",
+  vehiclePhotoFront: "Front exterior photo", vehiclePhotoRear: "Rear exterior photo",
+  vehiclePhotoLeft: "Left side photo", vehiclePhotoRight: "Right side photo",
+  vehiclePhotoInteriorFront: "Interior front photo",
+  vehiclePhotoInteriorRear: "Interior rear photo",
+  vehiclePhotoOdometer: "Dashboard / odometer photo",
+};
+
+const describeMissing = (fields, errors) => {
+  const missing = fields.filter((f) => errors[f]).map((f) => FIELD_LABELS[f] || f);
+  if (missing.length === 0) return "Please complete this step before continuing.";
+  if (missing.length === 1) return `${missing[0]} is required.`;
+  if (missing.length <= 3) return `Still needed: ${missing.join(", ")}.`;
+  return `Still needed: ${missing.slice(0, 3).join(", ")} and ${missing.length - 3} more.`;
+};
+
 // ─── default form values ──────────────────────────────────────────────────────
 
 const defaultValues = {
@@ -299,7 +325,20 @@ export default function Register() {
     if (fields.length > 0) {
       const valid = await methods.trigger(fields);
       if (!valid) {
-        toast.error("Please complete all required fields before continuing");
+        const errs = methods.formState.errors;
+        toast.error(describeMissing(fields, errs));
+        // Put the cursor on the first thing that is wrong. Works for text and
+        // select inputs; file inputs are hidden so setFocus is a no-op there,
+        // hence the scroll fallback below.
+        const firstBad = fields.find((f) => errs[f]);
+        if (firstBad) {
+          try { methods.setFocus(firstBad); } catch { /* not a focusable input */ }
+          requestAnimationFrame(() => {
+            document
+              .querySelector(`[name="${firstBad}"]`)
+              ?.scrollIntoView({ behavior: "smooth", block: "center" });
+          });
+        }
         return;
       }
     }
@@ -312,6 +351,19 @@ export default function Register() {
     }
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [currentStep, currentStepDef, methods, mode, phoneVerificationToken, selectedRole, steps]);
+
+  // Jump straight back to an already-completed step. Backwards only: a later
+  // step may depend on fields not yet filled, and skipping forward would bypass
+  // step validation entirely.
+  const handleStepSelect = useCallback((index) => {
+    if (index >= currentStep || index < 0) return;
+    setCurrentStep(index);
+    if (mode !== "referral") {
+      saveDraft(selectedRole, steps[index]?.key || "phone", methods.getValues(),
+        FILE_FIELDS, phoneVerificationToken);
+    }
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [currentStep, mode, methods, selectedRole, steps, phoneVerificationToken]);
 
   const handleBack = useCallback(() => {
     const prev = currentStep - 1;
@@ -493,7 +545,11 @@ export default function Register() {
 
       {/* Progress bar */}
       {steps.length > 0 && (
-        <WizardProgress steps={steps} currentStep={currentStep} />
+        <WizardProgress
+          steps={steps}
+          currentStep={currentStep}
+          onStepSelect={handleStepSelect}
+        />
       )}
 
       {/* Step card */}
@@ -510,6 +566,36 @@ export default function Register() {
             {/* ── Step: Phone OTP ── */}
             {stepKey === "phone" && (
               <div className="space-y-4">
+                {/* Set expectations before they start. People abandon partway
+                    because they did not know a document was coming, not because
+                    the form is hard. */}
+                <div className="rounded-xl border border-gray-100 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800/50">
+                  <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">
+                    {selectedRole === "driver" ? "About 10 minutes" : "About 3 minutes"}
+                  </p>
+                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    Have these ready before you start:
+                  </p>
+                  <ul className="mt-2 space-y-1 text-xs text-gray-600 dark:text-gray-300">
+                    {(selectedRole === "driver"
+                      ? ["Your CNIC (both sides)",
+                         "Your driving licence (both sides)",
+                         "Proof of BTK residency and your BTK ID",
+                         "Vehicle registration document",
+                         "Your vehicle, for 7 condition photos"]
+                      : ["Proof of BTK residency",
+                         "Your BTK ID (both sides)"]
+                    ).map((item) => (
+                      <li key={item} className="flex gap-2">
+                        <span className="text-townwize-accent">•</span>
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <p className="mt-2 text-[11px] text-gray-400">
+                    Your progress is saved automatically — you can close this and come back.
+                  </p>
+                </div>
                 <div>
                   <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Phone Number</label>
                   <input
