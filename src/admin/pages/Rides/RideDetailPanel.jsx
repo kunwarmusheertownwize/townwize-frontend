@@ -297,34 +297,39 @@ export default function RideDetailPanel({ ride, onUpdated }) {
         <div className="rounded-xl border border-gray-200 dark:border-gray-700 p-3">
           <h4 className="mb-2 font-semibold">How the billed distance was derived</h4>
           <div className="space-y-1 text-xs">
-            <Line k="Billed distance"        v={`${ride.actualDistanceKm ?? "-"} km`} strong />
-            <Line k="Measured from GPS trail" v={`${ride.distanceSource.pointsUsed ?? 0} points`} />
-            <Line k="Route estimate at booking" v={`${ride.distanceSource.routeEstimateKm ?? "-"} km`} />
-            <Line k="Driver device reported"  v={`${ride.distanceSource.clientReportedKm ?? "-"} km`} />
+            <Line k="Billed distance"          v={`${ride.actualDistanceKm ?? "-"} km`} strong />
+            <Line k="Measured on roads"        v={`${ride.distanceSource.observedKm ?? "-"} km`} />
             <Line
-              k="Added across GPS gaps"
-              v={`${ride.distanceSource.gapKmRecovered ?? 0} km over ${ride.distanceSource.gapsFilled ?? 0} gap(s)`}
-              warn={Number(ride.distanceSource.gapKmRecovered || 0) > 5}
+              k="Recovered across GPS gaps"
+              v={`${ride.distanceSource.gapKm ?? 0} km over ${ride.distanceSource.gapsFilled ?? 0} gap(s)`}
+              warn={Number(ride.distanceSource.gapKm || 0) > 5}
             />
-            <Line k="Longest single gap"     v={`${ride.distanceSource.longestGapKm ?? 0} km`} />
-            <Line k="Method"                 v={ride.distanceSource.method || "-"} />
-            {ride.fareAdjustment?.distanceCapped && (
+            <Line k="Longest single gap"       v={`${ride.distanceSource.longestGapKm ?? 0} km`} />
+            <Line k="Time stopped (no distance)" v={`${ride.distanceSource.stationaryMinutes ?? 0} min`} />
+            <Line k="GPS points recorded"      v={`${ride.distanceSource.pointsUsed ?? 0}`} />
+            <Line k="Method"                   v={ride.distanceSource.method || "-"} />
+            <div className="mt-1 border-t border-dotted border-gray-200 pt-1 dark:border-gray-700" />
+            <Line
+              k="Booking quote (not billed)"
+              v={`${ride.distanceSource.routeEstimateKm ?? "-"} km${
+                ride.distanceSource.vsEstimatePct != null
+                  ? `  (${ride.distanceSource.vsEstimatePct > 0 ? "+" : ""}${ride.distanceSource.vsEstimatePct}%)`
+                  : ""
+              }`}
+            />
+            <Line k="Driver device said (cross-check)" v={`${ride.distanceSource.clientReportedKm ?? "-"} km`} />
+
+            {ride.distanceSource.needsReview && (
               <p className="pt-1 text-[11px] font-semibold text-amber-600">
-                ⚠ Reported distance exceeded the cap and was clamped
-                (claimed {ride.fareAdjustment.reportedDistanceKm} km).
+                ⚠ Settled distance diverges more than 40% from the booking quote.
+                The fare was NOT adjusted — check the route on the map. A Wizer
+                may legitimately have taken a longer or shorter way.
               </p>
             )}
-            {ride.fareAdjustment?.distanceFloored && (
-              <p className="pt-1 text-[11px] font-semibold text-amber-600">
-                ⚠ Measured distance fell below the route floor and was raised
-                (measured {ride.fareAdjustment.reportedDistanceKm} km).
-              </p>
-            )}
-            {Number(ride.distanceSource.gapKmRecovered || 0) > 5 && (
+            {Number(ride.distanceSource.gapKm || 0) > 5 && (
               <p className="pt-1 text-[11px] text-amber-600">
-                A large share of this fare came from distance inferred across GPS
-                gaps rather than observed. Check the dashed sections on the map
-                before treating the fare as settled.
+                Over 5 km of this fare came from distance inferred across GPS
+                gaps rather than observed. Check the dashed sections on the map.
               </p>
             )}
           </div>
