@@ -1,37 +1,30 @@
 // 📄 src/components/auth/FaceSection.jsx
 import FaceLiveness from "../common/FaceLiveness";
 
-export default function FaceSection({ showFace, setShowFace, control, errors }) {
+/**
+ * Face verification.
+ *
+ * Was an accordion wrapping a component that printed its own "Selfie
+ * Verification" heading — so a single button sat beneath three stacked titles
+ * ("Face Verification" / "Selfie Verification" / "Initializing…"), and it
+ * started collapsed, hiding a mandatory step behind a tap.
+ *
+ * It is one required action, so it is always open and titled once.
+ */
+export default function FaceSection({ control, errors }) {
   return (
-    <div className="border border-gray-200 dark:border-gray-600 rounded-lg">
-      {/* Accordion Header */}
-      <button
-        type="button"
-        onClick={() => setShowFace(!showFace)}
-        className="w-full flex justify-between items-center p-3 bg-gray-100 dark:bg-gray-700 rounded-t-lg"
-      >
-        <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">
-          Face Verification
-        </span>
-        <span className="text-gray-500 dark:text-gray-300">
-          {showFace ? "−" : "+"}
-        </span>
-      </button>
+    <div className="rounded-lg border border-gray-100 p-4 dark:border-gray-700">
+      <div className="mb-3">
+        <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">Face Verification</p>
+        <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+          A quick check that you match your CNIC photo. This is not shown to Towners.
+        </p>
+      </div>
 
-      {showFace && (
-        <div className="p-4 space-y-6">
-          <FaceLiveness
-            control={control}
-            name="selfie"
-            label="Selfie Verification"
-          />
+      <FaceLiveness control={control} name="selfie" />
 
-          {errors?.selfie && (
-            <p className="text-xs !text-townwize-error mt-1">
-              {errors.selfie.message}
-            </p>
-          )}
-        </div>
+      {errors?.selfie && (
+        <p className="mt-2 text-xs !text-townwize-error">{errors.selfie.message}</p>
       )}
     </div>
   );

@@ -15,9 +15,9 @@ import FaceSection from "../FaceSection";
  * It now runs third, straight after the account is created.
  */
 export default function WizerIdentityStep({
-  showIdentity, setShowIdentity, showFace, setShowFace, control, errors: formErrors,
+  showIdentity, setShowIdentity, control, errors: formErrors,
 }) {
-  const { register, watch, setValue, trigger, formState: { errors } } = useFormContext();
+  const { watch, setValue, trigger, formState: { errors } } = useFormContext();
 
   const licenseFront = watch("licenseFront");
   const licenseBack = watch("licenseBack");
@@ -27,8 +27,6 @@ export default function WizerIdentityStep({
     trigger(field);
   };
 
-  const input =
-    "mt-1 w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg p-3 outline-none text-sm";
   const err = "text-xs text-red-600 mt-1";
 
   return (
@@ -42,18 +40,8 @@ export default function WizerIdentityStep({
         </p>
       </div>
 
-      <div>
-        <label className="text-sm text-gray-600 dark:text-gray-300">CNIC Number</label>
-        <input
-          {...register("cnicNumber")}
-          className={input}
-          placeholder="XXXXX-XXXXXXX-X"
-          maxLength={15}
-          inputMode="numeric"
-        />
-        {errors.cnicNumber && <p className={err}>{errors.cnicNumber.message}</p>}
-      </div>
-
+      {/* CNIC number is rendered by IdentitySection, which already owns it and
+          formats it as you type. Do not add a second field here. */}
       <IdentitySection
         showIdentity={showIdentity}
         setShowIdentity={setShowIdentity}
@@ -90,12 +78,7 @@ export default function WizerIdentityStep({
         {errors.licenseBack && <p className={err}>{errors.licenseBack.message}</p>}
       </div>
 
-      <FaceSection
-        showFace={showFace}
-        setShowFace={setShowFace}
-        control={control}
-        errors={formErrors}
-      />
+      <FaceSection control={control} errors={formErrors} />
     </div>
   );
 }

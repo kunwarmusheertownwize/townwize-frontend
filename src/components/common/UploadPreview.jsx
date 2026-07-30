@@ -98,15 +98,9 @@ export default function UploadPreview({
             </div>
           ) : null}
 
-          {progress === 100 ? <p className="mt-1 text-xs text-green-600 dark:text-green-400">Upload complete</p> : null}
-
-          <button
-            type="button"
-            onClick={handleRemove}
-            className="mt-2 inline-block rounded-lg bg-red-500 px-3 py-2 text-sm text-white transition hover:bg-red-600"
-          >
-            Remove
-          </button>
+          {progress === 100 ? (
+            <p className="mt-1 text-xs font-medium text-green-600 dark:text-green-400">✓ Uploaded</p>
+          ) : null}
         </>
       ) : (
         <div className="flex h-28 flex-col items-center justify-center rounded-md border-2 border-dashed border-gray-300 text-sm text-gray-400 dark:border-gray-600">
@@ -115,9 +109,36 @@ export default function UploadPreview({
       )}
 
       <input id={id} type="file" accept={accept} className="hidden" onChange={handleFileChange} />
-      <label htmlFor={id} className="mt-2 inline-block cursor-pointer rounded-lg bg-townwize-primary px-4 py-2 text-white transition hover:bg-townwize-primaryDark">
-        {file ? "Replace" : "Upload"}
-      </label>
+
+      {/* Once a file is present, Replace and Remove are secondary actions on an
+          already-completed task. They were two full-size solid buttons — one of
+          them bright red — which shouted louder than the upload itself and made
+          a finished step look unfinished. */}
+      {file ? (
+        <div className="mt-2 flex items-center justify-center gap-4 text-xs font-medium">
+          <label
+            htmlFor={id}
+            className="cursor-pointer text-townwize-primary underline-offset-2 hover:underline dark:text-townwize-accent"
+          >
+            Replace
+          </label>
+          <span className="text-gray-300 dark:text-gray-600">|</span>
+          <button
+            type="button"
+            onClick={handleRemove}
+            className="text-gray-400 underline-offset-2 transition-colors hover:text-red-600 hover:underline"
+          >
+            Remove
+          </button>
+        </div>
+      ) : (
+        <label
+          htmlFor={id}
+          className="mt-2 inline-block w-full cursor-pointer rounded-lg bg-townwize-primary px-4 py-2 text-center text-sm font-semibold text-white transition hover:bg-townwize-primaryDark"
+        >
+          Upload
+        </label>
+      )}
 
       {error ? <p className="mt-1 text-xs text-red-500">{error}</p> : null}
     </div>

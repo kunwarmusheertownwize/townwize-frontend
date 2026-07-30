@@ -10,6 +10,7 @@ import api from "../../services/api";
 import { getAppRole } from "../../utils/appRole";
 import AccountInfo from "../../components/auth/AccountInfo";
 import AuthHeader from "../../components/auth/AuthHeader";
+import RegistrationIntro from "../../components/auth/RegistrationIntro";
 import IdentitySection from "../../components/auth/IdentitySection";
 import ResidencySection from "../../components/auth/ResidencySection";
 import WizardProgress from "../../components/auth/wizard/WizardProgress";
@@ -104,26 +105,72 @@ const defaultValues = {
 
 // ─── phone OTP block ──────────────────────────────────────────────────────────
 
+/**
+ * Phone OTP.
+ *
+ * Was a titled box holding three stacked full-width controls — Send, a code
+ * field, Verify — all visible at once whether or not a code had been sent, plus
+ * a status line. Four things competing before the user had done anything.
+ *
+ * Now it is one action at a time: send, then enter and verify, then a single
+ * confirmation. Once verified the controls disappear entirely.
+ */
 const PhoneOtpBlock = ({ phone, verified, onSend, onVerify, loadingSend, loadingVerify }) => {
   const [code, setCode] = useState("");
-  return (
-    <div className="border border-gray-200 dark:border-gray-600 rounded-lg p-4 space-y-3">
-      <div className="text-sm font-semibold">Phone OTP Verification (WhatsApp)</div>
-      <div className="flex flex-col sm:flex-row gap-3">
-        <button type="button" onClick={onSend} disabled={!phone || loadingSend}
-          className="px-4 py-2 rounded bg-townwize-primary text-white text-sm disabled:opacity-60">
-          {loadingSend ? "Sending…" : "Send OTP"}
-        </button>
-        <input value={code} onChange={e => setCode(e.target.value.replace(/\D/g, "").slice(0, 8))}
-          placeholder="Enter OTP" className="flex-1 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg p-3 text-sm outline-none" />
-        <button type="button" onClick={() => onVerify(code)} disabled={!phone || !code || loadingVerify}
-          className="px-4 py-2 rounded bg-green-600 text-white text-sm disabled:opacity-60">
-          {loadingVerify ? "Verifying…" : "Verify OTP"}
-        </button>
+  const [sent, setSent] = useState(false);
+
+  const send = async () => { await onSend(); setSent(true); setCode(""); };
+
+  if (verified) {
+    return (
+      <div className="flex items-center gap-2 rounded-lg border border-green-200 bg-green-50 px-4 py-3 dark:border-green-800 dark:bg-green-900/20">
+        <span className="text-green-600 dark:text-green-400">✓</span>
+        <p className="text-sm font-medium text-green-800 dark:text-green-300">Phone verified</p>
       </div>
-      <p className={`text-sm ${verified ? "text-green-600" : "text-amber-600"}`}>
-        {verified ? "✓ Phone verified." : "Verify your phone number to continue."}
-      </p>
+    );
+  }
+
+  return (
+    <div className="space-y-3 rounded-lg border border-gray-200 p-4 dark:border-gray-600">
+      {!sent ? (
+        <>
+          <p className="text-xs text-gray-500 dark:text-gray-400">
+            We'll send a 6-digit code to this number on WhatsApp.
+          </p>
+          <button
+            type="button" onClick={send} disabled={!phone || loadingSend}
+            className="w-full rounded-lg bg-townwize-primary py-2.5 text-sm font-semibold text-white transition hover:bg-townwize-primaryDark disabled:opacity-50"
+          >
+            {loadingSend ? "Sending…" : "Send code on WhatsApp"}
+          </button>
+        </>
+      ) : (
+        <>
+          <p className="text-xs text-gray-500 dark:text-gray-400">
+            Enter the code sent to <span className="font-medium text-gray-700 dark:text-gray-200">{phone}</span>
+          </p>
+          <input
+            value={code}
+            onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 8))}
+            placeholder="000000"
+            inputMode="numeric"
+            autoComplete="one-time-code"
+            className="w-full rounded-lg border border-gray-200 bg-gray-50 p-3 text-center text-lg tracking-[0.4em] outline-none focus:border-townwize-primary dark:border-gray-600 dark:bg-gray-700"
+          />
+          <button
+            type="button" onClick={() => onVerify(code)} disabled={!code || loadingVerify}
+            className="w-full rounded-lg bg-townwize-primary py-2.5 text-sm font-semibold text-white transition hover:bg-townwize-primaryDark disabled:opacity-50"
+          >
+            {loadingVerify ? "Verifying…" : "Verify"}
+          </button>
+          <button
+            type="button" onClick={send} disabled={loadingSend}
+            className="w-full text-xs font-medium text-gray-400 underline-offset-2 hover:text-townwize-primary hover:underline disabled:opacity-50"
+          >
+            {loadingSend ? "Sending…" : "Didn't get it? Send again"}
+          </button>
+        </>
+      )}
     </div>
   );
 };
@@ -195,6 +242,8 @@ export default function Register() {
 
   const forcedRole = getAppRole() || null;
   const [selectedRole, setSelectedRole] = useState(forcedRole || (mode === "referral" ? "passenger" : null));
+  // Intro is shown once per fresh start. Restoring a draft skips it.
+  const [introDone, setIntroDone] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [referralCodeType, setReferralCodeType] = useState(null);
   const [referralOwnerName, setReferralOwnerName] = useState("");
@@ -204,7 +253,6 @@ export default function Register() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showResidency, setShowResidency] = useState(true);
   const [showIdentity, setShowIdentity] = useState(true);
-  const [showFace, setShowFace] = useState(true);
   const draftRestored = useRef(false);
 
   const isGuestTowner = referralCodeType === "GUEST_INVITE";
@@ -220,6 +268,8 @@ export default function Register() {
       const draft = await loadDraft();
       if (!draft || cancelled) return;
       draftRestored.current = true;
+      // Someone resuming mid-registration has already seen the briefing.
+      setIntroDone(true);
 
       setSelectedRole(draft.role);
 
@@ -294,6 +344,10 @@ export default function Register() {
   const handleSendOtp = async () => {
     if (!phone) { toast.error("Enter your phone number first"); return; }
     setOtpLoadingSend(true);
+    // Sending a fresh code invalidates whatever was verified before, so drop the
+    // old token. Otherwise the panel kept showing "Phone verified" after a
+    // resend, and the user had no idea the new code still needed entering.
+    setPhoneVerificationToken("");
     try {
       await api.post("/auth/phone-otp/send", { phone, channel: "whatsapp" });
       toast.success("OTP sent via WhatsApp");
@@ -449,11 +503,52 @@ export default function Register() {
       toast.success("Registration submitted! Please check your email to verify your account.");
       navigate("/login", { state: location.state || null, replace: true });
     } catch (err) {
-      toast.error(err?.response?.data?.message || "Registration failed");
+      const code = err?.response?.data?.error?.code || err?.response?.data?.code;
+      const msg = err?.response?.data?.message || "Registration failed";
+
+      // These two are the common dead ends. Both used to show a bare error with
+      // no route forward, leaving the user stuck on a completed form.
+      if (code === "EMAIL_ALREADY_EXISTS") {
+        toast.error(
+          <span>
+            {msg}{" "}
+            <button
+              type="button"
+              onClick={() => navigate("/login", { state: location.state || null })}
+              className="font-semibold underline underline-offset-2"
+            >
+              Sign in instead
+            </button>
+          </span>,
+          { autoClose: 9000 }
+        );
+      } else if (code === "WAITLIST_REQUIRED") {
+        toast.info(msg, { autoClose: 10000 });
+      } else {
+        toast.error(msg);
+      }
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  // ─── intro screen ─────────────────────────────────────────────────────────
+  // Between choosing a role and the first form step. Skipped when resuming a
+  // draft — someone coming back mid-registration does not need the briefing
+  // again — and skipped for invite links, which land straight in the flow.
+
+  if (selectedRole && !introDone && mode === "normal" && currentStep === 0) {
+    return (
+      <div className="min-h-screen w-full bg-townwize-bgLight pb-safe transition-colors duration-300 dark:bg-townwize-primaryDark">
+        <AuthHeader />
+        <RegistrationIntro
+          role={selectedRole}
+          onStart={() => setIntroDone(true)}
+          onChangeRole={() => { setSelectedRole(null); clearDraft(); }}
+        />
+      </div>
+    );
+  }
 
   // ─── role selection screen ────────────────────────────────────────────────
 
@@ -566,36 +661,8 @@ export default function Register() {
             {/* ── Step: Phone OTP ── */}
             {stepKey === "phone" && (
               <div className="space-y-4">
-                {/* Set expectations before they start. People abandon partway
-                    because they did not know a document was coming, not because
-                    the form is hard. */}
-                <div className="rounded-xl border border-gray-100 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800/50">
-                  <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">
-                    {selectedRole === "driver" ? "About 10 minutes" : "About 3 minutes"}
-                  </p>
-                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                    Have these ready before you start:
-                  </p>
-                  <ul className="mt-2 space-y-1 text-xs text-gray-600 dark:text-gray-300">
-                    {(selectedRole === "driver"
-                      ? ["Your CNIC (both sides)",
-                         "Your driving licence (both sides)",
-                         "Proof of BTK residency and your BTK ID",
-                         "Vehicle registration document",
-                         "Your vehicle, for 7 condition photos"]
-                      : ["Proof of BTK residency",
-                         "Your BTK ID (both sides)"]
-                    ).map((item) => (
-                      <li key={item} className="flex gap-2">
-                        <span className="text-townwize-accent">•</span>
-                        <span>{item}</span>
-                      </li>
-                    ))}
-                  </ul>
-                  <p className="mt-2 text-[11px] text-gray-400">
-                    Your progress is saved automatically — you can close this and come back.
-                  </p>
-                </div>
+                {/* Preparation content lives on the intro screen now, so this
+                    step is just the phone number and the code. */}
                 <div>
                   <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Phone Number</label>
                   <input
@@ -621,7 +688,10 @@ export default function Register() {
                 </div>
                 <PhoneOtpBlock
                   phone={phone}
-                  verified={!!phoneVerificationToken}
+                  // Must check expiry, not just presence. A dead token kept
+                  // showing a green tick, so the user walked the whole form and
+                  // only discovered at submit that verification had lapsed.
+                  verified={!!phoneVerificationToken && !isTokenExpired(phoneVerificationToken)}
                   onSend={handleSendOtp}
                   onVerify={handleVerifyOtp}
                   loadingSend={otpLoadingSend}
@@ -658,8 +728,6 @@ export default function Register() {
                 <WizerIdentityStep
                   showIdentity={showIdentity}
                   setShowIdentity={setShowIdentity}
-                  showFace={showFace}
-                  setShowFace={setShowFace}
                   control={methods.control}
                   errors={methods.formState.errors}
                 />
@@ -695,8 +763,12 @@ export default function Register() {
               />
             )}
 
-            {/* ── Navigation buttons ── */}
-            <div className="flex gap-3 pt-2">
+            {/* ── Navigation buttons ──
+                Sticky to the bottom of the viewport. They used to sit below the
+                form, so on a step with five uploads and face verification you
+                had to scroll the whole way down to move on — or back. Standard
+                for multi-step forms and the single biggest friction fix here. */}
+            <div className="sticky bottom-0 z-10 -mx-4 mt-2 flex gap-3 border-t border-gray-100 bg-white/95 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-white/80 dark:border-gray-700 dark:bg-gray-900/95 dark:supports-[backdrop-filter]:bg-gray-900/80 sm:static sm:mx-0 sm:border-0 sm:bg-transparent sm:px-0 sm:py-0 sm:pt-2 sm:backdrop-blur-none dark:sm:bg-transparent">
               {(currentStep > 0 || (currentStep === 0 && mode === "normal" && !forcedRole)) && (
                 <button
                   type="button"

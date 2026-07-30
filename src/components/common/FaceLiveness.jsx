@@ -1,11 +1,29 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { Controller } from "react-hook-form";
 import * as faceapi from "face-api.js";
+import { isNative } from "../../utils/platform";
 
 // stable constant
 const STEPS = ["front", "left", "right", "up", "down"];
 
-export default function FaceLiveness({ control, name, label }) {
+export default function FaceLiveness({ control, name, label = "Face verification" }) {
+  // Whether this device has a camera at all, so a laptop user is told to switch
+  // to their phone instead of tapping a button that can only fail.
+  const [hasCamera, setHasCamera] = useState(true);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        if (!navigator.mediaDevices?.enumerateDevices) { if (!cancelled) setHasCamera(false); return; }
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        if (!cancelled) setHasCamera(devices.some((d) => d.kind === "videoinput"));
+      } catch {
+        if (!cancelled) setHasCamera(true); // unknown — let them try
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
 
@@ -266,30 +284,52 @@ export default function FaceLiveness({ control, name, label }) {
       render={({ field: { onChange }, fieldState: { error } }) => {
         onChangeRef.current = onChange;
         return (
-          <div className="flex flex-col gap-4 items-center">
-            <label className="font-medium text-sm">{label}</label>
+          <div className="flex flex-col gap-3 items-center">
+            {/* The parent section already titles this. A second heading here
+                produced three stacked labels above one button. */}
 
-            <p
-              className={`text-sm font-semibold ${status.startsWith("✅")
-                  ? "text-green-600"
-                  : status.startsWith("❌")
-                    ? "text-red-600"
-                    : status.startsWith("🔄")
-                      ? "text-yellow-600"
-                      : "text-gray-700 dark:text-gray-300"
-                }`}          
-            >
-              {status}
-            </p>
+            {/* "Initializing…" before anything has been started is noise, not
+                status. Only speak once there is something to report. */}
+            {(cameraActive || capturedImage || status.startsWith("✅") ||
+              status.startsWith("❌") || status.startsWith("🔄")) && (
+              <p
+                className={`text-sm font-semibold ${status.startsWith("✅")
+                    ? "text-green-600"
+                    : status.startsWith("❌")
+                      ? "text-red-600"
+                      : status.startsWith("🔄")
+                        ? "text-yellow-600"
+                        : "text-gray-700 dark:text-gray-300"
+                  }`}
+              >
+                {status}
+              </p>
+            )}
 
             {!cameraActive ? (
-              <button
-                type="button"
-                onClick={startCamera}
-                className="px-4 py-2 bg-townwize-primary text-white rounded-lg shadow"
-              >
-                Start Recognition
-              </button>
+              <div className="flex w-full flex-col items-center gap-2">
+                <button
+                  type="button"
+                  onClick={startCamera}
+                  className="w-full rounded-lg bg-townwize-primary px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-townwize-primaryDark"
+                >
+                  Start face verification
+                </button>
+                {/* A laptop webcam works, but the CNIC-match check is far more
+                    reliable on a phone's front camera — and most Wizers are on a
+                    phone anyway. Say so rather than let them fail and retry. */}
+                {!hasCamera && (
+                  <p className="text-center text-xs text-amber-600">
+                    No camera detected on this device. Open registration on your
+                    phone to complete this step — your progress is saved.
+                  </p>
+                )}
+                {hasCamera && !isNative() && (
+                  <p className="text-center text-[11px] text-gray-400">
+                    Using a phone gives the most reliable result.
+                  </p>
+                )}
+              </div>
             ) : !capturedImage ? (
               <div className="relative flex flex-col items-center">
                 <div
