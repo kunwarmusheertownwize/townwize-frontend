@@ -1,5 +1,13 @@
 import { useEffect, useState } from "react";
 import { useLocation, Link } from "react-router-dom";
+import BrandSpinner from "../../components/common/BrandSpinner";
+
+// Tokens already sent to the server, kept at module scope so the guard survives
+// StrictMode's mount → unmount → remount cycle. The old `mounted` flag only
+// discarded the first RESULT; both requests still went out, the second landed on
+// a token the first had already consumed, and its failure was what rendered —
+// so a successful verification displayed "Invalid or expired token".
+const attempted = new Set();
 
 export default function VerifyEmail() {
   const { search } = useLocation();
@@ -16,6 +24,8 @@ export default function VerifyEmail() {
         setMessage("Verification token is missing. Please use the link from your email.");
         return;
       }
+      if (attempted.has(token)) return;
+      attempted.add(token);
       try {
         const res = await fetch(
           `${import.meta.env.VITE_API_BASE_URL}/auth/verify-email?token=${encodeURIComponent(token)}`
@@ -40,10 +50,7 @@ export default function VerifyEmail() {
       <div className="max-w-md w-full bg-white dark:bg-townwize-primaryDark border border-gray-200 dark:border-gray-700 rounded-2xl p-8 text-center shadow-sm">
 
         {status === "loading" && (
-          <>
-            <div className="w-12 h-12 rounded-full border-4 border-townwize-accent border-t-transparent animate-spin mx-auto mb-4" />
-            <p className="text-gray-500 dark:text-gray-400 text-sm">Verifying your email…</p>
-          </>
+          <BrandSpinner size={88} label="Verifying your email…" className="py-2" />
         )}
 
         {status === "success" && (
