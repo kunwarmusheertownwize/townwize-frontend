@@ -135,10 +135,14 @@ export default function ResidencySection({
             <input
               {...register("btkRegNo")}
               className="mt-1 w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg p-3 outline-none uppercase"
-              placeholder="As printed on your BTK ID card"
+              placeholder="e.g. BTKSC-V00711"
             />
+            {/* The card shows CARD ID directly above REG. No., and they are
+                different numbers. Saying so here is cheaper than rejecting the
+                application after the upload. */}
             <p className="mt-1 text-xs text-gray-400">
-              Look for <span className="font-semibold">REG. No.</span> on the front of your BTK ID card.
+              Find <span className="font-semibold">REG. No.</span> on the front of your BTK ID card —
+              it is the line <span className="font-semibold">below CARD ID</span>, and starts with letters.
               We check it against the card you upload.
             </p>
             {errors.btkRegNo && (
