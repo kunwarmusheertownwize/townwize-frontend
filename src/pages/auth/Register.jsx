@@ -26,7 +26,7 @@ import { enforceBusinessRules, schema } from "../../validation/fields";
 const PASSENGER_TOWNER_STEPS = [
   { key: "phone",     label: "Phone",     fields: ["phone"] },
   { key: "account",   label: "Account",   fields: ["name", "email", "password"] },
-  { key: "residency", label: "Residency", fields: ["btkAddress", "residencyType", "btkProofFile", "btkIdFront", "btkIdBack"] },
+  { key: "residency", label: "Residency", fields: ["btkAddress", "btkRegNo", "residencyType", "btkProofFile", "btkIdFront", "btkIdBack"] },
   { key: "review",    label: "Review",    fields: [] },
 ];
 
@@ -50,7 +50,7 @@ const WIZER_STEPS = [
   { key: "account",       label: "Account",   fields: ["name", "email", "password"] },
   { key: "identity",      label: "Identity",  fields: ["cnicNumber", "cnicFront", "cnicBack", "licenseFront", "licenseBack"] },
   { key: "faceCheck",     label: "Face",      fields: ["selfie"] },
-  { key: "residency",     label: "Residency", fields: ["btkAddress", "residencyType", "btkProofFile", "btkIdFront", "btkIdBack"] },
+  { key: "residency",     label: "Residency", fields: ["btkAddress", "btkRegNo", "residencyType", "btkProofFile", "btkIdFront", "btkIdBack"] },
   { key: "vehicle",       label: "Vehicle",   fields: ["vehicleType", "carType", "vehicleMake", "vehicleModel", "vehicleYear", "vehicleSeats", "vehicleNumber", "vehicleColor", "vehicleReg"] },
   { key: "vehiclePhotos", label: "Photos",    fields: ["vehiclePhotoFront", "vehiclePhotoRear", "vehiclePhotoLeft", "vehiclePhotoRight", "vehiclePhotoInteriorFront", "vehiclePhotoInteriorRear", "vehiclePhotoOdometer"] },
   { key: "review",        label: "Review",    fields: [] },
@@ -68,7 +68,7 @@ const FILE_FIELDS = ["btkProofFile", "btkIdFront", "btkIdBack", "cnicFront", "cn
 // of "Please complete all required fields" on a screen with six of them.
 const FIELD_LABELS = {
   phone: "Phone number", name: "Full name", email: "Email", password: "Password",
-  btkAddress: "BTK address", residencyType: "Owner or tenant",
+  btkAddress: "BTK address", btkRegNo: "BTK registration number", residencyType: "Owner or tenant",
   btkProofFile: "Proof of residency", btkIdFront: "BTK ID (front)", btkIdBack: "BTK ID (back)",
   cnicNumber: "CNIC number", cnicFront: "CNIC (front)", cnicBack: "CNIC (back)",
   licenseFront: "Licence (front)", licenseBack: "Licence (back)", selfie: "Face verification",
@@ -94,7 +94,7 @@ const describeMissing = (fields, errors) => {
 
 const defaultValues = {
   name: "", email: "", phone: "", password: "",
-  btkAddress: "", residencyType: "", cnicNumber: "",
+  btkAddress: "", btkRegNo: "", residencyType: "", cnicNumber: "",
   vehicleType: "Car", carType: "economy",
   vehicleMake: "", vehicleModel: "", vehicleYear: "", vehicleSeats: "4",
   vehicleNumber: "", vehicleColor: "", hasMTag: false,
@@ -207,6 +207,7 @@ const ReviewStep = ({ role, values, isGuestTowner, referralOwnerName }) => {
         <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 space-y-1">
           <p className="text-sm font-bold mb-2 text-gray-700 dark:text-gray-200">Residency</p>
           <Row label="BTK Address"    value={values.btkAddress} />
+          <Row label="BTK Reg. No."   value={values.btkRegNo} />
           <Row label="Residency Type" value={values.residencyType} />
           <Row label="BTK Proof"      value={values.btkProofFile?.name} />
           <Row label="BTK ID Front"   value={values.btkIdFront?.name} />
@@ -260,7 +261,14 @@ export default function Register() {
 
   const isGuestTowner = referralCodeType === "GUEST_INVITE";
 
-  const methods = useForm({ resolver: yupResolver(schema), mode: "onChange", defaultValues });
+  // `context` feeds the schema's $isGuestTowner condition, so the BTK residency
+  // fields are only required on the journeys that actually collect them.
+  const methods = useForm({
+    resolver: yupResolver(schema),
+    mode: "onChange",
+    defaultValues,
+    context: { isGuestTowner },
+  });
   const phone = methods.watch("phone");
 
   // ── restore draft ──
@@ -475,7 +483,7 @@ export default function Register() {
   const onSubmit = async (values) => {
     if (isSubmitting) return;
     const activeRole = selectedRole;
-    const businessErrors = enforceBusinessRules(values, activeRole);
+    const businessErrors = enforceBusinessRules(values, activeRole, isGuestTowner);
     if (Object.keys(businessErrors).length > 0) {
       Object.entries(businessErrors).forEach(([f, msg]) => methods.setError(f, { type: "manual", message: msg }));
       toast.error("Some required fields are missing. Please go back and check.");
@@ -493,6 +501,7 @@ export default function Register() {
       formData.append("password", values.password);
       formData.append("btkAddress", values.btkAddress || "");
       formData.append("residencyType", values.residencyType || "");
+      formData.append("btkRegNo", values.btkRegNo || "");
       formData.append("phoneVerificationToken", phoneVerificationToken);
       if (values.referralCode) formData.append("referralCode", values.referralCode);
 

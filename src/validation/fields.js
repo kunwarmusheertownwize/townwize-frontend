@@ -31,11 +31,37 @@ export const schema = yup.object().shape({
       return /^03\d{9}$/.test(raw);
     }),
   password: yup.string().min(8, "Password must be at least 8 characters").required("Password is required"),
-  btkAddress: yup.string().trim().required("BTK address is required"),
-  residencyType: yup
-    .string()
-    .oneOf(["owner", "tenant", "owner_family", "tenant_family"], "Select residency type")
-    .required("Residency type is required"),
+  // BTK residency fields apply to Towners and Wizers only. A GuestTowner is
+  // sponsored by a Towner and proves identity with a CNIC alone — they never
+  // see the residency step, so requiring these unconditionally made the whole
+  // schema unsatisfiable for them and blocked submit on fields they were never
+  // shown. Driven by `$isGuestTowner`, which Register.jsx passes as validation
+  // context.
+  btkAddress: yup.string().trim().when("$isGuestTowner", {
+    is: true,
+    then: (s) => s.notRequired(),
+    otherwise: (s) => s.required("BTK address is required"),
+  }),
+  // Format deliberately unconstrained beyond a minimum length: BTK registration
+  // numbers have no single published pattern, and a guessed regex would reject
+  // genuine cards. The server cross-checks it against the uploaded card, which
+  // is the check that actually matters.
+  btkRegNo: yup.string().trim().when("$isGuestTowner", {
+    is: true,
+    then: (s) => s.notRequired(),
+    otherwise: (s) =>
+      s
+        .required("BTK registration number is required")
+        .min(4, "Enter the full REG. No. from your BTK ID card"),
+  }),
+  residencyType: yup.string().when("$isGuestTowner", {
+    is: true,
+    then: (s) => s.notRequired(),
+    otherwise: (s) =>
+      s
+        .oneOf(["owner", "tenant", "owner_family", "tenant_family"], "Select residency type")
+        .required("Residency type is required"),
+  }),
   cnicNumber: yup
     .string()
     .trim()
@@ -85,13 +111,23 @@ export const schema = yup.object().shape({
   selfie: yup.string().nullable(),
 });
 
-export const enforceBusinessRules = (data, role) => {
+export const enforceBusinessRules = (data, role, isGuestTowner = false) => {
   const errors = {};
 
-  if (!data.btkProofFile) errors.btkProofFile = "Utility bill proof is required";
-  if (!data.btkIdFront) errors.btkIdFront = "BTK ID front is required";
-  if (!data.btkIdBack) errors.btkIdBack = "BTK ID back is required";
-  if (!data.residencyType) errors.residencyType = "Residency type is required";
+  // GuestTowners upload a CNIC and nothing else — no utility bill, no BTK ID,
+  // no residency type. These were demanded of every passenger regardless, so a
+  // GuestTowner reaching submit was rejected for four documents their journey
+  // never asked for and gives them no way to provide.
+  if (!isGuestTowner) {
+    if (!data.btkProofFile) errors.btkProofFile = "Utility bill proof is required";
+    if (!data.btkIdFront) errors.btkIdFront = "BTK ID front is required";
+    if (!data.btkIdBack) errors.btkIdBack = "BTK ID back is required";
+    if (!data.residencyType) errors.residencyType = "Residency type is required";
+    if (!data.btkRegNo) errors.btkRegNo = "BTK registration number is required";
+  } else {
+    if (!data.cnicFront) errors.cnicFront = "CNIC front is required";
+    if (!data.cnicBack) errors.cnicBack = "CNIC back is required";
+  }
 
   if (role === "driver") {
     if (!data.vehicleReg) errors.vehicleReg = "Vehicle registration is required";

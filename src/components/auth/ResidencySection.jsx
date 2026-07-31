@@ -125,6 +125,29 @@ export default function ResidencySection({
             )}
           </div>
 
+          {/* BTK Registration No. — printed on the BTK ID card as "REG. No."
+              The redesigned card carries no address, so this is the only field
+              on it we can verify against what the applicant types. */}
+          <div>
+            <label className="text-sm text-gray-600 dark:text-gray-300">
+              BTK Registration No.
+            </label>
+            <input
+              {...register("btkRegNo")}
+              className="mt-1 w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg p-3 outline-none uppercase"
+              placeholder="As printed on your BTK ID card"
+            />
+            <p className="mt-1 text-xs text-gray-400">
+              Look for <span className="font-semibold">REG. No.</span> on the front of your BTK ID card.
+              We check it against the card you upload.
+            </p>
+            {errors.btkRegNo && (
+              <p className="text-xs !text-townwize-error mt-1">
+                {errors.btkRegNo.message}
+              </p>
+            )}
+          </div>
+
           <div className="rounded-lg border border-emerald-200 bg-emerald-50 dark:bg-emerald-900/20 dark:border-emerald-800 px-3 py-2">
             <p className="text-sm font-semibold text-emerald-800 dark:text-emerald-300">
               {residencyGuidance.title}

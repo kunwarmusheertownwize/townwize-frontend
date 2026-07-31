@@ -78,6 +78,11 @@ const PassengerDocs = ({ profile }) => {
           BTK Address: <span className="font-medium">{profile.btkAddress}</span>
         </div>
       )}
+      {profile?.btkRegNo && (
+        <div className="text-xs text-gray-500">
+          BTK Reg. No.: <span className="font-medium">{profile.btkRegNo}</span>
+        </div>
+      )}
       {profile?.residencyType && (
         <div className="text-xs text-gray-500">
           Residency Type: <span className="font-medium capitalize">{profile.residencyType.replace(/_/g, " ")}</span>
@@ -166,6 +171,16 @@ const DriverDocs = ({ profile, referrer }) => {
           <DocLink url={res.proofUrl}      label="Residency Proof" />
           <DocLink url={res.btkIdFrontUrl} label="BTK ID Front"    />
           <DocLink url={res.btkIdBackUrl}  label="BTK ID Back"     />
+          {res.address && (
+            <div className="text-xs text-gray-500 mt-1">
+              BTK Address: <span className="font-medium">{res.address}</span>
+            </div>
+          )}
+          {res.btkRegNo && (
+            <div className="text-xs text-gray-500">
+              BTK Reg. No.: <span className="font-medium">{res.btkRegNo}</span>
+            </div>
+          )}
         </DocSection>
       )}
 
