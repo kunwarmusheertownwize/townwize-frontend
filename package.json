@@ -16,6 +16,7 @@
     "@capacitor/app": "^7.1.2",
     "@capacitor/cli": "^7.4.5",
     "@capacitor/core": "^7.4.5",
+    "@capacitor/push-notifications": "^7.0.7",
     "@capacitor/splash-screen": "^7.0.4",
     "@emotion/is-prop-valid": "^1.4.0",
     "@googlemaps/extended-component-library": "^0.6.14",

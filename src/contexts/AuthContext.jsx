@@ -5,6 +5,13 @@ import { AuthContext } from "./AuthContextBase";
 import { SplashScreen } from "@capacitor/splash-screen";
 import { isNative } from "../utils/platform";
 import { initFCM } from "../utils/fcm";
+import { initNativePush } from "../utils/pushNative";
+
+// Web uses a service worker (utils/fcm.js); the app cannot — there is no
+// service worker in the WebView — so it registers with FCM natively instead.
+// Picking the wrong one is why push has never worked inside the app.
+const registerForPush = () =>
+  (isNative() ? initNativePush() : initFCM()).catch(() => {});
 
 export function AuthProvider({ children }) {
   const [auth, setAuth] = useState(null);
@@ -16,7 +23,7 @@ export function AuthProvider({ children }) {
       try {
         setAuth(JSON.parse(stored));
         // Re-register FCM on page reload if user is already logged in
-        initFCM().catch(() => {});
+        registerForPush();
       } catch {
         localStorage.removeItem("auth");
       }
@@ -42,7 +49,7 @@ export function AuthProvider({ children }) {
     if (payload?.refreshToken) localStorage.setItem("_tw_rt", payload.refreshToken);
     setAuth(session);
     // Register FCM token for push notifications (non-blocking)
-    initFCM().catch(() => {});
+    registerForPush();
   };
 
   const logout = () => {
