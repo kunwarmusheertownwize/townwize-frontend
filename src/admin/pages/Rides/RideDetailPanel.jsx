@@ -247,7 +247,26 @@ export default function RideDetailPanel({ ride, onUpdated }) {
         <h4 className="mb-2 font-semibold">Route & Metrics</h4>
         <div>{ride.route || "-"}</div>
         <div className="mt-2">ETA: {ride.etaMinutes ?? "-"}m</div>
-        <div>Distance: {ride.distanceKm ?? "-"} km</div>
+        {/* `ride.distanceKm` is the BOOKING ESTIMATE, not what was charged —
+            the fare is settled on finalFareBreakdown.distanceKm, reconstructed
+            from the GPS trail. Showing only the estimate meant anyone reviewing
+            a disputed fare compared against a number the passenger was never
+            billed for. Both are shown, labelled, whenever they differ. */}
+        {ride.finalFareBreakdown?.distanceKm != null ? (
+          <>
+            <div>
+              Distance billed: {Number(ride.finalFareBreakdown.distanceKm).toLocaleString()} km
+            </div>
+            {ride.distanceKm != null &&
+              Math.abs(ride.finalFareBreakdown.distanceKm - ride.distanceKm) >= 0.05 && (
+                <div className="text-gray-500">
+                  Booking estimate: {Number(ride.distanceKm).toLocaleString()} km
+                </div>
+              )}
+          </>
+        ) : (
+          <div>Distance (booking estimate): {ride.distanceKm ?? "-"} km</div>
+        )}
         <div>Fare Estimate: {Number(ride.fareEstimate || 0).toLocaleString()} PKR</div>
         {ride.finalFare != null ? (
           <div>Final Fare: {Number(ride.finalFare || 0).toLocaleString()} PKR</div>
