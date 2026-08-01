@@ -247,12 +247,13 @@ function Login() {
                 >
                   Create account
                 </button>
+                {/* This said "available soon" and went nowhere, while the whole
+                    flow already existed and worked — the /forgot-password page,
+                    the reset page, both backend routes with their own rate
+                    limits, and the email. Only the entry point was missing, so
+                    anyone locked out of an account had no route back in. */}
                 <button
-                  onClick={() =>
-                    toast.info(
-                      "Password reset will be available soon. Please contact support if needed."
-                    )
-                  }
+                  onClick={() => navigate("/forgot-password")}
                   className="hover:underline"
                 >
                   Forgot password?
