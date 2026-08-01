@@ -51,14 +51,14 @@ const WIZER_STEPS = [
   { key: "identity",      label: "Identity",  fields: ["cnicNumber", "cnicFront", "cnicBack", "licenseFront", "licenseBack"] },
   { key: "faceCheck",     label: "Face",      fields: ["selfie"] },
   { key: "residency",     label: "Residency", fields: ["btkAddress", "btkRegNo", "residencyType", "btkProofFile", "btkIdFront", "btkIdBack"] },
-  { key: "vehicle",       label: "Vehicle",   fields: ["vehicleType", "carType", "vehicleMake", "vehicleModel", "vehicleYear", "vehicleSeats", "vehicleNumber", "vehicleColor", "vehicleReg"] },
+  { key: "vehicle",       label: "Vehicle",   fields: ["vehicleType", "carType", "vehicleMake", "vehicleModel", "vehicleYear", "vehicleSeats", "vehicleNumber", "vehicleColor", "vehicleReg", "mTagPhoto"] },
   { key: "vehiclePhotos", label: "Photos",    fields: ["vehiclePhotoFront", "vehiclePhotoRear", "vehiclePhotoLeft", "vehiclePhotoRight", "vehiclePhotoInteriorFront", "vehiclePhotoInteriorRear", "vehiclePhotoOdometer"] },
   { key: "review",        label: "Review",    fields: [] },
 ];
 
 // ─── draft helpers ────────────────────────────────────────────────────────────
 
-const FILE_FIELDS = ["btkProofFile", "btkIdFront", "btkIdBack", "cnicFront", "cnicBack", "vehicleReg", "licenseFront", "licenseBack", "vehiclePhotoFront", "vehiclePhotoRear", "vehiclePhotoLeft", "vehiclePhotoRight", "vehiclePhotoInteriorFront", "vehiclePhotoInteriorRear", "vehiclePhotoOdometer", "selfie"];
+const FILE_FIELDS = ["btkProofFile", "btkIdFront", "btkIdBack", "cnicFront", "cnicBack", "vehicleReg", "licenseFront", "licenseBack", "vehiclePhotoFront", "vehiclePhotoRear", "vehiclePhotoLeft", "vehiclePhotoRight", "vehiclePhotoInteriorFront", "vehiclePhotoInteriorRear", "vehiclePhotoOdometer", "selfie", "mTagPhoto"];
 // Draft persistence lives in utils/registrationDraft.js — it keeps uploaded
 // files in IndexedDB (localStorage cannot hold 16 images), stores the step KEY
 // rather than an index so reordering steps cannot strand anyone, and persists
@@ -75,6 +75,7 @@ const FIELD_LABELS = {
   vehicleType: "Vehicle type", carType: "Vehicle class", vehicleMake: "Make",
   vehicleModel: "Model", vehicleYear: "Year", vehicleSeats: "Seats",
   vehicleNumber: "Number plate", vehicleColor: "Colour", vehicleReg: "Vehicle registration",
+  mTagPhoto: "M-Tag photo",
   vehiclePhotoFront: "Front exterior photo", vehiclePhotoRear: "Rear exterior photo",
   vehiclePhotoLeft: "Left side photo", vehiclePhotoRight: "Right side photo",
   vehiclePhotoInteriorFront: "Interior front photo",
@@ -97,7 +98,7 @@ const defaultValues = {
   btkAddress: "", btkRegNo: "", residencyType: "", cnicNumber: "",
   vehicleType: "Car", carType: "economy",
   vehicleMake: "", vehicleModel: "", vehicleYear: "", vehicleSeats: "4",
-  vehicleNumber: "", vehicleColor: "", hasMTag: false,
+  vehicleNumber: "", vehicleColor: "", hasMTag: false, mTagPhoto: null,
   btkProofFile: null, btkIdFront: null, btkIdBack: null,
   vehicleReg: null, licenseFront: null, licenseBack: null,
   vehiclePhotoFront: null, vehiclePhotoRear: null, vehiclePhotoLeft: null, vehiclePhotoRight: null,
@@ -533,6 +534,7 @@ export default function Register() {
         formData.append("vehicleNumber",values.vehicleNumber|| "");
         formData.append("vehicleColor", values.vehicleColor || "");
         formData.append("hasMTag",      values.hasMTag ? "true" : "false");
+        if (values.mTagPhoto) formData.append("mTagPhoto", values.mTagPhoto);
         formData.append("cnicNumber",   values.cnicNumber   || "");
         if (values.btkProofFile) formData.append("residencyProof", values.btkProofFile);
         if (values.btkIdFront)  formData.append("btkIdFront", values.btkIdFront);

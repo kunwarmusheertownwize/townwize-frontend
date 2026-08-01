@@ -83,6 +83,7 @@ function getBlockedDetails(driverEligibility) {
     documentsSubmitted,
     verificationStatus,
     conditionStatus,
+    hasMTag,
     blockedReason,
   } = driverEligibility || {};
 
@@ -105,6 +106,15 @@ function getBlockedDetails(driverEligibility) {
       body: conditionStatus === "needs_recheck"
         ? "Your vehicle condition photos need re-inspection."
         : "Complete the vehicle condition inspection to go online.",
+    };
+  }
+  if (hasMTag !== true) {
+    // Deliberately does not claim M-9 rejects untagged vehicles — cash lanes
+    // exist and Wizers know it. This is a Townwize requirement, so say so.
+    return {
+      icon: "🏷️",
+      title: "M-Tag not verified",
+      body: blockedReason || "Townwize requires a verified M-Tag before you can go online. Add a photo of the M-Tag on your windscreen from your profile.",
     };
   }
   return null;

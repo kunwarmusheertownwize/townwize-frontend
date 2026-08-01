@@ -48,7 +48,11 @@ export default function VehiclePhotosStep() {
             label={p.label}
             file={values[i]}
             onFileChange={mkHandler(p.field)}
-            minWidth={600} minHeight={400} maxSizeMB={5}
+            minWidth={600} minHeight={400}
+            // Live capture: the whole point is evidence of THIS vehicle, and a
+            // gallery pick proves nothing. 8 MB because an unprocessed
+            // full-resolution phone photo routinely exceeds 5.
+            requireCamera captureAspect={4 / 3} maxSizeMB={8}
           />
         ))}
       </div>

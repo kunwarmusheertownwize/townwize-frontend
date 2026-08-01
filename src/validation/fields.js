@@ -106,6 +106,7 @@ export const schema = yup.object().shape({
   vehiclePhotoInteriorFront: fileValidation("Vehicle Interior Front"),
   vehiclePhotoInteriorRear: fileValidation("Vehicle Interior Rear"),
   vehiclePhotoOdometer: fileValidation("Vehicle Odometer"),
+  mTagPhoto: fileValidation("M-Tag Photo"),
   cnicFront: fileValidation("CNIC Front"),
   cnicBack: fileValidation("CNIC Back"),
   selfie: yup.string().nullable(),
@@ -152,6 +153,12 @@ export const enforceBusinessRules = (data, role, isGuestTowner = false) => {
     if (!data.vehicleColor) errors.vehicleColor = "Vehicle color is required";
     if (!data.cnicNumber) errors.cnicNumber = "CNIC number is required";
     if (!data.selfie) errors.selfie = "Selfie verification is required";
+    // Conditional on purpose: a Wizer may register WITHOUT an M-Tag. The block
+    // lands at go-online, not here. But claiming one without evidence is not
+    // allowed — that claim is what sets the discounted toll rate.
+    if (data.hasMTag && !data.mTagPhoto) {
+      errors.mTagPhoto = "Photo of the M-Tag on your windscreen is required";
+    }
   }
 
   return errors;

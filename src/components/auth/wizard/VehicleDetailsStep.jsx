@@ -5,6 +5,8 @@ export default function VehicleDetailsStep({ setVehicleProgress, setLicenseFront
   const { register, watch, setValue, trigger, formState: { errors } } = useFormContext();
 
   const vehicleReg = watch("vehicleReg");
+  const hasMTag = watch("hasMTag");
+  const mTagPhoto = watch("mTagPhoto");
 
   const mkHandler = (field, setter) => (file) => {
     setValue(field, file, { shouldValidate: true });
@@ -82,10 +84,36 @@ export default function VehicleDetailsStep({ setVehicleProgress, setLicenseFront
           <div>
             <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">I have an M-Tag</span>
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-              M-Tag holders pay a lower toll rate. If selected, the system will automatically apply M-Tag rates when calculating toll charges on your rides.
+              Townwize requires a verified M-Tag before you can go online. M-Tag holders also pay a lower toll on BTK trips.
             </p>
           </div>
         </label>
+
+        {/* Wording stays honest: cash lanes DO exist at the BTK exit, the BTK
+            entrance and M-9, so a Wizer without a tag can still make the trip.
+            Requiring one is our policy. Applicants drive that road daily and
+            would spot an overstatement immediately. */}
+        {hasMTag ? (
+          <div className="mt-4 space-y-2">
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              Photograph the M-Tag on your windscreen. An admin checks it before you can go online.
+            </p>
+            <UploadPreview
+              id="mtag-photo-upload"
+              label="M-Tag on windscreen"
+              file={mTagPhoto}
+              onFileChange={mkHandler("mTagPhoto")}
+              minWidth={600} minHeight={400} maxSizeMB={8}
+              requireCamera captureAspect={4 / 3}
+            />
+            {errors.mTagPhoto && <p className={err}>{errors.mTagPhoto.message}</p>}
+          </div>
+        ) : (
+          <p className="mt-3 rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:bg-amber-900/20 dark:text-amber-300">
+            Without a verified M-Tag you will not be able to go online. You can finish
+            registering and add it later from your profile.
+          </p>
+        )}
       </div>
 
       {/* Licence and CNIC moved to the Identity step — they identify the person,
@@ -98,7 +126,8 @@ export default function VehicleDetailsStep({ setVehicleProgress, setLicenseFront
             label="Vehicle Registration"
             file={vehicleReg}
             onFileChange={mkHandler("vehicleReg", setVehicleProgress)}
-            minWidth={600} minHeight={400} maxSizeMB={5}
+            minWidth={600} minHeight={400} maxSizeMB={8}
+            requireCamera
             onProgress={setVehicleProgress}
           />
         </div>

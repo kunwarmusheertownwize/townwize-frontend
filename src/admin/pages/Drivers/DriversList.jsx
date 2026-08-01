@@ -36,10 +36,15 @@ function VehicleReviewPanel({ driver, onClose, onSaved }) {
   const [conditionStatus, setConditionStatus] = useState(driver?.vehicleMeta?.conditionStatus || "pending");
   const [conditionScore, setConditionScore] = useState(Number(driver?.vehicleMeta?.conditionScore ?? 0));
   const [remarks, setRemarks] = useState("");
+  // Separate from `remarks` above, which belongs to vehicle verification.
+  // Sharing them would stamp a vehicle rejection reason onto an M-Tag decision.
+  const [mTagStatus, setMTagStatus] = useState(String(driver?.mTag?.status || "PENDING").toUpperCase());
+  const [mTagRemarks, setMTagRemarks] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
   const canSetPass = requiredUploaded >= 6;
+  const mTagPhotoUrl = driver?.mTag?.photoUrl || "";
 
   const handleSave = async () => {
     setError("");
@@ -51,6 +56,15 @@ function VehicleReviewPanel({ driver, onClose, onSaved }) {
       setError("Remarks are required when rejecting vehicle.");
       return;
     }
+    // Mirrors the server so the admin is told before the round trip.
+    if (mTagStatus === "APPROVED" && !mTagPhotoUrl) {
+      setError("An M-Tag photo is required before approving. Ask the Wizer to upload one.");
+      return;
+    }
+    if (mTagStatus === "REJECTED" && !mTagRemarks.trim()) {
+      setError("Remarks are required when rejecting an M-Tag.");
+      return;
+    }
     setSaving(true);
     try {
       await updateDriverVehicleApproval(String(driver.userId), {
@@ -59,6 +73,8 @@ function VehicleReviewPanel({ driver, onClose, onSaved }) {
         conditionStatus,
         conditionScore: Number(conditionScore || 0),
         remarks: remarks.trim(),
+        mTagStatus,
+        mTagRemarks: mTagRemarks.trim(),
       });
       await onSaved();
       onClose();
@@ -121,6 +137,37 @@ function VehicleReviewPanel({ driver, onClose, onSaved }) {
         </div>
       </div>
 
+      <div className="rounded-lg border border-gray-200 p-3">
+        <div className="mb-2 flex items-center justify-between">
+          <div className="text-sm font-semibold">M-Tag</div>
+          <div className={`text-xs ${driver?.hasMTag ? "text-green-700" : "text-amber-700"}`}>
+            {driver?.hasMTag ? "verified — can go online" : "not verified — blocked from going online"}
+          </div>
+        </div>
+        {mTagPhotoUrl ? (
+          <SecureImg
+            src={mTagPhotoUrl}
+            alt="M-Tag on windscreen"
+            className="w-full h-40 object-cover rounded cursor-pointer"
+            onClick={() =>
+              presignDocumentUrl(mTagPhotoUrl)
+                .then((d) => { const u = d?.data?.url || d?.url; if (u) window.open(u, "_blank", "noreferrer"); })
+                .catch(() => window.open(mTagPhotoUrl, "_blank", "noreferrer"))
+            }
+          />
+        ) : (
+          <div className="flex h-24 items-center justify-center rounded bg-gray-50 text-xs text-red-500">
+            {driver?.mTag?.declared ? "Claimed but no photo uploaded" : "Not submitted"}
+          </div>
+        )}
+        {/* Nothing in the system checks the tag belongs to THIS vehicle, so the
+            reviewer is the only control. Say so rather than assume they know. */}
+        <p className="mt-2 text-[11px] text-gray-500">
+          Check the number plate visible in the photo matches
+          <span className="font-semibold"> {driver?.vehicleMeta?.number || "the registered plate"}</span>.
+        </p>
+      </div>
+
       <div className="space-y-3 rounded-lg border border-gray-200 p-3">
         <div className="text-sm font-semibold">Decision</div>
         <div className="grid grid-cols-1 gap-3">
@@ -167,6 +214,28 @@ function VehicleReviewPanel({ driver, onClose, onSaved }) {
               max="100"
               value={conditionScore}
               onChange={(e) => setConditionScore(e.target.value)}
+              className="mt-1 w-full rounded border px-2 py-2 text-sm dark:bg-gray-800 dark:text-white dark:border-gray-600"
+            />
+          </label>
+          <label className="text-xs text-gray-600">
+            M-Tag Verification
+            <select
+              value={mTagStatus}
+              onChange={(e) => setMTagStatus(e.target.value)}
+              className="mt-1 w-full rounded border px-2 py-2 text-sm dark:bg-gray-800 dark:text-white dark:border-gray-600"
+            >
+              <option value="PENDING">PENDING</option>
+              <option value="APPROVED" disabled={!mTagPhotoUrl}>APPROVED</option>
+              <option value="REJECTED">REJECTED</option>
+            </select>
+          </label>
+          <label className="text-xs text-gray-600">
+            M-Tag Remarks
+            <textarea
+              value={mTagRemarks}
+              onChange={(e) => setMTagRemarks(e.target.value)}
+              rows={2}
+              placeholder="Required when rejecting — the Wizer sees this"
               className="mt-1 w-full rounded border px-2 py-2 text-sm dark:bg-gray-800 dark:text-white dark:border-gray-600"
             />
           </label>

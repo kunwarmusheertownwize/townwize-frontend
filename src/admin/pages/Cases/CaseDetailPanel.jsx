@@ -166,6 +166,29 @@ const DriverDocs = ({ profile, referrer }) => {
         )}
       </DocSection>
 
+      {/* M-Tag gates the driver's ability to go online at all, so it belongs in
+          the case view even though approval happens in the Drivers panel. */}
+      <DocSection
+        title={
+          <span className="flex items-center">
+            M-Tag
+            {profile?.mTag?.verification?.status === "PENDING" && profile?.mTag?.photoUrl && <PendingBadge />}
+          </span>
+        }
+        accent={profile?.hasMTag ? undefined : "amber"}
+      >
+        <DocLink url={profile?.mTag?.photoUrl} label="M-Tag on windscreen" />
+        <div className="text-xs text-gray-500">
+          Status: {profile?.mTag?.verification?.status || "PENDING"}
+          {profile?.hasMTag === true
+            ? " · can go online · charged the M-Tag toll rate"
+            : " · blocked from going online · charged the cash toll rate"}
+        </div>
+        {profile?.mTag?.verification?.remarks && (
+          <div className="text-xs text-gray-500">Remarks: {profile.mTag.verification.remarks}</div>
+        )}
+      </DocSection>
+
       {(res.proofUrl || res.btkIdFrontUrl) && (
         <DocSection title={<span className="flex items-center">Residency Proof{resPending && <PendingBadge />}</span>} accent={resPending ? "amber" : undefined}>
           <DocLink url={res.proofUrl}      label="Residency Proof" />

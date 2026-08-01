@@ -39,6 +39,10 @@ const getInitialEligibility = () => {
           documentsSubmitted: false,
           verificationStatus: "PENDING",
           conditionStatus: "pending",
+          // Defaults to false deliberately. This object is cached in
+          // localStorage, so a stale copy written before M-Tag existed must not
+          // read as "has one" and let a blocked driver think they can go online.
+          hasMTag: false,
           blockedReason: null,
         };
   } catch {
@@ -47,6 +51,7 @@ const getInitialEligibility = () => {
       documentsSubmitted: false,
       verificationStatus: "PENDING",
       conditionStatus: "pending",
+      hasMTag: false,
       blockedReason: null,
     };
   }

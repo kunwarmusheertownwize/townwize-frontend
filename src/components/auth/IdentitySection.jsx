@@ -83,7 +83,8 @@ export default function IdentitySection({
               onFileChange={handleFrontChange}
               minWidth={600}
               minHeight={400}
-              maxSizeMB={5}
+              maxSizeMB={8}
+              requireCamera
               onProgress={setCnicFrontProgress}
             />
             <UploadPreview
@@ -93,7 +94,8 @@ export default function IdentitySection({
               onFileChange={handleBackChange}
               minWidth={600}
               minHeight={400}
-              maxSizeMB={5}
+              maxSizeMB={8}
+              requireCamera
               onProgress={setCnicBackProgress}
             />
           </div>

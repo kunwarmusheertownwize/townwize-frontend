@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import GuidedDocumentCapture, { canGuideCapture } from "./GuidedDocumentCapture";
 
 export default function UploadPreview({
   id,
@@ -10,10 +11,26 @@ export default function UploadPreview({
   minHeight = 300,
   maxSizeMB = 5,
   onProgress,
+  // Opt in to live camera capture. Off by default, so every pre-existing call
+  // site behaves exactly as before.
+  //
+  // Set it wherever the photo must be of the thing in front of the applicant —
+  // identity documents and vehicle photos. NOT the utility bill: BTK bills
+  // arrive as emailed PDFs, and proof-of-address is the one category the KYC
+  // vendors also accept as an upload.
+  requireCamera = false,
+  // Guide-frame ratio: 1.585 matches a CNIC or licence, 4/3 suits a vehicle.
+  captureAspect = 1.585,
 }) {
   const [error, setError] = useState("");
   const [progress, setProgress] = useState(0);
   const [previewUrl, setPreviewUrl] = useState(null);
+  const [capturing, setCapturing] = useState(false);
+
+  // Falls back to the file input when the camera cannot run at all — a desktop
+  // without a webcam, or an insecure context. Better a gallery pick than an
+  // applicant who physically cannot complete registration.
+  const useCamera = requireCamera && canGuideCapture();
 
   useEffect(() => {
     if (!file) {
@@ -108,7 +125,31 @@ export default function UploadPreview({
         </div>
       )}
 
-      <input id={id} type="file" accept={accept} className="hidden" onChange={handleFileChange} />
+      {/* A camera-captured JPEG carries no `.pdf` case, and offering one would
+          be misleading when the picker cannot produce it. */}
+      <input
+        id={id}
+        type="file"
+        accept={useCamera ? "image/*" : accept}
+        className="hidden"
+        onChange={handleFileChange}
+      />
+
+      {capturing ? (
+        <div className="mt-2">
+          <GuidedDocumentCapture
+            label={label}
+            aspect={captureAspect}
+            onCancel={() => setCapturing(false)}
+            onCapture={(captured) => {
+              setCapturing(false);
+              // Route through the same validation the file input uses, so the
+              // size and dimension rules apply identically to both paths.
+              handleFileChange({ target: { files: [captured], value: "" } });
+            }}
+          />
+        </div>
+      ) : null}
 
       {/* Once a file is present, Replace and Remove are secondary actions on an
           already-completed task. They were two full-size solid buttons — one of
@@ -116,12 +157,22 @@ export default function UploadPreview({
           a finished step look unfinished. */}
       {file ? (
         <div className="mt-2 flex items-center justify-center gap-4 text-xs font-medium">
-          <label
-            htmlFor={id}
-            className="cursor-pointer text-townwize-primary underline-offset-2 hover:underline dark:text-townwize-accent"
-          >
-            Replace
-          </label>
+          {useCamera ? (
+            <button
+              type="button"
+              onClick={() => setCapturing(true)}
+              className="text-townwize-primary underline-offset-2 hover:underline dark:text-townwize-accent"
+            >
+              Retake
+            </button>
+          ) : (
+            <label
+              htmlFor={id}
+              className="cursor-pointer text-townwize-primary underline-offset-2 hover:underline dark:text-townwize-accent"
+            >
+              Replace
+            </label>
+          )}
           <span className="text-gray-300 dark:text-gray-600">|</span>
           <button
             type="button"
@@ -131,6 +182,14 @@ export default function UploadPreview({
             Remove
           </button>
         </div>
+      ) : useCamera ? (
+        <button
+          type="button"
+          onClick={() => setCapturing(true)}
+          className="mt-2 inline-block w-full cursor-pointer rounded-lg bg-townwize-primary px-4 py-2 text-center text-sm font-semibold text-white transition hover:bg-townwize-primaryDark"
+        >
+          Take photo
+        </button>
       ) : (
         <label
           htmlFor={id}

@@ -67,6 +67,22 @@ const DriverLayout = ({ title }) => {
           blockedReason = "Vehicle verification is pending approval.";
         } else if (conditionStatus !== "pass") {
           blockedReason = "Vehicle condition review is pending.";
+        } else if (p?.hasMTag !== true) {
+          // Last in the chain, so a driver is told the bigger problems first and
+          // only meets this once everything else is approved. Mirrors the
+          // server's getGoOnlineBlock — if these two disagree, the app says one
+          // thing and the API says another.
+          const mTagStatus = String(p?.mTag?.verification?.status || "").toUpperCase();
+          const mTagRemarks = String(p?.mTag?.verification?.remarks || "").trim();
+          if (mTagStatus === "REJECTED") {
+            blockedReason = mTagRemarks
+              ? "M-Tag photo rejected: " + mTagRemarks
+              : "M-Tag photo was rejected. Please upload a clear photo.";
+          } else if (p?.mTag?.photoUrl) {
+            blockedReason = "M-Tag photo is awaiting admin review.";
+          } else {
+            blockedReason = "Upload a photo of the M-Tag on your windscreen to go online.";
+          }
         }
 
         setDriverEligibility({
@@ -74,6 +90,7 @@ const DriverLayout = ({ title }) => {
           documentsSubmitted,
           verificationStatus: vehicleVerification,
           conditionStatus,
+          hasMTag: p?.hasMTag === true,
           blockedReason,
         });
       } catch {

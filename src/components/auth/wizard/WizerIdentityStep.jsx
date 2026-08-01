@@ -59,7 +59,8 @@ export default function WizerIdentityStep({ showIdentity, setShowIdentity }) {
             label="Licence Front"
             file={licenseFront}
             onFileChange={mkHandler("licenseFront")}
-            minWidth={600} minHeight={400} maxSizeMB={5}
+            minWidth={600} minHeight={400} maxSizeMB={8}
+            requireCamera
             onProgress={() => {}}
           />
           <UploadPreview
@@ -67,7 +68,8 @@ export default function WizerIdentityStep({ showIdentity, setShowIdentity }) {
             label="Licence Back"
             file={licenseBack}
             onFileChange={mkHandler("licenseBack")}
-            minWidth={600} minHeight={400} maxSizeMB={5}
+            minWidth={600} minHeight={400} maxSizeMB={8}
+            requireCamera
             onProgress={() => {}}
           />
         </div>

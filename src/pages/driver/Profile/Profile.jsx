@@ -156,6 +156,23 @@ function VehicleConditionCard({ profile, onUploaded }) {
 
 const DOC_SECTIONS = [
   {
+    // First, because this is the only section that stops a Wizer earning.
+    key: "mTag",
+    label: "M-Tag (required to go online)",
+    getStatus: (p) => p?.mTag?.verification?.status || "PENDING",
+    getRemark: (p) => p?.mTag?.verification?.remarks || "",
+    fields: [
+      {
+        field: "mTagPhoto",
+        label: "M-Tag on windscreen",
+        hasUrl: (p) => !!p?.mTag?.photoUrl,
+        // Live photo only: the point is evidence of the tag on THIS windscreen.
+        accept: "image/*",
+        capture: "environment",
+      },
+    ],
+  },
+  {
     key: "identity",
     label: "Identity & Selfie",
     getStatus: (p) => p?.identity?.verification?.status || "PENDING",
@@ -247,7 +264,7 @@ function DocumentSections({ profile, onUploaded }) {
               </p>
             )}
             <div className="grid grid-cols-1 gap-2">
-              {section.fields.map(({ field, label, hasUrl }) => {
+              {section.fields.map(({ field, label, hasUrl, accept, capture }) => {
                 const submitted = hasUrl(profile);
                 const selected = !!files[field];
                 return (
@@ -272,7 +289,8 @@ function DocumentSections({ profile, onUploaded }) {
                     </span>
                     <input
                       type="file"
-                      accept="image/*,application/pdf"
+                      accept={accept || "image/*,application/pdf"}
+                      capture={capture}
                       className="hidden"
                       ref={(el) => { inputRefs.current[field] = el; }}
                       onChange={(e) => handleFile(field, e)}

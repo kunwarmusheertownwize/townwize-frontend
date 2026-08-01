@@ -189,7 +189,8 @@ export default function ResidencySection({
               onFileChange={handleFrontChange}
               minWidth={400}
               minHeight={300}
-              maxSizeMB={5}
+              maxSizeMB={8}
+              requireCamera
               onProgress={setBtkFrontProgress}
             />
             <UploadPreview
@@ -199,7 +200,8 @@ export default function ResidencySection({
               onFileChange={handleBackChange}
               minWidth={400}
               minHeight={300}
-              maxSizeMB={5}
+              maxSizeMB={8}
+              requireCamera
               onProgress={setBtkBackProgress}
             />
           </div>
