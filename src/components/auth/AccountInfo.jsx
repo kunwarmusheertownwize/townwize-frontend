@@ -1,6 +1,6 @@
 import { useFormContext } from "react-hook-form";
 
-export default function AccountInfo({ register, errors, showPhone = true }) {
+export default function AccountInfo({ register, errors, showPhone = true, google = null }) {
   const { watch, setValue } = useFormContext();
   const phoneField = register("phone");
   const phoneValue = watch("phone") || "";
@@ -65,9 +65,19 @@ export default function AccountInfo({ register, errors, showPhone = true }) {
         <input
           type="email"
           {...register("email")}
-          className="mt-1 w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg p-3 outline-none"
+          readOnly={Boolean(google)}
+          className={`mt-1 w-full border border-gray-200 dark:border-gray-600 rounded-lg p-3 outline-none ${
+            google
+              ? "bg-gray-100 dark:bg-gray-800 text-gray-500 cursor-not-allowed"
+              : "bg-gray-50 dark:bg-gray-700"
+          }`}
           placeholder="you@example.com"
         />
+        {/* Locked: the server checks this against the address Google verified,
+            so editing it here could only fail at submit. */}
+        {google && (
+          <p className="mt-1 text-xs text-gray-400">Verified by Google — cannot be changed.</p>
+        )}
         {errors.email && (
           <p className="text-xs !text-townwize-error mt-1">{errors.email.message}</p>
         )}
@@ -97,35 +107,49 @@ export default function AccountInfo({ register, errors, showPhone = true }) {
         </div>
       )}
 
-      {/* Password */}
-      <div>
-        <label
-          htmlFor="password"
-          className="text-sm text-gray-600 dark:text-gray-300"
-        >
-          Password
-        </label>
-        <input
-          id="password"
-          type="password"
-          aria-label="Password"
-          {...register("password")}
-          className="mt-1 w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg p-3 outline-none"
-          placeholder="Strong Password"
-        />
-        {errors.password && (
-          <p className="text-xs !text-townwize-error mt-1">
-            {errors.password.message}
+      {/* Password — omitted entirely when Google owns the credential. Asking
+          someone to invent a password they will never use is exactly the
+          friction this path removes. "Forgot password" can set one later if
+          they ever want to sign in without Google. */}
+      {google ? (
+        <div className="rounded-lg border border-gray-100 bg-gray-50 px-3 py-2.5 dark:border-gray-700 dark:bg-gray-800/50">
+          <p className="text-sm font-medium text-gray-700 dark:text-gray-200">
+            Signing up with Google
           </p>
-        )}
+          <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+            No password needed — you'll sign in with Google.
+          </p>
+        </div>
+      ) : (
+        <div>
+          <label
+            htmlFor="password"
+            className="text-sm text-gray-600 dark:text-gray-300"
+          >
+            Password
+          </label>
+          <input
+            id="password"
+            type="password"
+            aria-label="Password"
+            {...register("password")}
+            className="mt-1 w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg p-3 outline-none"
+            placeholder="Strong Password"
+          />
+          {errors.password && (
+            <p className="text-xs !text-townwize-error mt-1">
+              {errors.password.message}
+            </p>
+          )}
 
-        {/* Strength indicator */}
-        {!errors.password && (
-          <p className="text-xs mt-1 text-gray-500 dark:text-gray-400">
-            Use at least 8 characters, mix of letters, numbers & symbols.
-          </p>
-        )}
-      </div>
+          {/* Strength indicator */}
+          {!errors.password && (
+            <p className="text-xs mt-1 text-gray-500 dark:text-gray-400">
+              Use at least 8 characters, mix of letters, numbers & symbols.
+            </p>
+          )}
+        </div>
+      )}
     </div>
   );
 }

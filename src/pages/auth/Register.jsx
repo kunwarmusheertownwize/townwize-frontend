@@ -244,6 +244,21 @@ export default function Register() {
   const { code: inviteCodeParam } = useParams();
   const mode = inviteCodeParam ? "referral" : "normal";
 
+  // Seeded when someone tapped "Continue with Google" and had no account yet.
+  // Login verifies the credential server-side first and passes the resulting
+  // short-lived token here, so the wizard is not racing Google's ~1h expiry
+  // through sixteen uploads.
+  const google = location.state?.google || null;
+
+  // Pre-fill from the verified Google identity. Runs once; a restored draft
+  // takes precedence because the applicant was already further along.
+  useEffect(() => {
+    if (!google || draftRestored.current) return;
+    if (google.email) methods.setValue("email", google.email);
+    if (google.name) methods.setValue("name", google.name);
+    setIntroDone(true);
+  }, [google, methods]);
+
   const forcedRole = getAppRole() || null;
   const [selectedRole, setSelectedRole] = useState(forcedRole || (mode === "referral" ? "passenger" : null));
   // Intro is shown once per fresh start. Restoring a draft skips it.
@@ -268,7 +283,7 @@ export default function Register() {
     resolver: yupResolver(schema),
     mode: "onChange",
     defaultValues,
-    context: { isGuestTowner },
+    context: { isGuestTowner, isGoogleSignup: Boolean(location.state?.google) },
   });
   const phone = methods.watch("phone");
 
@@ -499,7 +514,12 @@ export default function Register() {
       formData.append("name", values.name);
       formData.append("email", values.email);
       formData.append("phone", values.phone);
-      formData.append("password", values.password);
+      // A Google registrant never chose one; the server generates an unusable
+      // password so the model's required passwordHash still holds.
+      if (values.password) formData.append("password", values.password);
+      if (google?.googleRegistrationToken) {
+        formData.append("googleRegistrationToken", google.googleRegistrationToken);
+      }
       formData.append("btkAddress", values.btkAddress || "");
       formData.append("residencyType", values.residencyType || "");
       formData.append("btkRegNo", values.btkRegNo || "");
@@ -565,7 +585,11 @@ export default function Register() {
       });
 
       clearDraft();
-      toast.success("Registration submitted! Please check your email to verify your account.");
+      toast.success(
+        google
+          ? "Registration submitted! Your documents are now with our team for review."
+          : "Registration submitted! Please check your email to verify your account."
+      );
       navigate("/login", { state: location.state || null, replace: true });
     } catch (err) {
       const code = err?.response?.data?.error?.code || err?.response?.data?.code;
@@ -775,6 +799,7 @@ export default function Register() {
                 register={methods.register}
                 errors={methods.formState.errors}
                 showPhone={false}
+                google={google}
               />
             )}
 

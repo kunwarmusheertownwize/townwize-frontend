@@ -30,7 +30,16 @@ export const schema = yup.object().shape({
       if (raw.startsWith("92")) return /^(92)3\d{9}$/.test(raw);
       return /^03\d{9}$/.test(raw);
     }),
-  password: yup.string().min(8, "Password must be at least 8 characters").required("Password is required"),
+  // Not required when Google owns the credential — there is no password to
+  // invent, and the server generates an unusable one so the model's required
+  // passwordHash still holds. Driven by `$isGoogleSignup`, which Register.jsx
+  // passes as validation context alongside `$isGuestTowner`.
+  password: yup.string().when("$isGoogleSignup", {
+    is: true,
+    then: (s) => s.notRequired(),
+    otherwise: (s) =>
+      s.min(8, "Password must be at least 8 characters").required("Password is required"),
+  }),
   // BTK residency fields apply to Towners and Wizers only. A GuestTowner is
   // sponsored by a Towner and proves identity with a CNIC alone — they never
   // see the residency step, so requiring these unconditionally made the whole

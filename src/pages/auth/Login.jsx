@@ -152,25 +152,38 @@ function Login() {
       const status = err.response?.status;
       const message = err.response?.data?.message || "Google sign-in failed";
 
-      // Google is sign-IN only, never sign-up: registration collects sixteen
-      // documents, a CNIC, BTK residency proof and a face scan, so an
-      // auto-created account could log in and do nothing. But telling someone
-      // to "register first" without a way there is a dead end — the same one
-      // the duplicate-email error used to have.
+      // No account yet — so START registration with this Google identity rather
+      // than dead-ending. Google proves the address; the wizard still collects
+      // phone OTP and every document, so KYC is not weakened by a single step.
+      // What it removes is inventing a password and chasing a verification
+      // email for an address Google has already verified.
       if (status === 404) {
-        toast.error(
-          <span>
-            {message}{" "}
-            <button
-              type="button"
-              onClick={() => navigate("/register")}
-              className="font-semibold underline underline-offset-2"
-            >
-              Create account
-            </button>
-          </span>,
-          { autoClose: 9000 }
-        );
+        try {
+          const seed = await api.post("/auth/google/start-registration", { credential });
+          const { email: googleEmail, name, googleRegistrationToken } = seed.data?.data || {};
+          // Passed in router state, never the URL — this is a bearer token and
+          // URLs end up in history, logs and referrer headers.
+          navigate("/register", {
+            state: { google: { email: googleEmail, name, googleRegistrationToken } },
+          });
+          return;
+        } catch {
+          // Seeding failed (Google unreachable, or the address became taken
+          // between the two calls). Fall back to the plain link.
+          toast.error(
+            <span>
+              {message}{" "}
+              <button
+                type="button"
+                onClick={() => navigate("/register")}
+                className="font-semibold underline underline-offset-2"
+              >
+                Create account
+              </button>
+            </span>,
+            { autoClose: 9000 }
+          );
+        }
       } else {
         toast.error(message);
       }
