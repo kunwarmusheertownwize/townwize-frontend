@@ -149,7 +149,31 @@ function Login() {
         setIsSubmitting(false);
       }, 0);
     } catch (err) {
-      toast.error(err.response?.data?.message || "Google sign-in failed");
+      const status = err.response?.status;
+      const message = err.response?.data?.message || "Google sign-in failed";
+
+      // Google is sign-IN only, never sign-up: registration collects sixteen
+      // documents, a CNIC, BTK residency proof and a face scan, so an
+      // auto-created account could log in and do nothing. But telling someone
+      // to "register first" without a way there is a dead end — the same one
+      // the duplicate-email error used to have.
+      if (status === 404) {
+        toast.error(
+          <span>
+            {message}{" "}
+            <button
+              type="button"
+              onClick={() => navigate("/register")}
+              className="font-semibold underline underline-offset-2"
+            >
+              Create account
+            </button>
+          </span>,
+          { autoClose: 9000 }
+        );
+      } else {
+        toast.error(message);
+      }
       setIsSubmitting(false);
     }
   };
