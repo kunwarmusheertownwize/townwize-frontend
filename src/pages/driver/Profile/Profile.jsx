@@ -519,13 +519,18 @@ const DriverProfile = () => {
 
       <VehicleConditionCard profile={profile} onUploaded={() => setLoadTick((t) => t + 1)} />
 
+      {/* "Update Registration" used to sit here, navigating to
+          /register?role=driver — the full new-registration wizard from step one.
+          It never updated anything: Register.jsx has no update mode and ignores
+          the ?role query entirely, so an existing Wizer was sent through phone
+          OTP and eight steps only to be told their email was already
+          registered. The sections above are the real path — they post to
+          /driver/documents and reset the affected section for admin re-review. */}
       <div className="flex flex-col gap-3">
-        <button
-          onClick={() => navigate("/register?role=driver")}
-          className="w-full rounded-xl bg-townwize-primary dark:bg-townwize-accent px-5 py-3 font-semibold text-white dark:text-townwize-primary"
-        >
-          Update Registration
-        </button>
+        <p className="px-1 text-center text-xs text-gray-400 dark:text-gray-500">
+          Need to change your vehicle or documents? Use the sections above — an
+          admin reviews each update.
+        </p>
         <button
           onClick={handleLogout}
           className="w-full rounded-xl border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 px-5 py-3 font-semibold text-red-600 dark:text-red-400"
