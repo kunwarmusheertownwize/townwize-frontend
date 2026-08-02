@@ -250,15 +250,6 @@ export default function Register() {
   // through sixteen uploads.
   const google = location.state?.google || null;
 
-  // Pre-fill from the verified Google identity. Runs once; a restored draft
-  // takes precedence because the applicant was already further along.
-  useEffect(() => {
-    if (!google || draftRestored.current) return;
-    if (google.email) methods.setValue("email", google.email);
-    if (google.name) methods.setValue("name", google.name);
-    setIntroDone(true);
-  }, [google, methods]);
-
   const forcedRole = getAppRole() || null;
   const [selectedRole, setSelectedRole] = useState(forcedRole || (mode === "referral" ? "passenger" : null));
   // Intro is shown once per fresh start. Restoring a draft skips it.
@@ -286,6 +277,23 @@ export default function Register() {
     context: { isGuestTowner, isGoogleSignup: Boolean(location.state?.google) },
   });
   const phone = methods.watch("phone");
+
+  // Pre-fill from the verified Google identity.
+  //
+  // Must sit BELOW `methods` and `draftRestored` — both are const, so
+  // referencing them from an effect declared earlier in the component body is a
+  // temporal dead zone error thrown during render, not a runtime warning. That
+  // crashed the whole page.
+  //
+  // A restored draft wins: the applicant was already further along than the
+  // seed, and overwriting their edited email with the Google one would be
+  // silently destructive.
+  useEffect(() => {
+    if (!google || draftRestored.current) return;
+    if (google.email) methods.setValue("email", google.email);
+    if (google.name) methods.setValue("name", google.name);
+    setIntroDone(true);
+  }, [google, methods]);
 
   // ── restore draft ──
   useEffect(() => {
