@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "503241818268",
+    "project_id": "townwize-firebase",
+    "storage_bucket": "townwize-firebase.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:503241818268:android:80269ab1a6eb9c8db16d59",
+        "android_client_info": {
+          "package_name": "com.townwize.towner"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBoakmJEPctDqlO9kQpmRf1WzXc1ttpZYU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:503241818268:android:b1323be32868a86bb16d59",
+        "android_client_info": {
+          "package_name": "com.townwize.wizer"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBoakmJEPctDqlO9kQpmRf1WzXc1ttpZYU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

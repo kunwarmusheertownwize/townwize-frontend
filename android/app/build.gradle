@@ -86,11 +86,27 @@ dependencies {
 
 apply from: 'capacitor.build.gradle'
 
-try {
-    def servicesJSON = file('google-services.json')
-    if (servicesJSON.text) {
-        apply plugin: 'com.google.gms.google-services'
-    }
-} catch(Exception e) {
-    logger.info("google-services.json not found, google-services plugin not applied. Push Notifications won't work")
+// google-services.json holds BOTH flavours' clients (Firebase emits a combined
+// file once a project has more than one Android app), so the shared app-level
+// copy serves both and the plugin picks the client matching each applicationId:
+//
+//   townwize -> com.townwize.towner   (passenger app)
+//   wizer    -> com.townwize.wizer    (driver app)
+//
+// The per-flavour paths below are a fallback in case the two are ever split.
+// The real fix here is the `warn`: Capacitor's stock version logged at `info`,
+// which is hidden at the default log level — so a missing file meant push
+// silently never worked while the build reported success.
+def googleServicesLocations = [
+    'google-services.json',
+    'src/townwize/google-services.json',
+    'src/wizer/google-services.json',
+]
+if (googleServicesLocations.any { file(it).exists() }) {
+    apply plugin: 'com.google.gms.google-services'
+} else {
+    // warn, not info: `info` is hidden at default log level, which is exactly
+    // how this went unnoticed.
+    logger.warn("WARNING: no google-services.json found in " + googleServicesLocations +
+                " — the google-services plugin was NOT applied and PUSH NOTIFICATIONS WILL NOT WORK.")
 }
