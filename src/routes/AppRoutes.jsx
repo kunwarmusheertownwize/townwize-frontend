@@ -11,6 +11,7 @@ import Terms from "../pages/Public/Terms";
 import Refunds from "../pages/Public/Refunds";
 import Pricing from "../pages/Public/Pricing";
 import PaymentReturn from "../pages/passenger/Payment/PaymentReturn";
+import PaymentComplete from "../pages/Public/PaymentComplete";
 import Careers from "../pages/Public/Careers";
 import Community from "../pages/Public/Community";
 
@@ -108,6 +109,10 @@ const AppRoutes = () => {
             reviewer checks these without an account. */}
         <Route path="/refunds"    element={<Refunds />} />
         <Route path="/pricing"    element={<Pricing />} />
+        {/* Where Safepay's checkout returns to. MUST stay public — the payment
+            tab has no session, so a guarded route sends a passenger who just
+            paid to the login screen. */}
+        <Route path="/payment-complete" element={<PaymentComplete />} />
         <Route path="/careers"    element={<Careers />} />
         <Route path="/community"  element={<Community />} />
 

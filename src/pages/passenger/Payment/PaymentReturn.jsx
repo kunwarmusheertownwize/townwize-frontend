@@ -19,6 +19,13 @@ const POLL_MS = 2000;
 // tell the truth: we do not know yet. Silently spinning forever is worse.
 const GIVE_UP_MS = 45000;
 
+// Safepay sends no webhook when a passenger simply abandons checkout, so the
+// Payment sits at "pending" and polling alone can never tell "still paying"
+// apart from "gave up". Closing the tab is the only signal we get — and if it
+// arrives before anything settled, nothing was charged. Saying "your bank
+// hasn't confirmed" there is alarming and wrong.
+const isUnsettled = (s) => !s || s === "created" || s === "pending";
+
 const PaymentReturn = () => {
     const [params] = useSearchParams();
     const navigate = useNavigate();
@@ -97,11 +104,19 @@ const PaymentReturn = () => {
     useEffect(() => {
         if (!isNative()) return;
         let handle;
-        Browser.addListener("browserFinished", () => {
-            if (!settledRef.current) setState((s) => (s === "checking" ? "abandoned" : s));
+        Browser.addListener("browserFinished", async () => {
+            if (settledRef.current) return;
+            // One last check before deciding: they may have paid in the final
+            // second and closed the tab before the webhook landed. Only call it
+            // abandoned if the server still shows nothing charged.
+            try {
+                const res = await api.get(`/payments/${paymentId}`);
+                if (!isUnsettled(res?.data?.data?.status)) return; // poller will handle it
+            } catch { /* unreachable — fall through to abandoned */ }
+            setState((s) => (s === "checking" ? "abandoned" : s));
         }).then((h) => { handle = h; });
         return () => { handle?.remove?.(); };
-    }, []);
+    }, [paymentId]);
 
     return (
         <div className="min-h-[70vh] flex items-center justify-center px-6">
@@ -169,12 +184,13 @@ const PaymentReturn = () => {
                     <>
                         <p className="text-4xl">⏳</p>
                         <p className="text-lg font-bold text-gray-800 dark:text-white">
-                            Still confirming
+                            Taking longer than usual
                         </p>
                         <p className="text-sm text-gray-500">
-                            Your bank hasn't confirmed yet. If money left your account it will show
-                            on your receipt shortly — you will not be charged twice. Contact
-                            support@townwize.com if anything looks wrong.
+                            If you completed the payment, it will appear on your receipt shortly and
+                            you will not be charged twice. If you didn't, nothing has been taken and
+                            you can pay your Wizer in cash. Contact support@townwize.com if anything
+                            looks wrong.
                         </p>
                         <button
                             onClick={() => navigate(rideId ? `/passenger/live-tracking/${rideId}` : "/passenger/home", { replace: true })}
