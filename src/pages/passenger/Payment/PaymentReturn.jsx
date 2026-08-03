@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { Browser } from "@capacitor/browser";
 import api from "../../../services/api";
 import BrandSpinner from "../../../components/common/BrandSpinner";
+import { isNative } from "../../../utils/platform";
 
 /**
  * Where Safepay sends the passenger after hosted checkout.
@@ -23,8 +25,11 @@ const PaymentReturn = () => {
     const rideId = params.get("ride") || localStorage.getItem("pendingPaymentRideId");
     const paymentId = localStorage.getItem("pendingPaymentId");
 
-    const [state, setState] = useState("checking"); // checking | paid | failed | unknown
+    const [state, setState] = useState("checking"); // checking | paid | failed | unknown | abandoned
     const startedAt = useRef(Date.now());
+    // Set once payment lands, so the "user closed the tab" listener knows the
+    // close was ours and not them backing out.
+    const settledRef = useRef(false);
 
     useEffect(() => {
         if (!paymentId) {
@@ -42,8 +47,12 @@ const PaymentReturn = () => {
                 if (!mounted) return;
 
                 if (status === "captured") {
+                    settledRef.current = true;
                     localStorage.removeItem("pendingPaymentId");
                     localStorage.removeItem("pendingPaymentRideId");
+                    // Close the checkout tab ourselves. The passenger has paid;
+                    // making them find the X is a needless final obstacle.
+                    if (isNative()) Browser.close().catch(() => {});
                     setState("paid");
                     if (rideId) {
                         localStorage.setItem("activePassengerRideId", rideId);
@@ -52,6 +61,8 @@ const PaymentReturn = () => {
                     return;
                 }
                 if (status === "failed" || status === "cancelled") {
+                    settledRef.current = true;
+                    if (isNative()) Browser.close().catch(() => {});
                     setState("failed");
                     return;
                 }
@@ -73,6 +84,24 @@ const PaymentReturn = () => {
             clearTimeout(timer);
         };
     }, [paymentId, rideId, navigate]);
+
+    /**
+     * The passenger dismissed the checkout tab.
+     *
+     * Without this they land back on a screen spinning "Confirming your
+     * payment…" for 45 seconds after deliberately backing out — the app looking
+     * broken at the exact moment they chose to stop. Payment may still be in
+     * flight, though, so we keep polling underneath and only show the abandoned
+     * state if nothing has settled.
+     */
+    useEffect(() => {
+        if (!isNative()) return;
+        let handle;
+        Browser.addListener("browserFinished", () => {
+            if (!settledRef.current) setState((s) => (s === "checking" ? "abandoned" : s));
+        }).then((h) => { handle = h; });
+        return () => { handle?.remove?.(); };
+    }, []);
 
     return (
         <div className="min-h-[70vh] flex items-center justify-center px-6">
@@ -113,6 +142,25 @@ const PaymentReturn = () => {
                             className="w-full py-3 rounded-xl font-semibold text-white bg-townwize-primary"
                         >
                             Continue
+                        </button>
+                    </>
+                )}
+
+                {state === "abandoned" && (
+                    <>
+                        <p className="text-4xl">🚕</p>
+                        <p className="text-lg font-bold text-gray-800 dark:text-white">
+                            Payment not completed
+                        </p>
+                        <p className="text-sm text-gray-500">
+                            You closed the payment page, so nothing has been charged. Your ride is
+                            still booked — you can pay your Wizer in cash at the end of the trip.
+                        </p>
+                        <button
+                            onClick={() => navigate(rideId ? `/passenger/live-tracking/${rideId}` : "/passenger/home", { replace: true })}
+                            className="w-full py-3 rounded-xl font-semibold text-white bg-townwize-primary"
+                        >
+                            Continue to my ride
                         </button>
                     </>
                 )}

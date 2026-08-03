@@ -7,6 +7,7 @@ import { getSocket } from "../../../hooks/useRideSocket";
 import { authFetch } from "../../../utils/authFetch";
 import { toast } from "react-toastify";
 import PaymentMethodSelector from "../../../components/passenger/PaymentMethodSelector";
+import { Browser } from "@capacitor/browser";
 
 const getRideCreateErrorMessage = (payload, status) => {
   const code = payload?.error?.code || payload?.code || "";
@@ -341,6 +342,19 @@ const TripSummary = () => {
           if (payRes.ok && checkoutUrl) {
             localStorage.setItem("pendingPaymentRideId", rideId);
             localStorage.setItem("pendingPaymentId", payJson.data.paymentId);
+
+            if (isNative()) {
+              // In the app we must NOT navigate the WebView to Safepay — it
+              // would replace the app with a website and there is no way back.
+              // Instead move to the waiting screen first, then open checkout in
+              // a system tab layered on top. The app stays alive underneath,
+              // polls our own backend, and closes the tab itself the moment the
+              // webhook confirms payment.
+              navigate(`/passenger/payment/return?ride=${rideId}`, { replace: true });
+              await Browser.open({ url: checkoutUrl, presentationStyle: "popover" });
+              return;
+            }
+
             window.location.href = checkoutUrl;
             return;
           }
