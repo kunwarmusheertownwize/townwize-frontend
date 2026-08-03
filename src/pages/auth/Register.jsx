@@ -262,6 +262,10 @@ export default function Register() {
   const [otpLoadingVerify, setOtpLoadingVerify] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [checkingEmail, setCheckingEmail] = useState(false);
+  // Register.jsx had no reference to the terms or the privacy policy at all —
+  // no checkbox, no link. Payment providers and both app stores expect an
+  // explicit, unticked opt-in at the point of account creation.
+  const [acceptedPolicies, setAcceptedPolicies] = useState(false);
   const [showResidency, setShowResidency] = useState(true);
   const [showIdentity, setShowIdentity] = useState(true);
   const draftRestored = useRef(false);
@@ -865,6 +869,37 @@ export default function Register() {
               />
             )}
 
+            {/* Consent, on the step where the user actually commits. Unticked
+                by default — a pre-ticked box is not consent. */}
+            {isLastStep && (
+              <label className="flex items-start gap-3 rounded-xl border border-gray-200 dark:border-gray-700 px-4 py-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={acceptedPolicies}
+                  onChange={(e) => setAcceptedPolicies(e.target.checked)}
+                  className="mt-0.5 h-4 w-4 shrink-0 accent-townwize-primary"
+                />
+                <span className="text-xs leading-relaxed text-gray-600 dark:text-gray-300">
+                  I agree to the{" "}
+                  <a href="/terms" target="_blank" rel="noopener noreferrer"
+                     className="font-semibold text-townwize-primary hover:underline dark:text-townwize-accent">
+                    Terms of Use
+                  </a>
+                  , the{" "}
+                  <a href="/privacy" target="_blank" rel="noopener noreferrer"
+                     className="font-semibold text-townwize-primary hover:underline dark:text-townwize-accent">
+                    Privacy Policy
+                  </a>
+                  {" "}and the{" "}
+                  <a href="/refunds" target="_blank" rel="noopener noreferrer"
+                     className="font-semibold text-townwize-primary hover:underline dark:text-townwize-accent">
+                    Refund &amp; Cancellation Policy
+                  </a>
+                  .
+                </span>
+              </label>
+            )}
+
             {/* ── Navigation buttons ──
                 Sticky to the bottom of the viewport. They used to sit below the
                 form, so on a step with five uploads and face verification you
@@ -905,8 +940,8 @@ export default function Register() {
                   key="submit"
                   type="button"
                   onClick={methods.handleSubmit(onSubmit)}
-                  disabled={isSubmitting}
-                  className={`flex-1 py-3 rounded-xl font-semibold text-white transition text-sm ${isSubmitting ? "bg-gray-400 cursor-not-allowed" : "bg-townwize-primary hover:bg-townwize-primaryDark"}`}
+                  disabled={isSubmitting || !acceptedPolicies}
+                  className={`flex-1 py-3 rounded-xl font-semibold text-white transition text-sm ${isSubmitting || !acceptedPolicies ? "bg-gray-400 cursor-not-allowed" : "bg-townwize-primary hover:bg-townwize-primaryDark"}`}
                 >
                   {isSubmitting ? "Submitting…" : "Submit Application"}
                 </button>

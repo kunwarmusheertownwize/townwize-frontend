@@ -8,6 +8,9 @@ import Support from "../pages/Public/Support";
 import Guidelines from "../pages/Public/Guidelines";
 import Privacy from "../pages/Public/Privacy";
 import Terms from "../pages/Public/Terms";
+import Refunds from "../pages/Public/Refunds";
+import Pricing from "../pages/Public/Pricing";
+import PaymentReturn from "../pages/passenger/Payment/PaymentReturn";
 import Careers from "../pages/Public/Careers";
 import Community from "../pages/Public/Community";
 
@@ -101,6 +104,10 @@ const AppRoutes = () => {
         <Route path="/guidelines" element={<Guidelines />} />
         <Route path="/privacy"    element={<Privacy />} />
         <Route path="/terms"      element={<Terms />} />
+        {/* Both must stay public and unguarded — a payment-provider or app-store
+            reviewer checks these without an account. */}
+        <Route path="/refunds"    element={<Refunds />} />
+        <Route path="/pricing"    element={<Pricing />} />
         <Route path="/careers"    element={<Careers />} />
         <Route path="/community"  element={<Community />} />
 
@@ -130,6 +137,10 @@ const AppRoutes = () => {
           <Route path="/passenger/trip-summary" element={<TripSummary />} />
           <Route path="/passenger/trip-receipt/:rideId" element={<PassengerTripReceipt />} />
           <Route path="/passenger/trip-request" element={<TripRequest />} />
+          {/* Landing spots after Safepay hosted checkout. Both just poll our
+              own backend — the redirect itself is never treated as payment. */}
+          <Route path="/passenger/payment/return" element={<PaymentReturn />} />
+          <Route path="/passenger/payment/cancelled" element={<PaymentReturn />} />
           <Route
             path="/passenger/live-tracking/:rideId"
             element={

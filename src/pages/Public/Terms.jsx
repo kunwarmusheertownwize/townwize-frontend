@@ -45,18 +45,20 @@ const SECTIONS = [
             "Using the platform to harass, threaten, or discriminate against other users.",
             "Arranging rides outside the platform to avoid fees or circumvent the matching system.",
             "Sharing your account, referral code, or login credentials with unauthorised parties.",
-            "Accepting payments outside the Townwize platform as a Wizer.",
+            "As a Wizer, asking a Towner for any amount other than the fare shown in the app, or taking payment for a trip that was not booked through Townwize. Collecting the app's cash fare at the end of a trip is normal and permitted.",
             "Rating or reviewing in bad faith to manipulate driver or passenger scores.",
         ],
     },
     {
         title: "6. Fares, Payments & Cancellations",
         body: [
-            "Fares are calculated by the platform based on distance and ride type at the time of booking.",
-            "Payment is processed through the Townwize platform. Cash payments outside the app are not permitted.",
-            "Cancellation fees may apply if you cancel after a Wizer has been matched and is en route.",
-            "Refunds for disputed fares are handled on a case-by-case basis. Contact support@townwize.com within 48 hours of the ride.",
-            "Townwize charges a service fee deducted from the fare before payment is remitted to the Wizer.",
+            "Fares are calculated by the platform from distance, time and ride type. You see an estimate before you book; the final fare is calculated from the route actually travelled and may differ if the route or destination changes during the trip.",
+            "**Paying in cash:** you pay the Wizer directly at the end of the trip. This is the standard method on Townwize today.",
+            "**Paying by card or wallet:** where available, payment is processed by our payment provider. Townwize never receives or stores your full card number.",
+            "Tolls incurred on your route are passed through at cost and shown as a separate line on your receipt.",
+            "Cancellation fees may apply if you cancel after a Wizer has been matched and is en route. See our Refund & Cancellation Policy for the free-cancellation window and the exact amount.",
+            "Townwize charges a service fee, shown separately in your fare breakdown.",
+            "If you believe a fare is wrong, you have 30 days from the trip to raise it with support@townwize.com. Our Refund & Cancellation Policy sets out how disputes are handled, how quickly we respond, and how refunds are paid.",
         ],
     },
     {
@@ -94,7 +96,9 @@ const SECTIONS = [
         title: "11. Contact",
         body: [
             "For questions about these Terms of Use, contact us at legal@townwize.com.",
-            "Townwize is operated by Mercrest Group, Karachi, Pakistan.",
+            "For ride, fare or refund queries, contact support@townwize.com or call +92 339 400 9776.",
+            "**Registered address:** R-31/2, 10th East Street, Phase 1, DHA, Karachi, Pakistan.",
+            "Townwize is operated by **Townwize (Private) Limited**, a company incorporated in Pakistan.",
         ],
     },
 ];

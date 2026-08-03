@@ -148,15 +148,20 @@ const Support = () => {
                             Email Support
                         </a>
                         <a
-                            href="tel:+921234567890"
+                            href="tel:+923394009776"
                             className="flex items-center justify-center gap-3 px-6 py-4 rounded-2xl border border-townwize-primary dark:border-white/20 text-townwize-primary dark:text-white font-semibold hover:bg-townwize-primary hover:text-white transition-all"
                         >
                             <FaPhone />
-                            Call Us
+                            +92 339 400 9776
                         </a>
                     </div>
                     <p className="mt-5 text-xs text-gray-400 dark:text-gray-500">
                         support@townwize.com · Available Sat–Thu, 9am–9pm PKT
+                    </p>
+                    {/* A verifiable postal address is something payment providers and
+                        app stores both check for. It was missing everywhere. */}
+                    <p className="mt-3 text-xs text-gray-400 dark:text-gray-500 leading-relaxed">
+                        Townwize (Private) Limited · R-31/2, 10th East Street, Phase 1, DHA, Karachi, Pakistan
                     </p>
                 </div>
             </section>

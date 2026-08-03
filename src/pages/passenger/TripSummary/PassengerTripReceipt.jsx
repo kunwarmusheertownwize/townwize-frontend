@@ -4,6 +4,11 @@ import { useNavigate, useParams } from "react-router-dom";
 import { authFetch } from "../../../utils/authFetch";
 import { isNative } from "../../../utils/platform";
 import RouteThumb from "../../../components/common/RouteThumb";
+import {
+  paymentMethodIcon,
+  paymentMethodLabel,
+  paymentStatusNote,
+} from "../../../utils/paymentMethod";
 
 const buildShareText = (ride, fare) => {
   const toMoney = (n) => `${Number(n || 0).toLocaleString()} PKR`;
@@ -511,8 +516,13 @@ export default function PassengerTripReceipt() {
                 )}
               </div>
               <div className="mt-2 pt-2 border-t border-gray-100 dark:border-gray-800 flex items-center gap-1.5 text-xs text-gray-400">
-                <span>💳</span>
-                <span>Cash on Ride</span>
+                <span>{paymentMethodIcon(ride?.paymentMethod)}</span>
+                <span>{paymentMethodLabel(ride?.paymentMethod)}</span>
+                {paymentStatusNote(ride?.paymentMethod, ride?.paymentStatus) && (
+                  <span className="text-gray-300 dark:text-gray-600">
+                    · {paymentStatusNote(ride.paymentMethod, ride.paymentStatus)}
+                  </span>
+                )}
               </div>
               {Number(ride?.cancellationFee || 0) > 0 && (
                 <div className="mt-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 px-3 py-2 text-xs text-amber-700 dark:text-amber-400">
@@ -723,8 +733,13 @@ export default function PassengerTripReceipt() {
               )}
             </div>
             <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-600 flex items-center gap-1.5 text-xs text-gray-400 dark:text-gray-500">
-              <span>💳</span>
-              <span>Cash on Ride</span>
+              <span>{paymentMethodIcon(ride?.paymentMethod)}</span>
+              <span>{paymentMethodLabel(ride?.paymentMethod)}</span>
+              {paymentStatusNote(ride?.paymentMethod, ride?.paymentStatus) && (
+                <span className="text-gray-300 dark:text-gray-600">
+                  · {paymentStatusNote(ride.paymentMethod, ride.paymentStatus)}
+                </span>
+              )}
             </div>
             {Number(ride?.cancellationFee || 0) > 0 && (
               <div className="mt-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 px-3 py-2 text-xs text-amber-700 dark:text-amber-400">

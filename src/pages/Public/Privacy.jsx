@@ -7,8 +7,9 @@ const SECTIONS = [
         body: [
             "**Account information:** When you register, we collect your full name, email address, phone number, and password (hashed).",
             "**Identity & residency documents:** For verification purposes, we collect copies of your CNIC, proof of BTK residency, and — for Wizers — vehicle registration and driving licence.",
-            "**Location data:** We collect real-time location data during an active ride to match you with a driver, display live tracking, and calculate fare. We do not track your location when the app is closed.",
-            "**Payment information:** We do not store full card numbers. Payment processing is handled by our payment provider in accordance with PCI-DSS standards.",
+            "**Location data (Towners):** We collect your location while you are booking or taking a ride, so we can match you with a nearby Wizer, show live tracking, and calculate the fare. We do not collect a Towner's location in the background.",
+            "**Location data (Wizers) — including in the background:** While a Wizer has an active trip, the app collects location continuously, including when the app is minimised, the screen is locked, or the Wizer is on a phone call. This is necessary because the trip must keep tracking through the whole journey: the Towner sees the vehicle move in real time, and the fare is calculated from the distance actually travelled. Android shows an ongoing \"Trip Active\" notification for as long as this is running. Collection starts when a trip begins and stops when it ends — Townwize does not collect a Wizer's location when no trip is in progress, and never when the app is fully closed.",
+            "**Payment information:** Townwize does not store or ever receive your full card number. Card and wallet payments are processed by our payment provider, who is PCI-DSS certified; the card details are entered on their systems, not ours. Rides paid in cash are settled directly between the Towner and the Wizer.",
             "**Device & usage data:** We collect app version, device type, OS version, and in-app activity logs for performance and debugging purposes.",
         ],
     },
@@ -29,6 +30,7 @@ const SECTIONS = [
             "**With drivers (Wizers):** When a ride is matched, the driver receives your name and pickup location. Your full address or contact details are not shared beyond what is needed for the ride.",
             "**With passengers (Towners):** Drivers' name, photo, vehicle details, and rating are shared with the matched passenger.",
             "**With service providers:** We share data with third-party services (cloud storage, SMS gateways, payment processors) strictly for operational purposes. These partners are bound by confidentiality agreements.",
+            "**With our payment provider:** For card and wallet payments, the amount and a reference to your trip are shared with our payment provider so the transaction can be processed. Your card details are entered on their systems and never pass through Townwize.",
             "**With law enforcement:** We may disclose information if required by Pakistani law or in response to a valid legal request.",
         ],
     },
@@ -78,8 +80,9 @@ const SECTIONS = [
     {
         title: "9. Contact",
         body: [
-            "For privacy-related queries, contact us at privacy@townwize.com.",
-            "Townwize is operated by Mercrest Group, Karachi, Pakistan.",
+            "For privacy-related queries, contact us at privacy@townwize.com or call +92 339 400 9776.",
+            "**Registered address:** R-31/2, 10th East Street, Phase 1, DHA, Karachi, Pakistan.",
+            "Townwize is operated by **Townwize (Private) Limited**, a company incorporated in Pakistan, which is the data controller for the personal data described in this policy.",
         ],
     },
 ];

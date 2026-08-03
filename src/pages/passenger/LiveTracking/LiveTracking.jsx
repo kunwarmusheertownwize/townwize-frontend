@@ -41,10 +41,34 @@ const PASSENGER_CANCEL_REASONS = [
   "Other",
 ];
 
-const CancelReasonPanel = ({ ride, cancelReason, setCancelReason, cancelling, onKeep, onConfirm, compact }) => {
-  const withinFreeWindow =
-    !ride?.assignedAt ||
-    Date.now() - new Date(ride.assignedAt).getTime() < 3 * 60 * 1000;
+// `policy` defaults to the server's own defaults so this panel renders exactly
+// as it always did if the config fetch has not landed yet, or failed.
+const CancelReasonPanel = ({ ride, cancelReason, setCancelReason, cancelling, onKeep, onConfirm, compact, policy = { freeWindowMinutes: 3, fee: 75, feesEnabled: true } }) => {
+  // Ticks so the countdown below is live. Without this the panel would show a
+  // stale "free for another 2:41" for as long as it stayed open, and a
+  // passenger could act on a number that had already run out.
+  const [now, setNow] = useState(Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  const freeWindowMs = policy.freeWindowMinutes * 60 * 1000;
+  const msLeft = ride?.assignedAt
+    ? freeWindowMs - (now - new Date(ride.assignedAt).getTime())
+    : freeWindowMs;
+
+  const withinFreeWindow = !ride?.assignedAt || msLeft > 0;
+
+  // Warn over the back half of the free window. Derived rather than a second
+  // configurable number, so the warning can never outlast the window it warns
+  // about — with a 6-minute window the countdown appears at 3 minutes.
+  const warning = withinFreeWindow && msLeft <= freeWindowMs / 2;
+
+  const mmss = (ms) => {
+    const s = Math.max(0, Math.ceil(ms / 1000));
+    return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+  };
 
   return (
     <div className={`bg-white dark:bg-gray-800 rounded-xl shadow p-4 space-y-3 ${compact ? "" : ""}`}>
@@ -62,9 +86,27 @@ const CancelReasonPanel = ({ ride, cancelReason, setCancelReason, cancelling, on
         ))}
       </select>
 
-      {ride?.status !== "REQUESTED" && (
-        <div className={`flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium ${withinFreeWindow ? "bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400" : "bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-400"}`}>
-          <span>{withinFreeWindow ? "✓ Free cancellation" : "⚠ 75 PKR cancellation fee applies"}</span>
+      {ride?.status !== "REQUESTED" && policy.feesEnabled !== false && (
+        <div
+          className={`flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium ${
+            !withinFreeWindow
+              ? "bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-400"
+              : warning
+                ? "bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400"
+                : "bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400"
+          }`}
+        >
+          {!withinFreeWindow ? (
+            <span>⚠ {Number(policy.fee).toLocaleString("en-PK")} PKR cancellation fee applies</span>
+          ) : warning ? (
+            <span>
+              ⏱ Free for another{" "}
+              <span className="font-bold tabular-nums">{mmss(msLeft)}</span> — after that a{" "}
+              {Number(policy.fee).toLocaleString("en-PK")} PKR fee applies
+            </span>
+          ) : (
+            <span>✓ Free cancellation</span>
+          )}
         </div>
       )}
 
@@ -375,6 +417,31 @@ const LiveTracking = () => {
   const [cancelling, setCancelling] = useState(false);
   const [tripBlocked, setTripBlocked] = useState(false);
   const [cancelReason, setCancelReason] = useState("");
+
+  // The free window and the fee are admin-configurable on the server. They used
+  // to be hardcoded here, so editing the policy in admin left this screen
+  // quoting the old number while the server applied the new one — and the
+  // published policy page now promises the passenger sees the real fee before
+  // confirming. Defaults match the server defaults, so a failed fetch behaves
+  // exactly as this screen did before.
+  const [cancelPolicy, setCancelPolicy] = useState({ freeWindowMinutes: 3, fee: 75 });
+
+  useEffect(() => {
+    let mounted = true;
+    fetch(`${import.meta.env.VITE_API_BASE_URL}/public/config`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((json) => {
+        const c = json?.data?.cancellation;
+        if (!mounted || !c) return;
+        setCancelPolicy({
+          freeWindowMinutes: c.freeWindowMinutes ?? 3,
+          fee: c.fee ?? 75,
+          feesEnabled: c.feesEnabled !== false,
+        });
+      })
+      .catch(() => { /* keep the defaults */ });
+    return () => { mounted = false; };
+  }, []);
 
   const [sosOpen, setSosOpen] = useState(false);
   const [emergencyContacts, setEmergencyContacts] = useState([]);
@@ -1359,6 +1426,7 @@ const LiveTracking = () => {
                   cancelling={cancelling}
                   onKeep={handleKeepRide}
                   onConfirm={handleCancelRide}
+                  policy={cancelPolicy}
                   compact
                 />
               ) : (
@@ -1644,6 +1712,7 @@ const LiveTracking = () => {
             cancelling={cancelling}
             onKeep={handleKeepRide}
             onConfirm={handleCancelRide}
+            policy={cancelPolicy}
           />
         ) : (
           <button

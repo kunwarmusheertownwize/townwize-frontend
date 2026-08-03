@@ -6,6 +6,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { getSocket } from "../../../hooks/useRideSocket";
 import { authFetch } from "../../../utils/authFetch";
 import { toast } from "react-toastify";
+import PaymentMethodSelector from "../../../components/passenger/PaymentMethodSelector";
 
 const getRideCreateErrorMessage = (payload, status) => {
   const code = payload?.error?.code || payload?.code || "";
@@ -42,6 +43,9 @@ const TripSummary = () => {
   const [confirming, setConfirming] = useState(false);
   const [showFareDetails, setShowFareDetails] = useState(false);
   const [maxSeats, setMaxSeats] = useState(2);
+  // Cash is the default and, until the card feature flag is on for this user,
+  // the only thing the selector will offer.
+  const [paymentMethod, setPaymentMethod] = useState("cash");
   const scheduledAt = state?.scheduledAt || null;
   const [quote, setQuote] = useState({
     loading: true,
@@ -304,6 +308,7 @@ const TripSummary = () => {
             fareEstimate: Number(quote.finalFare || fare || 0),
             tollAmount,
             tollNames,
+            paymentMethod,
           }),
         }
       );
@@ -318,6 +323,34 @@ const TripSummary = () => {
 
       if (!rideId) {
         throw new Error("Ride creation failed: Missing ride id");
+      }
+
+      // Card ride: the ride exists but is unpaid. Send the passenger to the
+      // hosted checkout before anything dispatches. If the session cannot be
+      // created we do NOT strand them — the ride is already booked, so fall
+      // through to the normal flow and let support settle it rather than
+      // leaving them on a dead screen with a live ride.
+      if (paymentMethod !== "cash") {
+        try {
+          const payRes = await authFetch(
+            `${import.meta.env.VITE_API_BASE_URL}/payments/session`,
+            { method: "POST", body: JSON.stringify({ rideId }) }
+          );
+          const payJson = await payRes.json();
+          const checkoutUrl = payJson?.data?.checkoutUrl;
+          if (payRes.ok && checkoutUrl) {
+            localStorage.setItem("pendingPaymentRideId", rideId);
+            localStorage.setItem("pendingPaymentId", payJson.data.paymentId);
+            window.location.href = checkoutUrl;
+            return;
+          }
+          toast.error(
+            payJson?.error?.message ||
+              "Could not open the payment page. Please pay your Wizer in cash."
+          );
+        } catch {
+          toast.error("Could not open the payment page. Please pay your Wizer in cash.");
+        }
       }
 
       // RideTogether: route through pooling UI
@@ -357,7 +390,13 @@ const TripSummary = () => {
   };
 
   const confirmCta = (
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+    <>
+    <PaymentMethodSelector
+      value={paymentMethod}
+      onChange={setPaymentMethod}
+      disabled={confirming}
+    />
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
       <button
         disabled={confirming || zoneCheck.loading || zoneCheck.eligible === false || quote.loading}
         onClick={handleConfirmTrip}
@@ -381,6 +420,7 @@ const TripSummary = () => {
         Cancel
       </button>
     </div>
+    </>
   );
 
   return (

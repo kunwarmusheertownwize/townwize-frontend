@@ -21,9 +21,20 @@ const NAV = [
     {
         heading: "Support",
         links: [
-            { label: "Help Centre",       to: "/support" },
-            { label: "Guidelines",        to: "/guidelines" },
-            { label: "Customer Support",  to: "/support" },
+            { label: "Help Centre",  to: "/support" },
+            { label: "Guidelines",   to: "/guidelines" },
+            { label: "Fares & Charges", to: "/pricing" },
+        ],
+    },
+    // Legal pages used to appear only as text-white/30 in the bottom bar and in
+    // no navigation at all. Payment providers and app stores both expect these
+    // to be findable, and so does anyone deciding whether to trust the service.
+    {
+        heading: "Legal",
+        links: [
+            { label: "Terms of Use",             to: "/terms" },
+            { label: "Privacy Policy",           to: "/privacy" },
+            { label: "Refunds & Cancellations",  to: "/refunds" },
         ],
     },
 ];
@@ -40,7 +51,7 @@ const Footer = () => (
 
         {/* ── Main grid ── */}
         <div className="max-w-6xl mx-auto px-6 lg:px-12 pt-16 pb-10">
-            <div className="grid grid-cols-1 md:grid-cols-[1.6fr_1fr_1fr_1fr] gap-10 lg:gap-16">
+            <div className="grid grid-cols-1 md:grid-cols-[1.4fr_1fr_1fr_1fr_1fr] gap-10 lg:gap-12">
 
                 {/* Brand column */}
                 <div className="flex flex-col gap-5">
