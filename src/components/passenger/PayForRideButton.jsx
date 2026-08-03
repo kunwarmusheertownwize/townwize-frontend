@@ -23,6 +23,12 @@ const PayForRideButton = ({ ride, onPaid }) => {
     // Cash settles between passenger and Wizer; nothing to collect here.
     if (method === "cash") return null;
     if (status === "captured" || status === "refunded") return null;
+    // NEVER ask for money on a ride that did not happen. A cancelled card ride
+    // keeps paymentStatus "pending" — nothing will ever be collected against it
+    // — and without this check that state renders a "Pay 257 PKR" button for a
+    // trip the passenger never took. The server refuses it too, but a button
+    // that should not exist must not be drawn in the first place.
+    if (ride?.status !== "COMPLETED") return null;
 
     const fare = Number(ride?.finalFare ?? ride?.fareEstimate ?? 0);
 

@@ -138,10 +138,12 @@ export default function PassengerTrips() {
             <p className="text-xs text-gray-400 mt-0.5">{total} trip{total !== 1 ? "s" : ""} total</p>
           )}
         </div>
+        {/* hidden on mobile: the pull-to-refresh button below is `sm:hidden`,
+            so without this both rendered at once on a phone. */}
         <button
           onClick={() => { setPage(1); setRefreshKey((k) => k + 1); }}
           disabled={loading}
-          className="rounded-xl border border-gray-200 dark:border-gray-700 px-3 py-1.5 text-xs font-medium text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-40 transition"
+          className="hidden sm:block rounded-xl border border-gray-200 dark:border-gray-700 px-3 py-1.5 text-xs font-medium text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-40 transition"
         >
           {loading ? "Loading…" : "Refresh"}
         </button>
@@ -183,16 +185,21 @@ export default function PassengerTrips() {
               const dist = distanceOf(ride);
               const isCompleted = ride.status === "COMPLETED";
               const isMerged = ride.status === "POOLING_MERGED" && !!ride.linkedRideId;
+              // Cancelled trips were unopenable, so a passenger had no way to
+              // see what happened to one — including whether anything was
+              // charged. That is precisely the ride someone needs to check.
+              const isCancelled = ride.status === "CANCELLED";
+              const canOpen = isCompleted || isMerged || isCancelled;
               const rated = ride.passengerRating?.stars;
               const handleClick = () => {
-                if (isCompleted) navigate(`/passenger/trip-receipt/${ride._id}`);
-                else if (isMerged) navigate(`/passenger/trip-receipt/${ride.linkedRideId}`);
+                if (isMerged) navigate(`/passenger/trip-receipt/${ride.linkedRideId}`);
+                else if (canOpen) navigate(`/passenger/trip-receipt/${ride._id}`);
               };
               return (
                 <div
                   key={ride._id}
                   onClick={handleClick}
-                  className={`rounded-2xl border border-gray-100 bg-white dark:bg-townwize-primaryDark dark:border-gray-700 p-4 shadow-sm ${isCompleted || isMerged ? "cursor-pointer hover:border-townwize-primary/40 hover:shadow-md transition-shadow" : ""}`}
+                  className={`rounded-2xl border border-gray-100 bg-white dark:bg-townwize-primaryDark dark:border-gray-700 p-4 shadow-sm ${canOpen ? "cursor-pointer hover:border-townwize-primary/40 hover:shadow-md transition-shadow" : ""}`}
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1 min-w-0 space-y-2">
@@ -211,9 +218,25 @@ export default function PassengerTrips() {
                     </div>
 
                     <div className="shrink-0 text-right">
-                      <p className="text-base font-bold text-townwize-primary dark:text-white">
-                        {fareOf(ride)} PKR
-                      </p>
+                      {/* A cancelled trip costs nothing, but the list showed its
+                          ESTIMATE in the same bold style as a real fare — so a
+                          cancelled ride read as though it had charged 257 PKR.
+                          Show what was actually charged, which for a cancelled
+                          ride is nothing. */}
+                      {isCancelled ? (
+                        <>
+                          <p className="text-sm font-semibold text-gray-400 dark:text-gray-500">
+                            Not charged
+                          </p>
+                          <p className="text-[11px] text-gray-400">
+                            est. {fareOf(ride)} PKR
+                          </p>
+                        </>
+                      ) : (
+                        <p className="text-base font-bold text-townwize-primary dark:text-white">
+                          {fareOf(ride)} PKR
+                        </p>
+                      )}
                       {dist && <p className="text-xs text-gray-400">{dist}</p>}
                     </div>
                   </div>
