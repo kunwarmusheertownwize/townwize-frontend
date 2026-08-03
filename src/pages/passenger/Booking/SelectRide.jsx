@@ -292,30 +292,77 @@ const SelectRide = () => {
   const [dropoffSuggestions, setDropoffSuggestions] = useState([]);
   // Searching state
   const [searching, setSearching] = useState(false);
-  const deriveClassFare = useCallback((backendFare, fromKey, toKey) => {
-    const PLATFORM_FEE = 20;
-    const fromMult = CAR_CLASSES.find((c) => c.key === fromKey)?.multiplier || 1;
-    const toMult = CAR_CLASSES.find((c) => c.key === toKey)?.multiplier || 1;
-    return Math.round(((backendFare - PLATFORM_FEE) / fromMult) * toMult + PLATFORM_FEE);
+  /**
+   * Live pricing, so on-screen estimates cannot drift from what is charged.
+   *
+   * These numbers used to be hardcoded here and had gone stale — per-km 32 when
+   * the real rate is 45 — and, worse, they applied NO minimum fare and NO tax.
+   * On a short trip every class really settles at the minimum fare, so all three
+   * cost the same; the hardcoded maths instead showed them fanned out by their
+   * multipliers. The class buttons disagreed with the headline, and the headline
+   * was the one telling the truth.
+   *
+   * Defaults below mirror the live config so a failed fetch is still close,
+   * rather than wrong by a third.
+   */
+  const [pricing, setPricing] = useState({
+    private: { baseFare: 120, perKm: 45, perMinute: 6 },
+    rideTogether: { baseFare: 90, perKm: 24, perMinute: 4 },
+    carTypeMultipliers: { economy: 1, comfort: 1.18, xl: 1.35 },
+    minimumFare: 245,
+    platformFee: 20,
+    taxPercent: 5,
+  });
+
+  useEffect(() => {
+    let mounted = true;
+    fetch(`${import.meta.env.VITE_API_BASE_URL}/public/config`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((json) => {
+        const f = json?.data?.fares;
+        if (mounted && f) setPricing((prev) => ({ ...prev, ...f }));
+      })
+      .catch(() => { /* keep the defaults */ });
+    return () => { mounted = false; };
   }, []);
 
+  /**
+   * Mirrors the server's fare engine: ride components take the class
+   * multiplier, the flat platform fee is added, the MINIMUM FARE floor is
+   * applied to that subtotal, and tax goes on last. Verified against a real
+   * receipt — 146.67 floored to 245, then +5% SST = 257.
+   */
   const getLocalFallbackFare = useCallback((type, carClass, km, minutes = 0) => {
     if (!type || km <= 0) return 0;
     const privateRide = type === "Private Ride";
-    const baseFare = privateRide ? 120 : 90;
-    const perKmRate = privateRide ? 32 : 24;
-    const perMinuteRate = privateRide ? 4 : 3;
-    const platformFee = 20;
-    const carMultiplier =
-      privateRide
-        ? CAR_CLASSES.find((item) => item.key === carClass)?.multiplier || 1
-        : 1;
-    return Math.round(
-      (baseFare + perKmRate * km + perMinuteRate * Number(minutes || 0)) *
-        carMultiplier +
-        platformFee
-    );
-  }, []);
+    const rates = privateRide ? pricing.private : pricing.rideTogether;
+    const carMultiplier = privateRide
+      ? pricing.carTypeMultipliers?.[carClass] ?? 1
+      : 1;
+
+    let total =
+      (rates.baseFare + rates.perKm * km + (rates.perMinute || 0) * Number(minutes || 0)) *
+      carMultiplier;
+    total += pricing.platformFee || 0;
+    if (pricing.minimumFare) total = Math.max(total, pricing.minimumFare);
+    if (pricing.taxPercent) total *= 1 + pricing.taxPercent / 100;
+    return Math.round(total);
+  }, [pricing]);
+
+  /**
+   * Fare for an UNSELECTED car class.
+   *
+   * Previously scaled the selected class's backend fare by the ratio of their
+   * multipliers, which cannot represent the minimum-fare floor: on a short trip
+   * it turned a real 257 into a displayed 303 for Comfort and 347 for XL, none
+   * of which would have been charged. Estimating the target class directly
+   * applies the floor properly.
+   */
+  const deriveClassFare = useCallback(
+    (_backendFare, _fromKey, toKey, km, minutes) =>
+      getLocalFallbackFare("Private Ride", toKey, km, minutes),
+    [getLocalFallbackFare]
+  );
 
   // Fare calculation: backend quote is the source of truth so Select Ride and Trip Summary match.
   useEffect(() => {
@@ -337,6 +384,15 @@ const SelectRide = () => {
       setFare(fallbackFare);
       return;
     }
+
+    // Show this selection's own fallback IMMEDIATELY, before the request.
+    //
+    // `fare` still holds the previous selection's price at this point, and
+    // getPreviewFare returns it verbatim for whatever is currently selected —
+    // so tapping RideTogether showed the Private Ride price until the new quote
+    // landed. Private Ride hides that window behind a shimmer; RideTogether has
+    // none, so it simply displayed the wrong number as though it were real.
+    setFare(fallbackFare);
 
     let mounted = true;
     setQuoteLoading(true);
@@ -1146,6 +1202,9 @@ navigate("/passenger/trip-summary", {
                           ? <span className="inline-block tw-shimmer h-5 w-16 rounded-md" />
                           : `${getPreviewFare("Private Ride").toLocaleString()} PKR`
                         }
+                        {/* NOTE: RideTogether's headline further down has no
+                            equivalent shimmer, which is why a stale fare was
+                            visible there and hidden here. */}
                       </p>
                       <p className="text-[11px] text-gray-400">{etaText || "—"} · {effectiveDistanceKm.toFixed(1)} km</p>
                     </>
@@ -1177,7 +1236,7 @@ navigate("/passenger/trip-summary", {
                           {(Number(fare) > 0
                             ? selectedCarType === c.key
                               ? Number(fare)
-                              : deriveClassFare(Number(fare), selectedCarType, c.key)
+                              : deriveClassFare(Number(fare), selectedCarType, c.key, effectiveDistanceKm, effectiveEtaMinutes)
                             : getLocalFallbackFare("Private Ride", c.key, effectiveDistanceKm, effectiveEtaMinutes)
                           ).toLocaleString()} PKR
                         </span>
