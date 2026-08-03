@@ -344,7 +344,12 @@ const SelectRide = () => {
       (rates.baseFare + rates.perKm * km + (rates.perMinute || 0) * Number(minutes || 0)) *
       carMultiplier;
     total += pricing.platformFee || 0;
-    if (pricing.minimumFare) total = Math.max(total, pricing.minimumFare);
+    // The floor scales with the car class, exactly as the server does — a flat
+    // floor would erase the multiplier on short trips. This MUST stay in step
+    // with rideQuote.service.js or the app quotes one price and charges another.
+    if (pricing.minimumFare) {
+      total = Math.max(total, pricing.minimumFare * carMultiplier);
+    }
     if (pricing.taxPercent) total *= 1 + pricing.taxPercent / 100;
     return Math.round(total);
   }, [pricing]);
@@ -1245,6 +1250,23 @@ navigate("/passenger/trip-summary", {
                   ))}
                 </div>
               )}
+              {/* Three identical prices look like a bug unless you say why.
+                  On a short trip every class lands on the minimum fare, so
+                  they genuinely cost the same — explain it rather than leaving
+                  the passenger to wonder whether the app is broken. */}
+              {selectedType === "Private Ride" &&
+                effectiveDistanceKm > 0 &&
+                pricing.minimumFare > 0 &&
+                CAR_CLASSES.every(
+                  (c) =>
+                    getLocalFallbackFare("Private Ride", c.key, effectiveDistanceKm, effectiveEtaMinutes) ===
+                    getLocalFallbackFare("Private Ride", CAR_CLASSES[0].key, effectiveDistanceKm, effectiveEtaMinutes)
+                ) && (
+                  <p className="mt-2 text-[11px] text-gray-400">
+                    Short trip — our minimum fare of{" "}
+                    {pricing.minimumFare.toLocaleString()} PKR applies, so every car class costs the same.
+                  </p>
+                )}
               {quoteError && selectedType === "Private Ride" && (
                 <p className="mt-2 text-[11px] text-amber-600">{quoteError}</p>
               )}
