@@ -184,7 +184,27 @@ const DriverHome = () => {
       const socket = getSocket();
       if (!socket.connected) {
         socket.connect();
-        await new Promise((resolve) => socket.once("connect", resolve));
+        // This used to be a bare `once("connect", resolve)` with no timeout and
+        // no error path. When the server rejected the socket's origin, the
+        // promise simply never settled: the button spun "Connecting…" forever
+        // and said nothing. A Wizer had no way to tell that from a slow network.
+        await new Promise((resolve, reject) => {
+          const done = (err) => {
+            clearTimeout(timer);
+            socket.off("connect", ok);
+            socket.off("connect_error", fail);
+            err ? reject(err) : resolve();
+          };
+          const ok = () => done();
+          const fail = (err) =>
+            done(new Error(err?.message || "Could not reach the server"));
+          const timer = setTimeout(
+            () => done(new Error("Connection timed out. Check your internet and try again.")),
+            15000
+          );
+          socket.once("connect", ok);
+          socket.once("connect_error", fail);
+        });
       }
 
       const coords = await getCurrentPosition();
