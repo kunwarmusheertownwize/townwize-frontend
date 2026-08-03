@@ -15,9 +15,12 @@ import { isNative } from "../../../utils/platform";
  */
 
 const POLL_MS = 2000;
-// Webhooks normally land in a second or two. Past this we stop spinning and
-// tell the truth: we do not know yet. Silently spinning forever is worse.
-const GIVE_UP_MS = 45000;
+// 45 seconds was far too short. A real sandbox payment ran 4:20:29 → 4:22:21
+// before capture, because 3-D Secure adds a bank round trip, and the webhook
+// only fires afterwards. The app gave up while the payment was still in flight
+// and told the passenger it could not confirm — for a payment that succeeded.
+// Four minutes comfortably covers a 3DS step-up.
+const GIVE_UP_MS = 240000;
 
 // Safepay sends no webhook when a passenger simply abandons checkout, so the
 // Payment sits at "pending" and polling alone can never tell "still paying"

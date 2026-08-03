@@ -326,46 +326,13 @@ const TripSummary = () => {
         throw new Error("Ride creation failed: Missing ride id");
       }
 
-      // Card ride: the ride exists but is unpaid. Send the passenger to the
-      // hosted checkout before anything dispatches. If the session cannot be
-      // created we do NOT strand them — the ride is already booked, so fall
-      // through to the normal flow and let support settle it rather than
-      // leaving them on a dead screen with a live ride.
-      if (paymentMethod !== "cash") {
-        try {
-          const payRes = await authFetch(
-            `${import.meta.env.VITE_API_BASE_URL}/payments/session`,
-            { method: "POST", body: JSON.stringify({ rideId }) }
-          );
-          const payJson = await payRes.json();
-          const checkoutUrl = payJson?.data?.checkoutUrl;
-          if (payRes.ok && checkoutUrl) {
-            localStorage.setItem("pendingPaymentRideId", rideId);
-            localStorage.setItem("pendingPaymentId", payJson.data.paymentId);
-
-            if (isNative()) {
-              // In the app we must NOT navigate the WebView to Safepay — it
-              // would replace the app with a website and there is no way back.
-              // Instead move to the waiting screen first, then open checkout in
-              // a system tab layered on top. The app stays alive underneath,
-              // polls our own backend, and closes the tab itself the moment the
-              // webhook confirms payment.
-              navigate(`/passenger/payment/return?ride=${rideId}`, { replace: true });
-              await Browser.open({ url: checkoutUrl, presentationStyle: "popover" });
-              return;
-            }
-
-            window.location.href = checkoutUrl;
-            return;
-          }
-          toast.error(
-            payJson?.error?.message ||
-              "Could not open the payment page. Please pay your Wizer in cash."
-          );
-        } catch {
-          toast.error("Could not open the payment page. Please pay your Wizer in cash.");
-        }
-      }
+      // NOTHING is charged at booking, card or cash. Payment is collected at the
+      // end of the trip, against the settled fare, from the receipt screen.
+      //
+      // Charging here previously meant billing an estimate rather than the real
+      // fare, and left money captured on every ride that was subsequently
+      // cancelled, with no refund path. A booking simply records how the
+      // passenger intends to pay.
 
       // RideTogether: route through pooling UI
       if (rideType === "RideTogether") {

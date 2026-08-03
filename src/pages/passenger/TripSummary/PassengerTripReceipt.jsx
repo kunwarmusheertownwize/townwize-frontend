@@ -9,6 +9,7 @@ import {
   paymentMethodLabel,
   paymentStatusNote,
 } from "../../../utils/paymentMethod";
+import PayForRideButton from "../../../components/passenger/PayForRideButton";
 
 const buildShareText = (ride, fare) => {
   const toMoney = (n) => `${Number(n || 0).toLocaleString()} PKR`;
@@ -399,7 +400,16 @@ export default function PassengerTripReceipt() {
           <p className="text-xs text-white/40 mt-0.5">ID: {ride?._id || rideId}</p>
           {!loading && !error && (
             <div className="mt-5">
-              <p className="text-xs text-white/70 uppercase tracking-wider">{isPooled ? "Your Share (Split Fare)" : "Total Paid"}</p>
+              {/* "Total Paid" while the payment is still outstanding directly
+                  contradicts the "Payment pending" line further down the same
+                  receipt. Say what is true. */}
+              <p className="text-xs text-white/70 uppercase tracking-wider">
+                {isPooled
+                  ? "Your Share (Split Fare)"
+                  : ride?.paymentMethod && ride.paymentMethod !== "cash" && ride?.paymentStatus !== "captured"
+                    ? "Total Due"
+                    : "Total Paid"}
+              </p>
               <p className="text-5xl font-extrabold mt-1">{toMoney(isPooled && farePerSeat ? farePerSeat : fare.final)}</p>
               {isPooled && coRiderCount > 0 && (
                 <p className="text-xs text-yellow-300 font-semibold mt-1">RideTogether · shared with {coRiderCount} co-rider{coRiderCount > 1 ? "s" : ""}</p>
@@ -746,6 +756,12 @@ export default function PassengerTripReceipt() {
                 Cancellation fee applied: {toMoney(ride.cancellationFee)}
               </div>
             )}
+            {/* Card fares are collected here, at the end, against the settled
+                amount — never at booking. Renders nothing for cash or once
+                payment has been captured. */}
+            <div className="mt-3">
+              <PayForRideButton ride={ride} />
+            </div>
           </div>
 
           {ride?.driverInfo && (
