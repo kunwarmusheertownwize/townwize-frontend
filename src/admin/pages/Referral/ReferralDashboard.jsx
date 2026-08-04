@@ -177,7 +177,7 @@ export default function ReferralDashboard() {
                     </div>
 
                     {codesLoading ? <p className="text-sm text-gray-400">Loading codes…</p> : (
-                        <div className="rounded-xl border border-gray-200 overflow-hidden bg-white">
+                        <div className="rounded-xl border border-gray-200 overflow-x-auto bg-white">
                             <table className="min-w-full text-sm">
                                 <thead className="bg-gray-50 border-b border-gray-200">
                                     <tr>
@@ -239,7 +239,7 @@ export default function ReferralDashboard() {
                     <p className="text-xs text-gray-500">{guestsTotal} GuestTowner accounts — sponsored by Towners, limited to Karachi ↔ BTK routes.</p>
 
                     {guestsLoading ? <p className="text-sm text-gray-400">Loading…</p> : (
-                        <div className="rounded-xl border border-gray-200 overflow-hidden bg-white">
+                        <div className="rounded-xl border border-gray-200 overflow-x-auto bg-white">
                             <table className="min-w-full text-sm">
                                 <thead className="bg-amber-50 border-b border-amber-200">
                                     <tr>
@@ -318,7 +318,7 @@ export default function ReferralDashboard() {
                     </div>
 
                     {passengersLoading ? <p className="text-sm text-gray-400">Loading…</p> : (
-                        <div className="rounded-xl border border-gray-200 overflow-hidden bg-white">
+                        <div className="rounded-xl border border-gray-200 overflow-x-auto bg-white">
                             <table className="min-w-full text-sm">
                                 <thead className="bg-gray-50 border-b border-gray-200">
                                     <tr>

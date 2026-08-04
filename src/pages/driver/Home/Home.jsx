@@ -66,8 +66,13 @@ function WeeklyChart({ breakdown }) {
         const isToday = i === 6;
         const pct = Math.max(4, Math.round((s.total / max) * 100));
         return (
-          <div key={s.date} className="flex-1 flex flex-col items-center gap-1">
-            <div className="w-full rounded-t-sm" style={{ height: `${pct}%`, background: isToday ? "#17BEBB" : "#d1fae5" }} title={`${s.label}: ${fmt(s.total)} PKR (${s.trips} trips)`} />
+          // h-full + a flex-1 track: a percentage height needs a parent with a
+          // DEFINITE height to resolve against. This column had none, so every
+          // bar computed to zero and this chart has always been blank.
+          <div key={s.date} className="flex-1 h-full flex flex-col items-center gap-1">
+            <div className="w-full flex-1 flex items-end">
+              <div className="w-full rounded-t-sm" style={{ height: `${pct}%`, background: isToday ? "#17BEBB" : "#d1fae5" }} title={`${s.label}: ${fmt(s.total)} PKR (${s.trips} trips)`} />
+            </div>
             <span className={`text-[9px] font-semibold ${isToday ? "text-townwize-accent" : "text-gray-400"}`}>{s.label}</span>
           </div>
         );

@@ -78,12 +78,18 @@ function BarChart({ rows, labelKey, valueKey, period }) {
         const label = period === "monthly"
           ? row.label
           : fmtShortDate(row[labelKey]);
+        // h-full + a flex-1 track: a percentage height only resolves against a
+        // parent with a DEFINITE height. This column had none, so every bar
+        // computed to zero and the chart has always rendered empty — even with
+        // real earnings in the table directly beneath it.
         return (
-          <div key={i} className="flex-1 min-w-[28px] flex flex-col items-center gap-1 group relative">
-            <div
-              className="w-full rounded-t-sm bg-townwize-accent/80 hover:bg-townwize-accent transition-all"
-              style={{ height: `${Math.max(pct, 2)}%` }}
-            />
+          <div key={i} className="flex-1 min-w-[28px] h-full flex flex-col items-center gap-1 group relative">
+            <div className="w-full flex-1 flex items-end">
+              <div
+                className="w-full rounded-t-sm bg-townwize-accent/80 hover:bg-townwize-accent transition-all"
+                style={{ height: `${Math.max(pct, 2)}%` }}
+              />
+            </div>
             <span className="text-[9px] text-gray-400 dark:text-gray-500 truncate w-full text-center leading-none">
               {label}
             </span>
@@ -385,8 +391,11 @@ const Earnings = () => {
 
             <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-2 text-center">
               {chartPeriod === "monthly"
-                ? "30-day net earnings grouped by week — hover bars for details"
-                : "Last 7 days net earnings — hover bars for details"}
+                // "hover bars" told a phone user to do something impossible —
+                // there is no hover on touch, and the tooltip it referred to
+                // can never appear.
+                ? "30-day net earnings, grouped by week"
+                : "Last 7 days net earnings"}
             </p>
           </div>
 
