@@ -8,6 +8,7 @@ import RidesList from "../pages/Rides/RidesList";
 import DriversList from "../pages/Drivers/DriversList";
 import PassengersList from "../pages/Passengers/PassengersList";
 import CasesList from "../pages/Cases/CasesList";
+import NoShowDisputes from "../pages/Rides/NoShowDisputes";
 import TicketsList from "../pages/Support/TicketsList";
 import NotificationsList from "../pages/Notifications/NotificationsList";
 import FinanceDashboard from "../pages/Finance/FinanceDashboard";
@@ -31,6 +32,7 @@ export default function AdminRoutes() {
 
             <Route path="rides" element={<RidesList />} />
             <Route path="cases" element={<CasesList />} />
+            <Route path="no-show-disputes" element={<NoShowDisputes />} />
             <Route path="drivers" element={<DriversList />} />
             <Route path="passengers" element={<PassengersList />} />
             <Route path="support" element={<TicketsList />} />

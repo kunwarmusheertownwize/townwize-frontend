@@ -186,3 +186,10 @@ export const fetchTollPlazas = () => call("/admin/pricing/tolls");
 export const createTollPlaza = (body) => call("/admin/pricing/tolls", { method: "POST", body: JSON.stringify(body) });
 export const updateTollPlaza = (id, body) => call(`/admin/pricing/tolls/${id}`, { method: "PATCH", body: JSON.stringify(body) });
 export const deleteTollPlaza = (id) => call(`/admin/pricing/tolls/${id}`, { method: "DELETE" });
+
+// No-show disputes. The GPS verdict is computed server-side, so the admin
+// screen renders a conclusion rather than a map to interpret.
+export const fetchNoShowDisputes = (status = "OPEN") =>
+  call(`/admin/no-show-disputes?status=${encodeURIComponent(status)}`);
+export const resolveNoShowDispute = (rideId, body) =>
+  call(`/admin/no-show-disputes/${rideId}/resolve`, { method: "POST", body: JSON.stringify(body) });

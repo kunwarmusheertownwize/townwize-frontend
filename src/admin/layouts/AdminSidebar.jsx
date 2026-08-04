@@ -7,6 +7,7 @@ const navItems = [
 
   { to: "/admin/rides", label: "Rides" },
   { to: "/admin/cases", label: "Cases" },
+  { to: "/admin/no-show-disputes", label: "No-show Disputes" },
   { to: "/admin/drivers", label: "Drivers" },
   { to: "/admin/passengers", label: "Passengers" },
   { to: "/admin/support", label: "Support" },
