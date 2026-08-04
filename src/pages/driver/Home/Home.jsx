@@ -264,7 +264,13 @@ const DriverHome = () => {
                 <p className="text-sm font-bold">{tripsToday}</p>
               </div>
               <div className="ml-auto">
-                <p className="text-[10px] text-white/50">Balance</p>
+                {/* "Balance" beside a negative number is ambiguous — a driver
+                    cannot tell whether they owe it or are owed it. The Earnings
+                    screen already calls the same figure "Commission owed"; this
+                    now agrees with it. */}
+                <p className="text-[10px] text-white/50">
+                  {Number(earnings?.balance) < 0 ? "Commission owed" : "Balance"}
+                </p>
                 <p className={`text-sm font-bold ${Number(earnings?.balance) < 0 ? "text-red-300" : "text-townwize-accent"}`}>{fmt(earnings?.balance)} PKR</p>
               </div>
             </div>
@@ -296,14 +302,12 @@ const DriverHome = () => {
         </div>
       )}
 
-      {/* Online/Offline toggle */}
+      {/* Online/Offline toggle.
+          The status dot and word used to repeat here, roughly a screen below
+          the identical indicator in the layout header — the same fact stated
+          twice, which reads as an oversight rather than emphasis. The header
+          owns the status; this card owns the action. */}
       <div className="rounded-2xl bg-white dark:bg-townwize-primaryDark p-6 text-center shadow-sm ring-1 ring-gray-200 dark:ring-gray-700">
-        <div className="mb-4 flex items-center justify-center gap-2">
-          <span className={`inline-block h-3 w-3 rounded-full ${isOnline ? "bg-green-500 animate-pulse" : "bg-gray-400"}`} />
-          <span className={`text-sm font-semibold ${isOnline ? "text-green-600 dark:text-green-400" : "text-gray-500 dark:text-gray-400"}`}>
-            {isOnline ? "Online" : "Offline"}
-          </span>
-        </div>
 
         <p className="mb-5 text-sm text-gray-500 dark:text-gray-400">
           {isOnline ? "You are online. Waiting for ride requests." : "Go online to start receiving ride requests"}

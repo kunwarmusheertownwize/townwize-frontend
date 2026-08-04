@@ -1,6 +1,29 @@
-import { FaMoneyBillWave, FaHistory, FaClock } from "react-icons/fa";
+import { useEffect, useState } from "react";
+import { FaMoneyBillWave, FaHistory, FaClock, FaCreditCard } from "react-icons/fa";
+import api from "../../../services/api";
 
 const Wallet = () => {
+  /**
+   * Card availability comes from the server, not a hardcoded promise.
+   *
+   * This page told passengers digital payments were "coming soon" while the
+   * booking screen was already offering "Card or wallet" — the app
+   * contradicting itself on the one subject where a passenger has to trust it.
+   * It now asks the same endpoint the booking screen asks.
+   */
+  const [cardLive, setCardLive] = useState(false);
+  useEffect(() => {
+    let mounted = true;
+    api
+      .get("/payments/methods")
+      .then((res) => {
+        const card = (res?.data?.data?.methods || []).find((m) => m.id === "card");
+        if (mounted) setCardLive(Boolean(card?.available));
+      })
+      .catch(() => { /* assume not live — never promise what we cannot deliver */ });
+    return () => { mounted = false; };
+  }, []);
+
   return (
     <div className="space-y-4">
 
@@ -8,7 +31,7 @@ const Wallet = () => {
       <div className="rounded-2xl bg-gradient-to-br from-townwize-primary to-townwize-primaryDark p-6 text-white">
         <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-white/50 mb-1">Townwize Wallet</p>
         <p className="text-xl font-bold tracking-tight">Payment Method</p>
-        <p className="text-xs text-white/60 mt-1">Digital wallet activates when payments go live</p>
+        <p className="text-xs text-white/60 mt-1">{cardLive ? "Pay in cash, or by card and wallet" : "Digital wallet activates when payments go live"}</p>
 
         {/* Payment method badge */}
         <div className="mt-5 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/15">
@@ -33,17 +56,22 @@ const Wallet = () => {
         </div>
       </div>
 
-      {/* Coming soon */}
-      <div className="rounded-2xl bg-white dark:bg-townwize-primaryDark border border-dashed border-gray-200 dark:border-gray-700 p-5">
+      {/* Card / wallet — live or still coming, decided by the server */}
+      <div className={`rounded-2xl bg-white dark:bg-townwize-primaryDark p-5 ${cardLive ? "border border-gray-200 dark:border-gray-700" : "border border-dashed border-gray-200 dark:border-gray-700"}`}>
         <div className="flex items-start gap-4">
-          <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center shrink-0">
-            <FaClock className="text-blue-500 dark:text-blue-400" size={15} />
+          <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${cardLive ? "bg-townwize-accent/15" : "bg-blue-50 dark:bg-blue-900/30"}`}>
+            {cardLive
+              ? <FaCreditCard className="text-townwize-accent" size={15} />
+              : <FaClock className="text-blue-500 dark:text-blue-400" size={15} />}
           </div>
           <div>
-            <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-1">Digital Payments — Coming Soon</h3>
+            <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-1">
+              {cardLive ? "Card & wallet payments — available" : "Digital Payments — Coming Soon"}
+            </h3>
             <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
-              JazzCash, Easypaisa, and card payments are on the way.
-              You'll be able to top up your wallet and pay rides digitally.
+              {cardLive
+                ? "Choose \"Card or wallet\" when you confirm a ride. You pay the exact fare at the end of the trip — nothing is charged when you book."
+                : "JazzCash, Easypaisa, and card payments are on the way. You'll be able to pay for rides digitally."}
             </p>
           </div>
         </div>
