@@ -31,6 +31,12 @@ const AppLegalLinks = ({ className = "" }) => (
       ))}
     </div>
 
+    {/* Support email stays — it is how a signed-in user reaches us. The phone
+        number and registered address deliberately do NOT appear in the app:
+        they belong on the public Terms, Privacy, Refunds and Support pages,
+        which is where payment providers and app stores look for them. Repeating
+        them on every account screen just puts a direct line to the company in
+        front of every user. */}
     <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700 space-y-1">
       <a
         href="mailto:support@townwize.com"
@@ -38,11 +44,8 @@ const AppLegalLinks = ({ className = "" }) => (
       >
         support@townwize.com
       </a>
-      <a href="tel:+923394009776" className="block text-xs text-gray-500 dark:text-gray-400">
-        +92 339 400 9776
-      </a>
-      <p className="text-[11px] text-gray-400 dark:text-gray-500 pt-1 leading-relaxed">
-        Townwize (Private) Limited · Karachi, Pakistan
+      <p className="text-[11px] text-gray-400 dark:text-gray-500 pt-1">
+        Townwize (PVT) LTD.
       </p>
     </div>
   </div>

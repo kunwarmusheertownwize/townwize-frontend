@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import PassengerLayout from "../../../layouts/PassengerLayout";
 import api from "../../../services/api";
 import { FaUsers, FaWallet, FaShieldAlt, FaArrowRight, FaClock } from "react-icons/fa";
 
@@ -54,7 +53,11 @@ const RideTogether = () => {
   }, []);
 
   return (
-    <PassengerLayout>
+    // This route is ALREADY rendered inside PassengerLayout, and that layout
+    // renders <Outlet/> rather than {children} — so wrapping the page in a
+    // second PassengerLayout drew the navbar twice and threw this entire page
+    // away. The screen rendered blank.
+    <>
       <div className="max-w-lg mx-auto px-4 py-6 space-y-8">
 
         {/* Header */}
@@ -148,7 +151,7 @@ const RideTogether = () => {
         </div>
 
       </div>
-    </PassengerLayout>
+    </>
   );
 };
 
