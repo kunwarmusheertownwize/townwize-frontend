@@ -600,12 +600,19 @@ export default function PassengerTripReceipt() {
     <div className="trip-receipt-page max-w-5xl mx-auto mt-6 bg-white dark:bg-townwize-primaryDark p-6 md:p-8 rounded-2xl shadow-lg space-y-6 border border-gray-100 dark:border-gray-700">
 
       {/* Branding header — always visible; also included in image capture */}
-      <div className="receipt-branding flex items-center justify-between pb-4 border-b border-gray-300 dark:border-gray-700 mb-2">
-        <div className="flex items-center gap-3">
-          <img src="/images/logo-dark.png" alt="Townwize" className="h-9 w-auto" />
-          <p className="text-xs text-gray-500">www.townwize.com · support@townwize.com</p>
+      {/* Two fixed-width text blocks either side of a flex row collided on a
+          phone — "www.townwize.com · support@townwize.com" overlapped "Official
+          Trip Receipt", each wrapping through the other. Stacked below sm, side
+          by side above it, with the contact line dropped on mobile: it is
+          already on the receipt footer and in the account screen. */}
+      <div className="receipt-branding flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-3 pb-4 border-b border-gray-300 dark:border-gray-700 mb-2">
+        <div className="flex items-center gap-3 min-w-0">
+          <img src="/images/logo-dark.png" alt="Townwize" className="h-9 w-auto shrink-0" />
+          <p className="hidden sm:block text-xs text-gray-500 truncate">
+            www.townwize.com · support@townwize.com
+          </p>
         </div>
-        <p className="text-xs text-gray-400">Official Trip Receipt</p>
+        <p className="text-xs text-gray-400 shrink-0">Official Trip Receipt</p>
       </div>
 
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
