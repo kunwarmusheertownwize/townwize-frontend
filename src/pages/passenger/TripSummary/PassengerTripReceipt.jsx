@@ -539,6 +539,13 @@ export default function PassengerTripReceipt() {
                   Cancellation fee applied: {toMoney(ride.cancellationFee)}
                 </div>
               )}
+              {/* The receipt has TWO layout branches and this one — the branch
+                  the phone app actually renders — was missing the pay button
+                  entirely, so a card ride finished with no way to pay for it.
+                  Both branches must carry it. */}
+              <div className="mt-3">
+                <PayForRideButton ride={ride} />
+              </div>
             </div>
 
             {ride?.driverInfo && (
