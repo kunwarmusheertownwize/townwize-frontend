@@ -1,4 +1,5 @@
 // File: src/pages/passenger/Profile/Profile.jsx
+import AppLegalLinks from "../../../components/common/AppLegalLinks";
 import { useState, useContext, useEffect, useCallback } from "react";
 import {
   FaUser,
@@ -485,6 +486,13 @@ export default function Profile() {
           ))}
         </div>
 
+        {/* Legal & support. Lives here rather than in a marketing footer —
+            where Uber, Careem and Bolt keep it — so it is findable when
+            someone goes looking and out of the way when they are not. */}
+        <div className="mt-3 mx-3">
+          <AppLegalLinks />
+        </div>
+
         {/* Logout row */}
         <div className="mt-3 bg-white dark:bg-gray-900 rounded-2xl mx-3 overflow-hidden mb-4">
           <button
@@ -907,6 +915,8 @@ export default function Profile() {
                 />
               </button>
             </div>
+
+            <AppLegalLinks className="mt-6" />
 
             <div className="pt-2">
               <button

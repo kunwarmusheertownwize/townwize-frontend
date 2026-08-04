@@ -1,3 +1,4 @@
+import AppLegalLinks from "../../../components/common/AppLegalLinks";
 import { useCallback, useContext, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { FaStar, FaGift, FaCopy, FaShareAlt, FaTicketAlt, FaCamera, FaCar } from "react-icons/fa";
@@ -526,6 +527,8 @@ const DriverProfile = () => {
           OTP and eight steps only to be told their email was already
           registered. The sections above are the real path — they post to
           /driver/documents and reset the affected section for admin re-review. */}
+      <AppLegalLinks />
+
       <div className="flex flex-col gap-3">
         <p className="px-1 text-center text-xs text-gray-400 dark:text-gray-500">
           Need to change your vehicle or documents? Use the sections above — an

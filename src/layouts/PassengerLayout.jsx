@@ -3,7 +3,6 @@
 import { useEffect } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import Navbar from "../components/shared/Navbar";
-import Footer from "../components/shared/Footer";
 import api from "../services/api";
 import MobilePassengerLayout from "./MobilePassengerLayout";
 import { isNative } from "../utils/platform";
@@ -106,11 +105,17 @@ const PassengerLayout = () => {
       <main className={isMapPage ? "flex-grow" : "passenger-layout-main flex-grow w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6"}>
         <Outlet />
       </main>
-      {!isMapPage && (
-        <div className="passenger-layout-footer">
-          <Footer />
-        </div>
-      )}
+      {/* The marketing footer used to render here — logo, "Community",
+          "About Townwize", social icons — below every signed-in screen. A
+          passenger mid-booking is already a customer; on a phone it was a
+          screenful of scrolling past the thing they came for, and apps that
+          end in a marketing footer read as websites with a login. Uber, Careem
+          and Bolt all end at the working content.
+
+          Terms, Privacy, Refunds and support contact moved to the account
+          screen (AppLegalLinks) — the footer was their only route from inside
+          the app, and Play and payment providers both check they are
+          reachable. */}
     </div>
   );
 };

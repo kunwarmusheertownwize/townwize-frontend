@@ -374,123 +374,17 @@ const DriverLayout = ({ title }) => {
       </main>
 
 
-      {/* Footer */}
-      <footer className="footer mt-12 w-full">
-        <div>
-          {/* Logo → always back to Landing */}
-          <Link to="/" className="inline-block mx-16">
-            <img
-              src="/images/logo-dark.png"
-              alt="Townwize Logo"
-              className="h-15 footer-logo"
-            />
-          </Link>
+      {/* The marketing footer rendered here — logo, Drive/Community columns,
+          social links — below every signed-in driver screen. A Wizer waiting
+          for a request does not need a link to About Townwize; on a phone it
+          was a screenful of scrolling past the Go Online button, and an app
+          that ends in a marketing footer reads as a website with a login.
+          Uber, Careem and inDrive all end at the working content.
 
-          <div className="container mx-auto px-6 max-w-6xl">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-sm">
-              {/* Drive */}
-              <div>
-                <h4 className="font-semibold mb-3">Drive</h4>
-                <ul className="space-y-2">
-                  <li>
-                    <Link to="/driver/home" className="link-secondary">
-                      Driver Dashboard
-                    </Link>
-                  </li>
-                  <li>
-                    <Link to="/driver/earnings" className="link-secondary">
-                      Earnings Overview
-                    </Link>
-                  </li>
-                  <li>
-                    <Link to="/driver/safety" className="link-secondary">
-                      Safety Standards
-                    </Link>
-                  </li>
-                </ul>
-              </div>
-
-              {/* Community */}
-              <div>
-                <h4 className="font-semibold mb-3">Community</h4>
-                <ul className="space-y-2">
-                  <li>
-                    <Link to="/about" className="link-secondary">
-                      About Townwize
-                    </Link>
-                  </li>
-                  <li>
-                    <Link to="/community" className="link-secondary">
-                      Driver Stories
-                    </Link>
-                  </li>
-                  <li>
-                    <Link to="/careers" className="link-secondary">
-                      Careers
-                    </Link>
-                  </li>
-                </ul>
-              </div>
-
-              {/* Help */}
-              <div>
-                <h4 className="font-semibold mb-3">Help & Support</h4>
-                <ul className="space-y-2">
-                  <li>
-                    <Link to="/driver/support" className="link-secondary">
-                      Driver Support
-                    </Link>
-                  </li>
-                  <li>
-                    <Link to="/driver/faqs" className="link-secondary">
-                      FAQs
-                    </Link>
-                  </li>
-                </ul>
-              </div>
-
-              {/* Social */}
-              <div>
-                <h4 className="font-semibold mb-3">Stay Connected</h4>
-                <ul className="flex space-x-4">
-                  <li>
-                    <a
-                      href="https://facebook.com/townwize"
-                      aria-label="Facebook"
-                      className="link-secondary"
-                    >
-                      <FaFacebookF />
-                    </a>
-                  </li>
-                  <li>
-                    <a
-                      href="https://twitter.com/townwize"
-                      aria-label="Twitter"
-                      className="link-secondary"
-                    >
-                      <FaTwitter />
-                    </a>
-                  </li>
-                  <li>
-                    <a
-                      href="https://instagram.com/townwize"
-                      aria-label="Instagram"
-                      className="link-secondary"
-                    >
-                      <FaInstagram />
-                    </a>
-                  </li>
-                </ul>
-              </div>
-            </div>
-
-            <hr className="border-gray-300 mt-10 w-full" />
-            <div className="text-center text-gray-400 text-xs mt-2 w-full">
-              © {new Date().getFullYear()} Townwize. All rights reserved.
-            </div>
-          </div>
-        </div>
-      </footer>
+          Terms, Privacy, Refunds and support contact moved to the account
+          screen (AppLegalLinks): this footer was their only route from inside
+          the app, and Play and payment providers both check they are
+          reachable. */}
     </div>
   );
 };
