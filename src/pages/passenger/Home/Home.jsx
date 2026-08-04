@@ -50,6 +50,11 @@ const Home = () => {
   const sessionTokenRef = useRef(null);
   const locationBiasRef = useRef(null);
   const currentCoordsRef = useRef(null);
+  // Dropoff coordinates were available from the Places lookup but only ever
+  // captured for pickup, so the next screen had to re-geocode the dropoff text.
+  // In BTK nearly every precinct has a "Rd 14", so that lands on whichever one
+  // Google prefers — a different precinct entirely.
+  const dropoffCoordsRef = useRef(null);
   // Recent pickups dropdown
   const [showRecentPickups, setShowRecentPickups] = useState(false);
   const [recentPickups, setRecentPickups] = useState([]);
@@ -269,6 +274,10 @@ const Home = () => {
         pickup,
         pickupCoords: currentCoordsRef.current,
         dropoff,
+        // Carried so the next screen can place the pin exactly, instead of
+        // re-geocoding the address text and landing on a same-named road in
+        // another precinct.
+        dropoffCoords: dropoffCoordsRef.current,
         ...(scheduledAt ? { scheduledAt } : {}),
       },
       replace: true,
@@ -425,7 +434,13 @@ const Home = () => {
             currentCoordsRef.current = { lat: loc.lat(), lng: loc.lng() };
           }
         }
-        if (setter === setDropoff) setDropoffSuggestions([]);
+        if (setter === setDropoff) {
+          setDropoffSuggestions([]);
+          const dloc = p?.location || p?.Fg;
+          if (dloc && typeof dloc.lat === "function") {
+            dropoffCoordsRef.current = { lat: dloc.lat(), lng: dloc.lng() };
+          }
+        }
 
         // start a new session after selection
         const { AutocompleteSessionToken } = await google.maps.importLibrary("places");
@@ -451,7 +466,13 @@ const Home = () => {
             currentCoordsRef.current = { lat: geom.lat(), lng: geom.lng() };
           }
         }
-        if (setter === setDropoff) setDropoffSuggestions([]);
+        if (setter === setDropoff) {
+          setDropoffSuggestions([]);
+          const dgeom = p?.geometry?.location;
+          if (dgeom && typeof dgeom.lat === "function") {
+            dropoffCoordsRef.current = { lat: dgeom.lat(), lng: dgeom.lng() };
+          }
+        }
 
         const { AutocompleteSessionToken } = await google.maps.importLibrary("places");
         sessionTokenRef.current = new AutocompleteSessionToken();

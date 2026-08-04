@@ -31,6 +31,31 @@ import {
 import { useContext } from "react";
 import AuthContext from "../../../contexts/AuthContext";
 
+// Bahria Town Karachi. Used to bias address lookups: BTK repeats road names
+// across precincts ("Rd 14" exists in most of them), so an unbiased geocode
+// resolves to whichever one Google prefers — which put dropoffs kilometres
+// from the intended precinct.
+/**
+ * Bottom-sheet snap points, as translateY in vh — 0 is fully open.
+ *
+ * "peek" is new. There used to be only full and half, and the sheet opens in
+ * half, so a downward swipe had nowhere to go: it set the state to the one it
+ * was already in and the sheet stayed put. The only way down was to swipe UP to
+ * full first, which is the workaround people were discovering by accident.
+ *
+ * Ordered top to bottom; a swipe moves one step.
+ */
+const SHEET_SNAPS = { full: 0, half: 32, peek: 62 };
+const SHEET_ORDER = ["full", "half", "peek"];
+
+const BTK_CENTER = { lat: 25.08994, lng: 67.34764 };
+const BTK_BOUNDS = {
+    south: 24.98,
+    west: 67.22,
+    north: 25.20,
+    east: 67.47,
+};
+
 const CAR_CLASSES = [
   {
     key: "economy",
@@ -972,19 +997,70 @@ navigate("/passenger/trip-summary", {
 
       const geocoder = await getGeocoder();
 
-      geocoder.geocode({ address: effectiveState.pickup }, (results, status) => {
-        if (status === "OK" && results?.[0]?.geometry?.location) {
-          updateMapMarker(results[0].geometry.location, "pickup");
-          setPickup(results[0].formatted_address);
+      /**
+       * Restore a marker, preferring EXACT COORDINATES over the address text.
+       *
+       * This used to geocode the address string unconditionally. In BTK almost
+       * every precinct has a "Rd 14", so asking Google to resolve "Rd 14, …"
+       * returns whichever one it prefers — and the pin landed in a precinct
+       * kilometres from where the passenger had dropped it. It then overwrote
+       * the address with Google's guess, so the text agreed with the wrong pin
+       * and nothing looked broken.
+       *
+       * The coordinates were being passed all along and simply ignored. They
+       * are the only precise thing we have: a dragged pin has no address, just
+       * a point. Geocoding stays as a fallback for entries that genuinely have
+       * text only.
+       */
+      const restorePoint = (coords, address, type, setText) => {
+        const lat = Number(coords?.lat);
+        const lng = Number(coords?.lng);
+        if (Number.isFinite(lat) && Number.isFinite(lng)) {
+          updateMapMarker({ lat, lng }, type);
+          // Keep the passenger's own address text — re-deriving it here is what
+          // relabelled a correct pin with a distant road's name.
+          if (address) setText(address);
+          return;
         }
-      });
+        if (!address) return;
 
-      geocoder.geocode({ address: effectiveState.dropoff }, (results, status) => {
-        if (status === "OK" && results?.[0]?.geometry?.location) {
-          updateMapMarker(results[0].geometry.location, "dropoff");
-          setDropoff(results[0].formatted_address);
-        }
-      });
+        // Bias the fallback to Bahria Town, and pick the nearest match.
+        //
+        // "Rd 14" exists in most BTK precincts, and an unbiased geocode returns
+        // whichever Google prefers — reliably landing a dropoff kilometres from
+        // the intended one. Bounds alone is only a hint, so the results are
+        // then sorted by distance from BTK's centre and the closest is used.
+        geocoder.geocode(
+            { address, bounds: BTK_BOUNDS, componentRestrictions: { country: "PK" } },
+            (results, status) => {
+                if (status !== "OK" || !results?.length) return;
+
+                const withDistance = results
+                    .filter((r) => r?.geometry?.location)
+                    .map((r) => {
+                        const loc = r.geometry.location;
+                        const lat = typeof loc.lat === "function" ? loc.lat() : loc.lat;
+                        const lng = typeof loc.lng === "function" ? loc.lng() : loc.lng;
+                        return {
+                            r,
+                            km: Math.hypot(
+                                (lat - BTK_CENTER.lat) * 111,
+                                (lng - BTK_CENTER.lng) * 111 * Math.cos((lat * Math.PI) / 180)
+                            ),
+                        };
+                    })
+                    .sort((a, b) => a.km - b.km);
+
+                const best = withDistance[0]?.r;
+                if (!best) return;
+                updateMapMarker(best.geometry.location, type);
+                setText(best.formatted_address);
+            }
+        );
+      };
+
+      restorePoint(effectiveState.pickupCoords, effectiveState.pickup, "pickup", setPickup);
+      restorePoint(effectiveState.dropoffCoords, effectiveState.dropoff, "dropoff", setDropoff);
     };
 
     tryRestore();
@@ -1068,7 +1144,7 @@ navigate("/passenger/trip-summary", {
           style={window.innerWidth < 768 ? {
             transform: selectingFor
               ? "translateY(85vh)"
-              : sheetSnap === "full" ? "translateY(0)" : "translateY(32vh)",
+              : `translateY(${SHEET_SNAPS[sheetSnap] ?? SHEET_SNAPS.half}vh)`,
             transition: "transform 400ms cubic-bezier(0.32, 0.72, 0, 1)",
           } : undefined}
           onTouchStart={(e) => {
@@ -1078,8 +1154,13 @@ navigate("/passenger/trip-summary", {
           onTouchMove={(e) => {
             if (window.innerWidth >= 768 || sheetDragStartY.current == null || !sheetRef.current) return;
             const delta = e.touches[0].clientY - sheetDragStartY.current;
-            const baseTranslate = sheetSnap === "full" ? 0 : window.innerHeight * 0.32;
-            const clamped = Math.max(-20, Math.min(window.innerHeight * 0.32 + 20, baseTranslate + delta));
+            const vh = window.innerHeight / 100;
+            const baseTranslate = (SHEET_SNAPS[sheetSnap] ?? SHEET_SNAPS.half) * vh;
+            // Clamp across the WHOLE range of snap points. It used to clamp at
+            // the "half" offset, so from "half" the sheet could only travel 20px
+            // downward and simply refused to follow the finger.
+            const lowest = SHEET_SNAPS[SHEET_ORDER[SHEET_ORDER.length - 1]] * vh;
+            const clamped = Math.max(-20, Math.min(lowest + 20, baseTranslate + delta));
             sheetRef.current.style.transition = "none";
             sheetRef.current.style.transform = `translateY(${clamped}px)`;
           }}
@@ -1089,10 +1170,19 @@ navigate("/passenger/trip-summary", {
             if (sheetRef.current) {
               sheetRef.current.style.transition = "transform 400ms cubic-bezier(0.32, 0.72, 0, 1)";
             }
-            if (delta < -40) setSheetSnap("full");
-            else if (delta > 40) setSheetSnap("half");
+            // Step one snap point per swipe rather than jumping to a fixed
+            // state. Previously a downward swipe always set "half" — which from
+            // "half" was a no-op, so the sheet would not go down at all unless
+            // you first dragged it up to "full". Hence the pinch-up-then-down
+            // workaround.
+            const i = SHEET_ORDER.indexOf(sheetSnap);
+            const current = i === -1 ? SHEET_ORDER.indexOf("half") : i;
+            if (delta < -40) setSheetSnap(SHEET_ORDER[Math.max(0, current - 1)]);
+            else if (delta > 40) setSheetSnap(SHEET_ORDER[Math.min(SHEET_ORDER.length - 1, current + 1)]);
             else if (sheetRef.current) {
-              sheetRef.current.style.transform = sheetSnap === "full" ? "translateY(0)" : "translateY(32vh)";
+              // Not far enough — settle back where it was.
+              sheetRef.current.style.transform =
+                `translateY(${SHEET_SNAPS[sheetSnap] ?? SHEET_SNAPS.half}vh)`;
             }
             sheetDragStartY.current = null;
           }}

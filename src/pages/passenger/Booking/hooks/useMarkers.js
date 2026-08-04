@@ -64,32 +64,6 @@ export default function useMarkers({ mapInstanceRef, reverseGeocode, onMarkerUpd
         ? { lat: location.lat(), lng: location.lng() }
         : location;
 
-      // TEMPORARY DIAGNOSTIC — remove once the "pin jumps to another precinct
-      // after dragging" report is resolved.
-      //
-      // Reading the code did not reveal what repositions a dragged marker, so
-      // this records every move together with the call site that caused it.
-      // Purely observational: nothing here changes behaviour.
-      try {
-        const previous = (type === "pickup" ? pickupMarkerRef : type === "stop" ? stopMarkerRef : dropoffMarkerRef).current?.position;
-        const prev = previous
-          ? { lat: typeof previous.lat === "function" ? previous.lat() : previous.lat,
-              lng: typeof previous.lng === "function" ? previous.lng() : previous.lng }
-          : null;
-        const movedMetres = prev
-          ? Math.round(
-              Math.hypot(
-                (latLng.lat - prev.lat) * 111320,
-                (latLng.lng - prev.lng) * 111320 * Math.cos((latLng.lat * Math.PI) / 180)
-              )
-            )
-          : null;
-        console.log(
-          `[MARKER] ${type} -> ${latLng.lat?.toFixed?.(6)},${latLng.lng?.toFixed?.(6)}` +
-            (movedMetres != null ? ` (moved ${movedMetres} m)` : " (first placement)"),
-          "\ncalled from:\n" + (new Error().stack || "").split("\n").slice(2, 7).join("\n")
-        );
-      } catch { /* diagnostics must never break the map */ }
 
       const colors = {
         pickup: "#2d88e0",
@@ -131,12 +105,7 @@ export default function useMarkers({ mapInstanceRef, reverseGeocode, onMarkerUpd
               lng: typeof own.lng === "function" ? own.lng() : own.lng }
           : e.latLng;
 
-        // TEMPORARY DIAGNOSTIC — pairs with the [MARKER] log above, so the log
-        // shows where the pin was dropped and then whatever moves it next.
-        console.log(`[DRAGEND] ${type} dropped at`, newPos, "event latLng:", e?.latLng?.toString?.() ?? e?.latLng);
-
         reverseGeocode(newPos, (addr) => {
-          console.log(`[DRAGEND] ${type} reverse-geocoded to:`, addr);
           if (type === "pickup") window.__setPickup?.(addr);
           if (type === "stop") window.__setStop?.(addr);
           if (type === "dropoff") window.__setDropoff?.(addr);

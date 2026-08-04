@@ -52,6 +52,7 @@ export default function MobileHome() {
   const mapsReadyRef = useRef(false);   // fast sync access for fetchSuggestions
   const sessionTokenRef = useRef(null);
   const currentCoordsRef = useRef(null);
+  const dropoffCoordsRef = useRef(null);
   const userMarkerRef = useRef(null);
   const dropoffInputRef = useRef(null);
   const pickupInputRef = useRef(null);
@@ -273,6 +274,26 @@ export default function MobileHome() {
         setter(addr || prediction.placePrediction.text?.text || "");
         const { AutocompleteSessionToken } = await google.maps.importLibrary("places");
         sessionTokenRef.current = new AutocompleteSessionToken();
+        // Keep the chosen place's EXACT coordinates.
+        //
+        // p.location was fetched, used to pan the map, and then thrown away —
+        // so the next screen had only the address text and re-geocoded it. In
+        // BTK nearly every precinct has a "Rd 14", so that resolved to whichever
+        // one Google preferred, in a different precinct entirely.
+        //
+        // Pickup was worse: currentCoordsRef only ever held the GPS fix, so
+        // searching for a pickup left the coordinates pointing at wherever the
+        // passenger happened to be standing.
+        const loc = p.location;
+        const asLatLng = loc
+          ? { lat: typeof loc.lat === "function" ? loc.lat() : loc.lat,
+              lng: typeof loc.lng === "function" ? loc.lng() : loc.lng }
+          : null;
+        if (asLatLng) {
+          if (activeField === "pickup") currentCoordsRef.current = asLatLng;
+          else dropoffCoordsRef.current = asLatLng;
+        }
+
         const selectedLoc = activeField === "dropoff" ? p.location : null;
         setSuggestions([]);
         // Pan search map AFTER suggestions clear (map becomes visible again)
@@ -297,7 +318,14 @@ export default function MobileHome() {
       return;
     }
     navigate("/passenger/select-ride", {
-      state: { pickup, pickupCoords: currentCoordsRef.current, dropoff },
+      state: {
+        pickup,
+        pickupCoords: currentCoordsRef.current,
+        dropoff,
+        // Without this the next screen re-geocodes the dropoff text and can
+        // land on a same-named road in another precinct.
+        dropoffCoords: dropoffCoordsRef.current,
+      },
       replace: true,
     });
   }
@@ -306,7 +334,12 @@ export default function MobileHome() {
     setPickup(dropoff);
     setDropoff(pickup);
     setSuggestions([]);
-    currentCoordsRef.current = null;
+    // Swap the coordinates along with the text. Clearing pickup's alone left
+    // the dropoff coordinates attached to what is now the pickup address —
+    // pointing the pin at the wrong end of the journey.
+    const prevPickup = currentCoordsRef.current;
+    currentCoordsRef.current = dropoffCoordsRef.current;
+    dropoffCoordsRef.current = prevPickup;
   }
 
   function closeSearch() {
