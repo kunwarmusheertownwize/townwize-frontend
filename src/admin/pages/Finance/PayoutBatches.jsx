@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import EmptyState from "../../components/common/EmptyState";
 import StatusBadge from "../../components/common/StatusBadge";
 import { fetchFinancePayouts, generateFinancePayoutBatch, updateFinancePayoutStatus } from "../../../api/adminApi";
@@ -12,6 +12,8 @@ export default function PayoutBatches() {
   const [pendingAction, setPendingAction] = useState(null); // { batch, nextStatus }
   const [actionNotes, setActionNotes] = useState("");
   const [actionFailureReason, setActionFailureReason] = useState("");
+  const [expandedId, setExpandedId] = useState(null);
+  const [skipped, setSkipped] = useState([]);
 
   const load = async () => {
     setLoading(true);
@@ -36,9 +38,14 @@ export default function PayoutBatches() {
     setBusy(true);
     setError("");
     setMessage("");
+    setSkipped([]);
     try {
-      await generateFinancePayoutBatch();
+      const json = await generateFinancePayoutBatch();
       setMessage("New payout batch generated.");
+      // Wizers left out because they have no bank details. Surfaced rather than
+      // swallowed — they earned this cycle and are not getting paid, so someone
+      // has to chase them before the next run.
+      setSkipped(json?.data?.notPayable || []);
       await load();
     } catch (e) {
       setError(e.message || "Failed to generate payout batch");
@@ -89,7 +96,13 @@ export default function PayoutBatches() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="dark:text-white text-xl font-semibold">Payout Batches</h1>
+        <div>
+          <h1 className="dark:text-white text-xl font-semibold">Payout Batches</h1>
+          <p className="text-xs text-gray-500 dark:text-gray-400">
+            Weekly cycle. A batch covers the seven days ending on the payout day, and includes
+            card-settled trips only — cash fares are already in the Wizer's hands.
+          </p>
+        </div>
         <button
           className="rounded-md bg-townwize-primary px-3 py-2 text-sm text-white disabled:opacity-50"
           disabled={busy}
@@ -101,6 +114,26 @@ export default function PayoutBatches() {
 
       {message ? <div className="rounded border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-700 dark:bg-gray-800 dark:text-white dark:border-gray-600">{message}</div> : null}
       {error ? <div className="rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-gray-800 dark:text-white dark:border-gray-600">{error}</div> : null}
+
+      {skipped.length > 0 && (
+        <div className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 dark:border-amber-700 dark:bg-amber-900/20">
+          <p className="text-sm font-semibold text-amber-900 dark:text-amber-200">
+            {skipped.length} Wizer{skipped.length > 1 ? "s" : ""} left out — no bank details
+          </p>
+          <p className="mt-0.5 text-xs text-amber-800 dark:text-amber-300">
+            They earned this cycle but cannot be paid. Their trips return to the pool and will be
+            picked up by the next batch once details are supplied.
+          </p>
+          <ul className="mt-2 space-y-1">
+            {skipped.map((s) => (
+              <li key={String(s.driverId)} className="text-xs text-amber-900 dark:text-amber-200">
+                <span className="font-medium">{s.driverName || String(s.driverId)}</span>
+                {" — "}{s.trips} trip{s.trips === 1 ? "" : "s"}, missing: {s.missing.join(", ")}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       <div className="overflow-x-auto rounded-xl border bg-white dark:bg-gray-900">
         <table className="w-full text-sm">
@@ -115,7 +148,9 @@ export default function PayoutBatches() {
               <th className="px-4 py-3 text-left">Platform Fee</th>
               <th className="px-4 py-3 text-left">Commission</th>
               <th className="px-4 py-3 text-left">Townwize Revenue</th>
-              <th className="px-4 py-3 text-left">Driver Payout</th>
+              <th className="px-4 py-3 text-left">Wizer Earnings</th>
+              <th className="px-4 py-3 text-left">Commission Withheld</th>
+              <th className="px-4 py-3 text-left">Net to Pay</th>
               <th className="px-4 py-3 text-left">Status</th>
               <th className="px-4 py-3 text-left">Actions</th>
             </tr>
@@ -123,13 +158,13 @@ export default function PayoutBatches() {
           <tbody>
             {loading ? (
               <tr>
-                <td className="px-4 py-10 text-center text-gray-500 dark:text-gray-400" colSpan={12}>
+                <td className="px-4 py-10 text-center text-gray-500 dark:text-gray-400" colSpan={14}>
                   Loading...
                 </td>
               </tr>
             ) : items.length === 0 ? (
               <tr>
-                <td className="p-8" colSpan={12}>
+                <td className="p-8" colSpan={14}>
                   <EmptyState title="No payouts found" description="No payout batches yet" />
                 </td>
               </tr>
@@ -139,9 +174,26 @@ export default function PayoutBatches() {
                 const period = it.periodFrom && it.periodTo
                   ? `${new Date(it.periodFrom).toLocaleDateString()} - ${new Date(it.periodTo).toLocaleDateString()}`
                   : it.period || "-";
+                const id = it._id || it.id;
+                const lines = Array.isArray(it.lines) ? it.lines : [];
+                const isOpen = expandedId === id;
                 return (
-                  <tr key={it._id || it.id} className="border-t">
-                    <td className="px-4 py-3">{it.code || it.id}</td>
+                  <Fragment key={id}>
+                  <tr className="border-t">
+                    <td className="px-4 py-3">
+                      {lines.length ? (
+                        <button
+                          type="button"
+                          onClick={() => setExpandedId(isOpen ? null : id)}
+                          aria-expanded={isOpen}
+                          className="text-left font-medium text-townwize-primary hover:underline"
+                        >
+                          {isOpen ? "▾" : "▸"} {it.code || id}
+                        </button>
+                      ) : (
+                        it.code || id
+                      )}
+                    </td>
                     <td className="px-4 py-3">{period}</td>
                     <td className="px-4 py-3">{it.totalTrips ?? it.drivers ?? "-"}</td>
                     <td className="px-4 py-3">{it.totalDrivers ?? "-"}</td>
@@ -153,6 +205,12 @@ export default function PayoutBatches() {
                       {money(it.townwizeRevenue ?? Number(it.platformFeeAmount || 0) + Number(it.commissionAmount || 0))}
                     </td>
                     <td className="px-4 py-3">{money(it.payoutAmount ?? it.amount)}</td>
+                    <td className="px-4 py-3 text-amber-700 dark:text-amber-400">
+                      {Number(it.commissionOffsetTotal || 0) > 0 ? `- ${money(it.commissionOffsetTotal)}` : money(0)}
+                    </td>
+                    <td className="px-4 py-3 font-semibold">
+                      {money(it.netPayoutAmount ?? it.payoutAmount ?? it.amount)}
+                    </td>
                     <td className="px-4 py-3">
                       <StatusBadge status={it.status || "-"} />
                     </td>
@@ -180,6 +238,55 @@ export default function PayoutBatches() {
                       )}
                     </td>
                   </tr>
+                  {isOpen && (
+                    <tr className="bg-gray-50 dark:bg-gray-800/60">
+                      <td colSpan={14} className="px-4 py-4">
+                        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                          Per-Wizer breakdown — one payment instruction each
+                        </p>
+                        <div className="overflow-x-auto rounded-lg border bg-white dark:bg-gray-900">
+                          <table className="w-full text-xs">
+                            <thead className="bg-gray-100 dark:bg-gray-800">
+                              <tr>
+                                <th className="px-3 py-2 text-left">Wizer</th>
+                                <th className="px-3 py-2 text-left">Trips</th>
+                                <th className="px-3 py-2 text-left">Earned</th>
+                                <th className="px-3 py-2 text-left">Commission withheld</th>
+                                <th className="px-3 py-2 text-left">Credit added</th>
+                                <th className="px-3 py-2 text-left">Net to pay</th>
+                                <th className="px-3 py-2 text-left">Ledger at generation</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {lines.map((ln) => (
+                                <tr key={String(ln.driverId)} className="border-t">
+                                  <td className="px-3 py-2">{ln.driverName || String(ln.driverId)}</td>
+                                  <td className="px-3 py-2">{ln.trips}</td>
+                                  <td className="px-3 py-2">{money(ln.grossEarning)}</td>
+                                  <td className="px-3 py-2 text-amber-700 dark:text-amber-400">
+                                    {Number(ln.commissionOffset || 0) > 0 ? `- ${money(ln.commissionOffset)}` : money(0)}
+                                  </td>
+                                  <td className="px-3 py-2 text-green-700 dark:text-green-400">
+                                    {Number(ln.carriedCredit || 0) > 0 ? `+ ${money(ln.carriedCredit)}` : money(0)}
+                                  </td>
+                                  <td className="px-3 py-2 font-semibold">{money(ln.netPayable)}</td>
+                                  <td className="px-3 py-2 text-gray-500 dark:text-gray-400">
+                                    {money(ln.balanceAtGeneration)}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                        {it.offsetsAppliedAt ? (
+                          <p className="mt-2 text-xs text-green-700 dark:text-green-400">
+                            Commission withheld here has been credited to the Wizers' ledgers.
+                          </p>
+                        ) : null}
+                      </td>
+                    </tr>
+                  )}
+                  </Fragment>
                 );
               })
             )}

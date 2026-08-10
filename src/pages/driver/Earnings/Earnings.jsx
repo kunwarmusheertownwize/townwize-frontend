@@ -1,6 +1,12 @@
 import { useEffect, useState, useCallback } from "react";
 import { toast } from "react-toastify";
-import { fetchDriverEarnings, fetchPayoutRequests, submitPayoutRequest } from "../../../api/driverApi";
+import {
+  fetchDriverEarnings,
+  fetchPayoutRequests,
+  submitPayoutRequest,
+  fetchPayoutDetails,
+  savePayoutDetails,
+} from "../../../api/driverApi";
 
 const toMoney = (n) => `PKR ${Number(n || 0).toLocaleString()}`;
 const fmtDate = (iso) =>
@@ -175,6 +181,115 @@ function PaymentModal({ balanceOwed, onClose, onSubmit }) {
   );
 }
 
+function BankDetailsModal({ existing, onClose, onSaved }) {
+  const [accountTitle, setAccountTitle] = useState(existing?.accountTitle || "");
+  const [bankName, setBankName] = useState(existing?.bankName || "");
+  const [iban, setIban] = useState("");
+  const [dateOfBirth, setDateOfBirth] = useState(
+    existing?.dateOfBirth ? String(existing.dateOfBirth).slice(0, 10) : ""
+  );
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmit = async () => {
+    setSubmitting(true);
+    try {
+      await savePayoutDetails({ accountTitle, bankName, iban, dateOfBirth });
+      toast.success("Bank details saved.");
+      onSaved();
+      onClose();
+    } catch (e) {
+      // The server validates the IBAN checksum, so its message is the useful
+      // one — it says which part is wrong rather than just "invalid".
+      toast.error(e?.response?.data?.message || e?.message || "Could not save your details");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 px-4 pb-6 sm:pb-0 overflow-y-auto">
+      <div className="w-full max-w-sm bg-white dark:bg-gray-900 rounded-2xl shadow-2xl overflow-hidden my-6">
+        <div className="bg-gradient-to-br from-townwize-primary to-townwize-primaryDark px-6 py-5 text-white">
+          <h3 className="text-lg font-bold">Where should we send your earnings?</h3>
+          <p className="text-xs text-white/70 mt-0.5">
+            Card trips are paid into your bank account. Cash trips you keep at the kerb.
+          </p>
+        </div>
+        <div className="px-6 py-5 space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
+              Account title
+            </label>
+            <input
+              type="text"
+              value={accountTitle}
+              onChange={(e) => setAccountTitle(e.target.value)}
+              placeholder="Exactly as your bank has it"
+              className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-townwize-primary"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
+              Bank name
+            </label>
+            <input
+              type="text"
+              value={bankName}
+              onChange={(e) => setBankName(e.target.value)}
+              placeholder="e.g. Meezan Bank"
+              className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-townwize-primary"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
+              IBAN
+            </label>
+            <input
+              type="text"
+              value={iban}
+              onChange={(e) => setIban(e.target.value.toUpperCase())}
+              placeholder="PK00XXXX0000000000000000"
+              autoCapitalize="characters"
+              spellCheck={false}
+              className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2.5 text-sm font-mono tracking-wide focus:outline-none focus:ring-2 focus:ring-townwize-primary"
+            />
+            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              {existing?.hasIban
+                ? `Currently ${existing.ibanMasked}. Enter it again to change it.`
+                : "24 characters, printed on your cheque book or in your banking app."}
+            </p>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
+              Date of birth
+            </label>
+            <input
+              type="date"
+              value={dateOfBirth}
+              onChange={(e) => setDateOfBirth(e.target.value)}
+              className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-townwize-primary"
+            />
+            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              As printed on your CNIC. Your bank checks this before releasing a transfer.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={handleSubmit}
+            disabled={submitting}
+            className="w-full py-3 rounded-xl bg-townwize-primary text-white font-semibold disabled:opacity-60"
+          >
+            {submitting ? "Saving…" : "Save bank details"}
+          </button>
+          <button type="button" onClick={onClose} className="w-full py-2 text-sm text-gray-400 hover:text-gray-600">
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 const Earnings = () => {
   const [loading, setLoading] = useState(true);
   const [chartPeriod, setChartPeriod] = useState("weekly"); // "weekly" | "monthly"
@@ -183,14 +298,24 @@ const Earnings = () => {
     balance: 0, balanceStatus: "clear",
     hardBlockThreshold: -3000, softWarnThreshold: -1500,
     totalCommission: 0, breakdown: [],
+    payoutCycle: null,
   });
   const [requests, setRequests] = useState([]);
   const [showModal, setShowModal] = useState(false);
+  const [bankDetails, setBankDetails] = useState(null);
+  const [showBankModal, setShowBankModal] = useState(false);
 
   const load = useCallback(async (period = chartPeriod) => {
     setLoading(true);
     try {
-      const [earnings, reqs] = await Promise.all([fetchDriverEarnings(period), fetchPayoutRequests()]);
+      const [earnings, reqs, bank] = await Promise.all([
+        fetchDriverEarnings(period),
+        fetchPayoutRequests(),
+        // Non-blocking: a Wizer who has never earned on card still sees their
+        // cash commission screen if this call fails.
+        fetchPayoutDetails().catch(() => null),
+      ]);
+      setBankDetails(bank);
       setData({
         today: Number(earnings?.today || 0),
         week: Number(earnings?.week || 0),
@@ -201,6 +326,7 @@ const Earnings = () => {
         softWarnThreshold: Number(earnings?.softWarnThreshold ?? -1500),
         totalCommission: Number(earnings?.totalCommission || 0),
         breakdown: Array.isArray(earnings?.breakdown) ? earnings.breakdown : [],
+        payoutCycle: earnings?.payoutCycle || null,
       });
       setRequests(Array.isArray(reqs) ? reqs : []);
     } catch {
@@ -234,6 +360,14 @@ const Earnings = () => {
           balanceOwed={balanceOwed}
           onClose={() => setShowModal(false)}
           onSubmit={handleSubmit}
+        />
+      )}
+
+      {showBankModal && (
+        <BankDetailsModal
+          existing={bankDetails}
+          onClose={() => setShowBankModal(false)}
+          onSaved={() => load(chartPeriod)}
         />
       )}
 
@@ -313,6 +447,101 @@ const Earnings = () => {
               </div>
             )}
           </div>
+
+          {/* Bank details missing while money is waiting. Shown ahead of the
+              payout card because until this is fixed the payout will not
+              happen at all — and a Wizer must learn that from the app, not
+              from a payout day that passes in silence. */}
+          {data.payoutCycle && data.payoutCycle.pendingTotal > 0 && !data.payoutCycle.readiness?.ready && (
+            <div className="rounded-2xl border border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/20 p-4">
+              <p className="text-sm font-semibold text-amber-900 dark:text-amber-200">
+                We cannot send your {toMoney(data.payoutCycle.pendingTotal)} yet
+              </p>
+              <p className="mt-1 text-xs text-amber-800 dark:text-amber-300 leading-relaxed">
+                {data.payoutCycle.readinessMessage}
+              </p>
+              <button
+                type="button"
+                onClick={() => setShowBankModal(true)}
+                className="mt-3 rounded-xl bg-amber-600 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-700 transition"
+              >
+                Add bank details
+              </button>
+            </div>
+          )}
+
+          {/* Card-ride payouts. Only rendered once there is something to pay —
+              a Wizer running cash-only has no use for it and it would just add
+              a permanently empty card to their screen. */}
+          {data.payoutCycle && data.payoutCycle.pendingTotal > 0 && (
+            <div className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-5">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1">
+                    Your next payout
+                  </p>
+                  <p className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">
+                    {toMoney(data.payoutCycle.estimatedNet)}
+                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    Arrives{" "}
+                    <strong className="text-gray-700 dark:text-gray-200">
+                      {new Date(data.payoutCycle.nextPayoutDate).toLocaleDateString(undefined, {
+                        weekday: "long", day: "numeric", month: "short",
+                      })}
+                    </strong>
+                  </p>
+                </div>
+              </div>
+
+              <dl className="mt-4 space-y-1.5 border-t border-gray-100 dark:border-gray-800 pt-3 text-sm">
+                <div className="flex justify-between">
+                  <dt className="text-gray-500 dark:text-gray-400">Card trips earned</dt>
+                  <dd className="font-medium text-gray-800 dark:text-gray-100">
+                    {toMoney(data.payoutCycle.pendingTotal)}
+                  </dd>
+                </div>
+                {data.payoutCycle.estimatedWithholding > 0 && (
+                  <div className="flex justify-between">
+                    <dt className="text-amber-700 dark:text-amber-400">Commission withheld</dt>
+                    <dd className="font-medium text-amber-700 dark:text-amber-400">
+                      − {toMoney(data.payoutCycle.estimatedWithholding)}
+                    </dd>
+                  </div>
+                )}
+                <div className="flex justify-between border-t border-gray-100 dark:border-gray-800 pt-1.5">
+                  <dt className="font-semibold text-gray-700 dark:text-gray-200">You receive</dt>
+                  <dd className="font-bold text-gray-900 dark:text-white">
+                    {toMoney(data.payoutCycle.estimatedNet)}
+                  </dd>
+                </div>
+              </dl>
+
+              {data.payoutCycle.estimatedWithholding > 0 && (
+                <p className="mt-3 text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
+                  Commission you owe on cash trips is taken out of this payout, so you do not need to
+                  transfer it separately.
+                </p>
+              )}
+
+              {data.payoutCycle.lastPaidAt && (
+                <p className="mt-3 text-xs text-gray-400 dark:text-gray-500">
+                  Last payout {toMoney(data.payoutCycle.lastPaidAmount || 0)} on{" "}
+                  {new Date(data.payoutCycle.lastPaidAt).toLocaleDateString()}
+                </p>
+              )}
+
+              {data.payoutCycle.readiness?.ready && bankDetails?.ibanMasked && (
+                <button
+                  type="button"
+                  onClick={() => setShowBankModal(true)}
+                  className="mt-3 text-xs text-townwize-primary hover:underline"
+                >
+                  Paying into {bankDetails.bankName} {bankDetails.ibanMasked} — change
+                </button>
+              )}
+            </div>
+          )}
 
           {/* Education card — shown when commission is clear */}
           {!balanceOwed && (

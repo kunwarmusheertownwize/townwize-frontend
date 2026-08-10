@@ -29,7 +29,17 @@ const SECTIONS = [
         ],
     },
     {
-        title: "4. User Obligations",
+        title: "4. What you are buying, and when you receive it",
+        body: [
+            "**What is being sold.** A single point-to-point road journey for you and any passengers travelling with you, in the vehicle class you select at booking, between the pickup and drop-off you specify. Nothing is shipped and nothing is posted to you — the service is the trip itself.",
+            "**Where we operate.** Bahria Town Karachi and the routes serving it. Pickups and drop-offs outside our published service area cannot be booked.",
+            "**When it is delivered.** Immediately. A Wizer is matched to you within minutes of booking and the service is complete when you arrive at your drop-off. Scheduled rides are delivered at the time you select.",
+            "**What you receive afterwards.** An itemised receipt in the app and by email, showing the route actually driven, the distance and time it was charged on, every fare line, and how you paid.",
+            "**If the service is not delivered** — no Wizer accepts, your Wizer cancels, or nobody arrives — you are not charged, and any amount already taken is refunded in full. See our Refund & Cancellation Policy.",
+        ],
+    },
+    {
+        title: "5. User Obligations",
         body: [
             "You agree to provide accurate and truthful information during registration and to keep your account details up to date.",
             "You are responsible for maintaining the confidentiality of your account credentials. Any activity on your account is your responsibility.",
@@ -39,7 +49,7 @@ const SECTIONS = [
         ],
     },
     {
-        title: "5. Prohibited Conduct",
+        title: "6. Prohibited Conduct",
         body: [
             "Impersonating another person or providing false identity or residency documents.",
             "Using the platform to harass, threaten, or discriminate against other users.",
@@ -50,7 +60,7 @@ const SECTIONS = [
         ],
     },
     {
-        title: "6. Fares, Payments & Cancellations",
+        title: "7. Fares, Payments & Cancellations",
         body: [
             "Fares are calculated by the platform from distance, time and ride type. You see an estimate before you book; the final fare is calculated from the route actually travelled and may differ if the route or destination changes during the trip.",
             "**Paying in cash:** you pay the Wizer directly at the end of the trip. This is the standard method on Townwize today.",
@@ -62,7 +72,7 @@ const SECTIONS = [
         ],
     },
     {
-        title: "7. Ratings & Reviews",
+        title: "8. Ratings & Reviews",
         body: [
             "Towners rate Wizers after each ride and vice versa. Ratings are used to maintain platform quality.",
             "Wizers with a rating below 4.0 may be temporarily or permanently deactivated.",
@@ -70,7 +80,7 @@ const SECTIONS = [
         ],
     },
     {
-        title: "8. Limitation of Liability",
+        title: "9. Limitation of Liability",
         body: [
             "To the fullest extent permitted by law, Townwize shall not be liable for any indirect, incidental, special, or consequential damages arising from your use of the platform.",
             "Townwize is not liable for the conduct of drivers or passengers during a ride.",
@@ -78,7 +88,7 @@ const SECTIONS = [
         ],
     },
     {
-        title: "9. Termination",
+        title: "10. Termination",
         body: [
             "Townwize may suspend or permanently terminate your account at any time for violations of these terms, Community Guidelines, or for any reason at our sole discretion.",
             "You may close your account at any time by contacting support@townwize.com.",
@@ -86,14 +96,14 @@ const SECTIONS = [
         ],
     },
     {
-        title: "10. Governing Law",
+        title: "11. Governing Law",
         body: [
             "These terms are governed by the laws of the Islamic Republic of Pakistan.",
             "Any disputes arising from these terms or use of the platform shall be subject to the jurisdiction of the courts of Karachi, Pakistan.",
         ],
     },
     {
-        title: "11. Contact",
+        title: "12. Contact",
         body: [
             "For questions about these Terms of Use, contact us at legal@townwize.com.",
             "For ride, fare or refund queries, contact support@townwize.com or call +92 339 400 9776.",
