@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import {
   deleteWaitlistEntry, downloadWaitlistExport,
-  fetchWaitlist, fetchWaitlistStats, updateWaitlistEntry,
+  fetchWaitlist, fetchWaitlistStats, updateWaitlistEntry, inviteWaitlistBatch,
 } from "../../../api/adminApi";
 import EmptyState from "../../components/common/EmptyState";
 
@@ -395,6 +395,10 @@ export default function WaitlistPage() {
   const [groupBy,        setGroupBy]        = useState("none");
   const [selected,       setSelected]       = useState(null);
   const [exporting,      setExporting]      = useState(false);
+  const [inviteCount,    setInviteCount]    = useState(25);
+  const [inviteType,     setInviteType]     = useState("passenger");
+  const [inviting,       setInviting]       = useState(false);
+  const [inviteResult,   setInviteResult]   = useState(null);
 
   const load = async () => {
     setLoading(true); setError("");
@@ -426,6 +430,41 @@ export default function WaitlistPage() {
       await downloadWaitlistExport(params);
     } catch (e) { alert("Export failed: " + e.message); }
     finally { setExporting(false); }
+  };
+
+  const handleInviteWave = async () => {
+    // The ids are resolved here rather than server-side so the endpoint only
+    // ever acts on an explicit list — "invite the next 25" computed on the
+    // server is a much easier thing to fire by accident.
+    setInviting(true);
+    setInviteResult(null);
+    try {
+      const res = await fetchWaitlist({
+        type: inviteType,
+        status: "pending",
+        sortBy: "createdAt",
+        sortOrder: "asc",   // longest-waiting first
+        limit: inviteCount,
+        page: 1,
+      });
+      const ids = (res?.data?.items || []).map((i) => i._id);
+      if (!ids.length) {
+        setInviteResult({ message: "No pending entries match that selection." });
+        return;
+      }
+      if (!window.confirm(
+        `Send ${ids.length} invitation email${ids.length === 1 ? "" : "s"}? ` +
+        `Each recipient will be able to register immediately.`
+      )) return;
+
+      const out = await inviteWaitlistBatch(ids);
+      setInviteResult({ message: out?.message || "Invitations sent.", failed: out?.data?.failed || [] });
+      await load();
+    } catch (e) {
+      setInviteResult({ message: `Could not send invitations: ${e.message}`, failed: [] });
+    } finally {
+      setInviting(false);
+    }
   };
 
   const groups = groupItems(items, groupBy);
@@ -512,6 +551,62 @@ export default function WaitlistPage() {
           <input type="checkbox" checked={suspiciousOnly} onChange={(e) => { setSuspiciousOnly(e.target.checked); setPage(1); }} />
           ⚠ Suspicious only
         </label>
+      </div>
+
+      {/* ── Invite a wave ──
+          Queue order, not hand-picked. Nobody selects fifty rows one at a time,
+          and doing it that way ends with half a wave sent and no record of
+          where you stopped. */}
+      <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
+        <div className="flex flex-wrap items-end gap-3">
+          <div>
+            <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Invite the next</label>
+            <input
+              type="number" min={1} max={50} value={inviteCount}
+              onChange={(e) => setInviteCount(Math.max(1, Math.min(50, Number(e.target.value) || 1)))}
+              className="w-20 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-white px-3 py-2 text-sm"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Who</label>
+            <select
+              value={inviteType} onChange={(e) => setInviteType(e.target.value)}
+              className="rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-white px-3 py-2 text-sm"
+            >
+              <option value="passenger">Towners</option>
+              <option value="driver">Wizers</option>
+              <option value="all">Both</option>
+            </select>
+          </div>
+          <button
+            type="button"
+            disabled={inviting}
+            onClick={handleInviteWave}
+            className="rounded-lg bg-townwize-primary px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+          >
+            {inviting ? "Sending…" : "Send invitations"}
+          </button>
+          <p className="text-xs text-gray-500 dark:text-gray-400 max-w-md">
+            Takes the longest-waiting pending entries first. Each one gets an email with a
+            registration link; only those that send successfully are marked Invited.
+          </p>
+        </div>
+        {inviteResult && (
+          <div className={`mt-3 rounded-lg px-3 py-2 text-sm ${
+            inviteResult.failed?.length
+              ? "border border-amber-300 bg-amber-50 text-amber-900 dark:border-amber-700 dark:bg-amber-900/20 dark:text-amber-200"
+              : "border border-green-200 bg-green-50 text-green-800 dark:border-green-800 dark:bg-green-900/20 dark:text-green-300"
+          }`}>
+            <p>{inviteResult.message}</p>
+            {inviteResult.failed?.length > 0 && (
+              <ul className="mt-1 list-disc pl-5 text-xs">
+                {inviteResult.failed.map((f) => (
+                  <li key={f.email}>{f.email} — {f.reason}</li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
       </div>
 
       {error && <p className="text-sm text-red-600">{error}</p>}

@@ -250,8 +250,24 @@ export default function Register() {
   // through sixteen uploads.
   const google = location.state?.google || null;
 
+  // Waitlist invitation. The email carries the address it was sent to and the
+  // role it was sent for, so someone arriving from it does not have to
+  // re-choose a role or retype an address the gate matches exactly.
+  const invite = useMemo(() => {
+    const qs = new URLSearchParams(location.search);
+    const email = (qs.get("email") || "").trim().toLowerCase();
+    const role = qs.get("role");
+    return {
+      email: /^\S+@\S+\.\S+$/.test(email) ? email : "",
+      role: role === "driver" || role === "passenger" ? role : null,
+      isInvited: qs.get("invited") === "1",
+    };
+  }, [location.search]);
+
   const forcedRole = getAppRole() || null;
-  const [selectedRole, setSelectedRole] = useState(forcedRole || (mode === "referral" ? "passenger" : null));
+  const [selectedRole, setSelectedRole] = useState(
+    forcedRole || invite.role || (mode === "referral" ? "passenger" : null)
+  );
   // Intro is shown once per fresh start. Restoring a draft skips it.
   const [introDone, setIntroDone] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
@@ -356,6 +372,16 @@ export default function Register() {
     return () => { cancelled = true; };
   }, [mode, methods]);
 
+  // ── prefill the invited address ──
+  // Only when the field is still empty, so a restored draft always wins: someone
+  // resuming half a registration should not have it overwritten by a link they
+  // happened to click again.
+  useEffect(() => {
+    if (!invite.email) return;
+    if (methods.getValues("email")) return;
+    methods.setValue("email", invite.email, { shouldValidate: false });
+  }, [invite.email, methods]);
+
   // ── validate referral code ──
   useEffect(() => {
     if (!inviteCodeParam) return;
@@ -448,8 +474,19 @@ export default function Register() {
       if (email) {
         setCheckingEmail(true);
         try {
-          const { data } = await api.get("/auth/availability", { params: { email } });
-          if (data?.data?.available === false) {
+          // `role` also asks the server whether this address has been invited.
+          // Omitted for GuestTowners: they arrive on a Towner's invite code and
+          // are never on the waitlist, so asking would refuse a journey that is
+          // supposed to bypass it entirely.
+          const params = { email };
+          if (selectedRole && !(mode === "referral" && isGuestTowner)) {
+            params.role = selectedRole;
+          }
+
+          const { data } = await api.get("/auth/availability", { params });
+          const check = data?.data || {};
+
+          if (check.available === false && check.reason === "EMAIL_ALREADY_EXISTS") {
             methods.setError("email", { type: "manual", message: "This email is already registered" });
             toast.error(
               <span>
@@ -464,6 +501,16 @@ export default function Register() {
               </span>,
               { autoClose: 9000 }
             );
+            return;
+          }
+
+          if (check.available === false) {
+            // Waitlist refusals. The server's wording is used verbatim so the
+            // applicant reads the same sentence here as they would at submit —
+            // and reads it now, rather than after uploading every document.
+            const message = check.message || "This email cannot be registered yet.";
+            methods.setError("email", { type: "manual", message });
+            toast.error(message, { autoClose: 12000 });
             return;
           }
         } catch {
@@ -638,10 +685,33 @@ export default function Register() {
   // draft — someone coming back mid-registration does not need the briefing
   // again — and skipped for invite links, which land straight in the flow.
 
+  // Shown on the intro and throughout the wizard, so the reassurance survives
+  // the whole form rather than only greeting them on arrival.
+  const inviteBanner = invite.isInvited ? (
+    <div className="mx-auto mt-4 w-full max-w-xl px-4">
+      <div className="rounded-2xl border border-townwize-primary/30 bg-townwize-primary/5 px-4 py-3 dark:border-townwize-accent/30 dark:bg-townwize-accent/10">
+        <p className="text-sm font-semibold text-townwize-primary dark:text-townwize-accent">
+          Your invitation is confirmed
+        </p>
+        <p className="mt-0.5 text-xs leading-relaxed text-gray-600 dark:text-gray-300">
+          {invite.email ? (
+            <>
+              You are registering as <strong>{invite.email}</strong>. Your invitation is tied to this
+              address, so please keep it as it is.
+            </>
+          ) : (
+            <>Registration is open for you. Use the email address your invitation was sent to.</>
+          )}
+        </p>
+      </div>
+    </div>
+  ) : null;
+
   if (selectedRole && !introDone && mode === "normal" && currentStep === 0) {
     return (
       <div className="min-h-screen w-full bg-townwize-bgLight pb-safe transition-colors duration-300 dark:bg-townwize-primaryDark">
         <AuthHeader />
+        {inviteBanner}
         <RegistrationIntro
           role={selectedRole}
           onStart={() => setIntroDone(true)}
@@ -714,6 +784,8 @@ export default function Register() {
   return (
     <div className="min-h-screen w-full bg-townwize-bgLight dark:bg-townwize-primaryDark transition-colors duration-300 pb-safe">
       <AuthHeader />
+
+      {inviteBanner}
 
       {/* Referral tier banner */}
       {mode === "referral" && referralCodeType === "GUEST_INVITE" && (

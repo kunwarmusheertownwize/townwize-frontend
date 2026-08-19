@@ -1,7 +1,16 @@
 import { Fragment, useEffect, useState } from "react";
 import EmptyState from "../../components/common/EmptyState";
 import StatusBadge from "../../components/common/StatusBadge";
-import { fetchFinancePayouts, generateFinancePayoutBatch, updateFinancePayoutStatus } from "../../../api/adminApi";
+import {
+  fetchFinancePayouts,
+  generateFinancePayoutBatch,
+  updateFinancePayoutStatus,
+  downloadPayoutTransfers,
+} from "../../../api/adminApi";
+
+// Safepay Payouts is on hold pending SBP approval, so Wizers are paid by bank
+// transfer. A batch is only worth a file once someone has approved it.
+const TRANSFERABLE = ["APPROVED", "PROCESSING", "PAID"];
 
 export default function PayoutBatches() {
   const [items, setItems] = useState([]);
@@ -49,6 +58,20 @@ export default function PayoutBatches() {
       await load();
     } catch (e) {
       setError(e.message || "Failed to generate payout batch");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const getTransferFile = async (batch) => {
+    setBusy(true);
+    setError("");
+    setMessage("");
+    try {
+      await downloadPayoutTransfers(batch._id || batch.id, batch.code);
+      setMessage("Transfer file downloaded.");
+    } catch (e) {
+      setError(e.message || "Could not produce the transfer file");
     } finally {
       setBusy(false);
     }
@@ -241,9 +264,25 @@ export default function PayoutBatches() {
                   {isOpen && (
                     <tr className="bg-gray-50 dark:bg-gray-800/60">
                       <td colSpan={14} className="px-4 py-4">
-                        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                          Per-Wizer breakdown — one payment instruction each
-                        </p>
+                        <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                          <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                            Per-Wizer breakdown — one bank transfer each
+                          </p>
+                          {TRANSFERABLE.includes(String(it.status || "").toUpperCase()) ? (
+                            <button
+                              type="button"
+                              disabled={busy}
+                              onClick={() => getTransferFile(it)}
+                              className="rounded-md border border-townwize-primary px-3 py-1.5 text-xs font-semibold text-townwize-primary disabled:opacity-50 hover:bg-townwize-primary hover:text-white transition"
+                            >
+                              ↓ Bank transfer file (CSV)
+                            </button>
+                          ) : (
+                            <span className="text-xs text-gray-500 dark:text-gray-400">
+                              Approve the batch to produce a transfer file
+                            </span>
+                          )}
+                        </div>
                         <div className="overflow-x-auto rounded-lg border bg-white dark:bg-gray-900">
                           <table className="w-full text-xs">
                             <thead className="bg-gray-100 dark:bg-gray-800">

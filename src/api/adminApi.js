@@ -79,6 +79,28 @@ export const generateFinancePayoutBatch = () =>
 export const updateFinancePayoutStatus = (batchId, body) =>
     call(`/admin/finance/payouts/${batchId}/status`, { method: "PATCH", body: JSON.stringify(body || {}) });
 
+/**
+ * Downloads the bank transfer file for a batch.
+ *
+ * Not routed through `call()`: the server refuses to produce a partial file, so
+ * a failure comes back as JSON with the reason and has to be read and shown
+ * rather than saved as a broken .csv.
+ */
+export const downloadPayoutTransfers = async (batchId, code) => {
+    const res = await authFetch(`${API_BASE}/admin/finance/payouts/${batchId}/transfers.csv`);
+    if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body?.message || "Could not produce the transfer file");
+    }
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${code || batchId}-transfers.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+};
+
 export const fetchDriverPayoutRequests = (params) => {
     const q = new URLSearchParams(params || {}).toString();
     return call(`/admin/finance/driver-payout-requests${q ? `?${q}` : ""}`);
@@ -169,6 +191,7 @@ export const fetchWaitlist = (params) => {
 export const fetchWaitlistStats   = ()         => call("/admin/waitlist/stats");
 export const updateWaitlistEntry  = (id, body) => call(`/admin/waitlist/${id}`, { method: "PATCH", body: JSON.stringify(body) });
 export const deleteWaitlistEntry  = (id)       => call(`/admin/waitlist/${id}`, { method: "DELETE" });
+export const inviteWaitlistBatch  = (ids)      => call("/admin/waitlist/invite", { method: "POST", body: JSON.stringify({ ids }) });
 export const downloadWaitlistExport = async (params) => {
   const qs  = new URLSearchParams(params || {}).toString();
   const res = await authFetch(`${API_BASE}/admin/waitlist/export${qs ? `?${qs}` : ""}`);
