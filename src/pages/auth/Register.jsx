@@ -23,16 +23,26 @@ import { enforceBusinessRules, schema } from "../../validation/fields";
 
 // ─── step definitions ────────────────────────────────────────────────────────
 
+// Account BEFORE phone, in every flow.
+//
+// The account step carries the disqualifying checks — email already taken, and
+// whether this address has actually been invited — and both are free. The phone
+// step sends a Twilio OTP, which is the only part of registration that costs
+// Townwize money on every attempt.
+//
+// Phone-first meant anyone refused at the email step had already burned a paid
+// verification, and with a shared registration link that is repeatable by
+// anyone. The free check that can say no now runs before the paid one.
 const PASSENGER_TOWNER_STEPS = [
-  { key: "phone",     label: "Phone",     fields: ["phone"] },
   { key: "account",   label: "Account",   fields: ["name", "email", "password"] },
+  { key: "phone",     label: "Phone",     fields: ["phone"] },
   { key: "residency", label: "Residency", fields: ["btkAddress", "btkRegNo", "residencyType", "btkProofFile", "btkIdFront", "btkIdBack"] },
   { key: "review",    label: "Review",    fields: [] },
 ];
 
 const PASSENGER_GUEST_STEPS = [
-  { key: "phone",    label: "Phone",    fields: ["phone"] },
   { key: "account",  label: "Account",  fields: ["name", "email", "password"] },
+  { key: "phone",    label: "Phone",    fields: ["phone"] },
   { key: "identity", label: "Identity", fields: ["cnicFront", "cnicBack"] },
   { key: "review",   label: "Review",   fields: [] },
 ];
@@ -41,13 +51,16 @@ const PASSENGER_GUEST_STEPS = [
 // and the heaviest ask (seven vehicle photos) lands where abandoning costs least.
 // Uploads per step: 0, 0, 5, 3, 1, 7.
 //
+// "Cheapest" counts Townwize's cost too, not only the applicant's — see the note
+// above PASSENGER_TOWNER_STEPS for why account precedes phone.
+//
 // Identity was previously step 6 of 7 — a driver uploaded everything including
 // seven vehicle photos before we asked who they were. The CNIC number sat in the
 // Vehicle step while its images sat two steps away, and the driving licence, a
 // personal document, was filed under Vehicle.
 const WIZER_STEPS = [
-  { key: "phone",         label: "Phone",     fields: ["phone"] },
   { key: "account",       label: "Account",   fields: ["name", "email", "password"] },
+  { key: "phone",         label: "Phone",     fields: ["phone"] },
   { key: "identity",      label: "Identity",  fields: ["cnicNumber", "cnicFront", "cnicBack", "licenseFront", "licenseBack"] },
   { key: "faceCheck",     label: "Face",      fields: ["selfie"] },
   { key: "residency",     label: "Residency", fields: ["btkAddress", "btkRegNo", "residencyType", "btkProofFile", "btkIdFront", "btkIdBack"] },
