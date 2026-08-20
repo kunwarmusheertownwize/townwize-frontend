@@ -96,12 +96,28 @@ const FIELD_LABELS = {
   vehiclePhotoOdometer: "Dashboard / odometer photo",
 };
 
+// Reports what is actually wrong, which is not always "missing".
+//
+// This used to map every invalid field to its label and say "X is required",
+// discarding the schema's own message. So someone who had typed a password that
+// failed the strength rules was told "Password is required" — describing a
+// field they had filled in as empty, and naming none of the four rules they
+// could have fixed. The same held for a malformed email or phone number.
+//
+// One bad field gets its real message; several fall back to a list of labels,
+// because four validation sentences in one toast is unreadable.
 const describeMissing = (fields, errors) => {
-  const missing = fields.filter((f) => errors[f]).map((f) => FIELD_LABELS[f] || f);
-  if (missing.length === 0) return "Please complete this step before continuing.";
-  if (missing.length === 1) return `${missing[0]} is required.`;
-  if (missing.length <= 3) return `Still needed: ${missing.join(", ")}.`;
-  return `Still needed: ${missing.slice(0, 3).join(", ")} and ${missing.length - 3} more.`;
+  const bad = fields.filter((f) => errors[f]);
+  if (bad.length === 0) return "Please complete this step before continuing.";
+
+  if (bad.length === 1) {
+    const message = errors[bad[0]]?.message;
+    return message || `${FIELD_LABELS[bad[0]] || bad[0]} is required.`;
+  }
+
+  const labels = bad.map((f) => FIELD_LABELS[f] || f);
+  if (labels.length <= 3) return `Still needed: ${labels.join(", ")}.`;
+  return `Still needed: ${labels.slice(0, 3).join(", ")} and ${labels.length - 3} more.`;
 };
 
 // ─── default form values ──────────────────────────────────────────────────────

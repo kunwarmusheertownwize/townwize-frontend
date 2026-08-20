@@ -1,9 +1,20 @@
 import { useFormContext } from "react-hook-form";
 
+// Kept in step with the password rules in validation/fields.js. If one changes
+// and the other does not, the form goes back to asking for something it never
+// checks — which is what this replaced.
+const passwordRules = [
+  { label: "8+ characters", test: (v) => v.length >= 8 },
+  { label: "letter",        test: (v) => /[A-Za-z]/.test(v) },
+  { label: "number",        test: (v) => /\d/.test(v) },
+  { label: "symbol",        test: (v) => /[^A-Za-z0-9]/.test(v) },
+];
+
 export default function AccountInfo({ register, errors, showPhone = true, google = null }) {
   const { watch, setValue } = useFormContext();
   const phoneField = register("phone");
   const phoneValue = watch("phone") || "";
+  const passwordValue = watch("password") || "";
 
   const formatPakPhoneInput = (value) => {
     const raw = String(value || "").trim();
@@ -136,16 +147,41 @@ export default function AccountInfo({ register, errors, showPhone = true, google
             className="mt-1 w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg p-3 outline-none"
             placeholder="Strong Password"
           />
-          {errors.password && (
+          {/* One line, not a stacked list — this sits under every password
+              field and a four-row checklist pushed the form around.
+              It replaced a static grey sentence that promised rules nothing
+              enforced and looked identical for "aaaa" and a strong password.
+              Per-rule colour means a failure says WHICH rule; a single red
+              line cannot. */}
+          <p
+            className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] leading-tight"
+            aria-live="polite"
+          >
+            {passwordRules.map((rule) => {
+              const met = rule.test(passwordValue);
+              // Nothing typed yet is not a failure — stay neutral until they
+              // start, so the form does not open covered in red.
+              const state = !passwordValue ? "idle" : met ? "met" : "unmet";
+              return (
+                <span
+                  key={rule.label}
+                  className={[
+                    "transition-colors",
+                    state === "met"   ? "text-green-600 dark:text-green-400" : "",
+                    state === "unmet" ? "!text-townwize-error" : "",
+                    state === "idle"  ? "text-gray-500 dark:text-gray-400" : "",
+                  ].join(" ")}
+                >
+                  {state === "met" ? "✓ " : "• "}{rule.label}
+                </span>
+              );
+            })}
+          </p>
+
+          {/* Server-side or submit-time errors that the checklist cannot express. */}
+          {errors.password && passwordValue && passwordRules.every((r) => r.test(passwordValue)) && (
             <p className="text-xs !text-townwize-error mt-1">
               {errors.password.message}
-            </p>
-          )}
-
-          {/* Strength indicator */}
-          {!errors.password && (
-            <p className="text-xs mt-1 text-gray-500 dark:text-gray-400">
-              Use at least 8 characters, mix of letters, numbers & symbols.
             </p>
           )}
         </div>

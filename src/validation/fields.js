@@ -34,11 +34,24 @@ export const schema = yup.object().shape({
   // invent, and the server generates an unusable one so the model's required
   // passwordHash still holds. Driven by `$isGoogleSignup`, which Register.jsx
   // passes as validation context alongside `$isGuestTowner`.
+  // The rules below are the ones the account step displays as a live checklist.
+  // They used to be length alone, while the hint underneath promised "a mix of
+  // letters, numbers & symbols" — so the form asked for something it never
+  // checked, and accepted "aaaaaaaa".
+  //
+  // Letters and digits are required; symbols are encouraged but not mandatory.
+  // Forcing a symbol mostly produces a trailing "!" and NIST moved away from
+  // mandatory composition rules for exactly that reason.
   password: yup.string().when("$isGoogleSignup", {
     is: true,
     then: (s) => s.notRequired(),
     otherwise: (s) =>
-      s.min(8, "Password must be at least 8 characters").required("Password is required"),
+      s
+        .min(8, "Use at least 8 characters")
+        .matches(/[A-Za-z]/, "Include at least one letter")
+        .matches(/\d/, "Include at least one number")
+        .matches(/[^A-Za-z0-9]/, "Include at least one symbol")
+        .required("Password is required"),
   }),
   // BTK residency fields apply to Towners and Wizers only. A GuestTowner is
   // sponsored by a Towner and proves identity with a CNIC alone — they never
