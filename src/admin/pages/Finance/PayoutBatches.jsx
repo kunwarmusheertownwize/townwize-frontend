@@ -63,13 +63,17 @@ export default function PayoutBatches() {
     }
   };
 
-  const getTransferFile = async (batch) => {
+  const getTransferFile = async (batch, format) => {
     setBusy(true);
     setError("");
     setMessage("");
     try {
-      await downloadPayoutTransfers(batch._id || batch.id, batch.code);
-      setMessage("Transfer file downloaded.");
+      await downloadPayoutTransfers(batch._id || batch.id, batch.code, format);
+      setMessage(
+        format === "s2b"
+          ? "Straight2Bank file downloaded. Upload it under BULK IMPORT, and check the row count and total on the confirmation screen before releasing."
+          : "Transfer file downloaded."
+      );
     } catch (e) {
       setError(e.message || "Could not produce the transfer file");
     } finally {
@@ -269,14 +273,24 @@ export default function PayoutBatches() {
                             Per-Wizer breakdown — one bank transfer each
                           </p>
                           {TRANSFERABLE.includes(String(it.status || "").toUpperCase()) ? (
-                            <button
-                              type="button"
-                              disabled={busy}
-                              onClick={() => getTransferFile(it)}
-                              className="rounded-md border border-townwize-primary px-3 py-1.5 text-xs font-semibold text-townwize-primary disabled:opacity-50 hover:bg-townwize-primary hover:text-white transition"
-                            >
-                              ↓ Bank transfer file (CSV)
-                            </button>
+                            <div className="flex flex-wrap items-center gap-2">
+                              <button
+                                type="button"
+                                disabled={busy}
+                                onClick={() => getTransferFile(it, "s2b")}
+                                className="rounded-md bg-townwize-primary px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50 hover:opacity-90 transition"
+                              >
+                                ↓ Straight2Bank file
+                              </button>
+                              <button
+                                type="button"
+                                disabled={busy}
+                                onClick={() => getTransferFile(it)}
+                                className="rounded-md border border-townwize-primary px-3 py-1.5 text-xs font-semibold text-townwize-primary disabled:opacity-50 hover:bg-townwize-primary hover:text-white transition"
+                              >
+                                ↓ Readable CSV
+                              </button>
+                            </div>
                           ) : (
                             <span className="text-xs text-gray-500 dark:text-gray-400">
                               Approve the batch to produce a transfer file

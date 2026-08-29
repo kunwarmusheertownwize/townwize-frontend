@@ -85,9 +85,16 @@ export const updateFinancePayoutStatus = (batchId, body) =>
  * Not routed through `call()`: the server refuses to produce a partial file, so
  * a failure comes back as JSON with the reason and has to be read and shown
  * rather than saved as a broken .csv.
+ *
+ * `format: "s2b"` returns Standard Chartered's Straight2Bank bulk-import shape
+ * instead — the file that actually gets uploaded. The default stays the
+ * readable one, which is what a person checks the numbers against first.
  */
-export const downloadPayoutTransfers = async (batchId, code) => {
-    const res = await authFetch(`${API_BASE}/admin/finance/payouts/${batchId}/transfers.csv`);
+export const downloadPayoutTransfers = async (batchId, code, format) => {
+    const isS2b = format === "s2b";
+    const res = await authFetch(
+        `${API_BASE}/admin/finance/payouts/${batchId}/transfers.csv${isS2b ? "?format=s2b" : ""}`
+    );
     if (!res.ok) {
         const body = await res.json().catch(() => ({}));
         throw new Error(body?.message || "Could not produce the transfer file");
@@ -96,7 +103,7 @@ export const downloadPayoutTransfers = async (batchId, code) => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `${code || batchId}-transfers.csv`;
+    a.download = `${code || batchId}-${isS2b ? "s2b" : "transfers"}.csv`;
     a.click();
     URL.revokeObjectURL(url);
 };
