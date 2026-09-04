@@ -424,7 +424,7 @@ const Earnings = () => {
                   className="shrink-0 px-4 py-2 rounded-xl bg-white text-red-600 text-sm font-bold hover:bg-red-50 disabled:opacity-60 transition shadow-sm"
                   title={hasPending ? "Payment already submitted, awaiting confirmation" : ""}
                 >
-                  {hasPending ? "Pending…" : "I've Paid"}
+                  {hasPending ? "Pending…" : "Submit Commission"}
                 </button>
               )}
             </div>
@@ -687,7 +687,7 @@ const Earnings = () => {
                   onClick={() => setShowModal(true)}
                   className="text-xs font-bold text-townwize-primary hover:underline"
                 >
-                  + Submit payment
+                  + Submit Commission
                 </button>
               )}
             </div>
