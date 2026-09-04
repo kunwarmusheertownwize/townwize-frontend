@@ -98,7 +98,7 @@ const buildSections = (c) => [
         body: [
             "Refunds, cancellations and fare disputes: support@townwize.com or +92 339 400 9776.",
             "Please include your trip ID — it is on your receipt and in your trip history.",
-            "**Townwize (Private) Limited** · R-31/2, 10th East Street, Phase 1, DHA, Karachi, Pakistan.",
+            "**Townwize (Private) Limited**, a company incorporated in Pakistan.",
         ],
     },
 ];

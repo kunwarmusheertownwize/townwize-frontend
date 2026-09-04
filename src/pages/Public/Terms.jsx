@@ -107,7 +107,6 @@ const SECTIONS = [
         body: [
             "For questions about these Terms of Use, contact us at legal@townwize.com.",
             "For ride, fare or refund queries, contact support@townwize.com or call +92 339 400 9776.",
-            "**Registered address:** R-31/2, 10th East Street, Phase 1, DHA, Karachi, Pakistan.",
             "Townwize is operated by **Townwize (Private) Limited**, a company incorporated in Pakistan.",
         ],
     },

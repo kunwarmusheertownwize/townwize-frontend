@@ -161,7 +161,7 @@ const Support = () => {
                     {/* A verifiable postal address is something payment providers and
                         app stores both check for. It was missing everywhere. */}
                     <p className="mt-3 text-xs text-gray-400 dark:text-gray-500 leading-relaxed">
-                        Townwize (Private) Limited · R-31/2, 10th East Street, Phase 1, DHA, Karachi, Pakistan
+                        Townwize (Private) Limited, a company incorporated in Pakistan
                     </p>
                 </div>
             </section>
