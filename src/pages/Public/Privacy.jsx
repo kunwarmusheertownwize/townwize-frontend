@@ -63,11 +63,13 @@ const SECTIONS = [
         ],
     },
     {
-        title: "7. Cookies & Local Storage",
+        title: "7. Cookies, Local Storage & Advertising",
         body: [
             "The Townwize web platform uses localStorage to store your session tokens and preferences (e.g., dark mode).",
-            "We do not use third-party advertising cookies.",
-            "Analytics are collected via first-party tools only.",
+            "**On our public marketing website only**, we use the Meta pixel and the Meta Conversions API to measure whether our advertising is working. These place cookies in your browser and send Meta limited information about your visit — for example that you viewed a page or joined the waitlist. Where you have given us your email address or phone number, a securely hashed (irreversible) version may be sent so that Meta can match the event to an existing account. We never send Meta your name, your address, your location, or anything about your rides.",
+            "**None of this runs inside the Townwize app, or anywhere you are signed in.** Your trips, your locations, your documents and your payment activity are never shared with any advertising platform.",
+            "You can limit this using your browser's tracking-protection or ad-blocking settings, and through the ad preferences in your own Meta account.",
+            "We do not sell your personal data, and we do not use advertising cookies to build profiles beyond measuring our own campaigns.",
         ],
     },
     {
@@ -103,7 +105,7 @@ const Privacy = () => (
                 <p className="text-white/60 text-base max-w-xl mx-auto">
                     This policy explains what data we collect, how we use it, and your rights as a Townwize user.
                 </p>
-                <p className="text-white/30 text-xs mt-6">Last updated: June 2026</p>
+                <p className="text-white/30 text-xs mt-6">Last updated: September 2026</p>
             </div>
         </section>
 
