@@ -515,6 +515,40 @@
             }
         }
     </style>
+<!-- Meta pixel. Pairs with the Conversions API on the backend: the browser and
+     the server send the SAME Lead event carrying the SAME event id, and Meta
+     keeps one. Ad blockers stop this half on roughly a fifth to a half of mobile
+     visits, which is the entire reason the server half exists. -->
+<script>
+!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;
+n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;
+t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,
+document,'script','https://connect.facebook.net/en_US/fbevents.js');
+fbq('init', '1076117554809513');
+fbq('track', 'PageView');
+
+// Meta's own cookies, read as-is. _fbp identifies this browser; _fbc identifies
+// the ad click that brought the visitor here — it is what lets Meta attribute a
+// signup to a specific campaign. Both must reach the server UNHASHED.
+function twGetCookie(name) {
+  var parts = document.cookie.split('; ');
+  for (var i = 0; i < parts.length; i++) {
+    if (parts[i].indexOf(name + '=') === 0) return parts[i].substring(name.length + 1);
+  }
+  return '';
+}
+
+// ONE id per signup, shared by the pixel event and the server event so Meta
+// counts them as a single conversion. Without it every lead is counted twice
+// and reported cost-per-lead reads half of what it really is.
+function twNewEventId() {
+  if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
+  return 'ev-' + Date.now() + '-' + Math.random().toString(16).slice(2);
+}
+</script>
+<noscript><img height="1" width="1" style="display:none"
+src="https://www.facebook.com/tr?id=1076117554809513&ev=PageView&noscript=1" alt=""/></noscript>
 </head>
 
 <body class="bg-townwize-bgLight font-['Inter'] text-townwize-primary antialiased">
@@ -1485,6 +1519,9 @@
                         const isBTK = fd.get('is_btk') === 'Yes';
 
                         const rawPrecinct = fd.get('precinct');
+                        // Generated per submission, not per page load: two signups
+                        // from one open tab must not share a conversion id.
+                        const twEventId = twNewEventId();
                         const payload = {
                             email: fd.get('email')?.trim(),
                             phone: fd.get('phone')?.trim(),
@@ -1494,7 +1531,10 @@
                             interest,
                             type: interest === 'Towner' ? 'passenger' : 'driver',
                             is_btk: isBTK ? 'Yes' : 'No',
-                            lang: 'en'
+                            lang: 'en',
+                            eventId: twEventId,
+                            fbc: twGetCookie('_fbc'),
+                            fbp: twGetCookie('_fbp')
                         };
 
                         let err = '';
@@ -1522,6 +1562,18 @@
                             const result = await res.json();
 
                             if (result.success) {
+                                // Exactly the condition the server uses. A returning
+                                // visitor re-submitting is not a new lead; if the two
+                                // halves disagree on that, the numbers drift apart.
+                                //
+                                // 'Lead' and eventID are both case-sensitive and both
+                                // must match the server, or deduplication silently
+                                // fails and every signup counts twice.
+                                if (!result.alreadyRegistered && window.fbq) {
+                                    fbq('track', 'Lead',
+                                        { content_category: payload.type },
+                                        { eventID: twEventId });
+                                }
                                 statusBox.className = 'status-msg is-success';
                                 statusBox.innerHTML = result.message;
                                 setTimeout(() => {
