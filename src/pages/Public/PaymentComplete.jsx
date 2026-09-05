@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useParams, useSearchParams } from "react-router-dom";
 
 /**
  * The page Safepay's checkout returns to. PUBLIC and unguarded, deliberately.
@@ -28,9 +28,23 @@ import { useSearchParams } from "react-router-dom";
  */
 const PaymentComplete = () => {
     const [params] = useSearchParams();
-    const cancelled = params.get("state") === "cancelled";
-    // Passed by the backend on both return URLs. Absent only for an old link.
-    const rideId = params.get("ride");
+    const path = useParams();
+
+    // PATH FIRST, query second.
+    //
+    // Safepay appends its own return parameters with "?" without checking
+    // whether the URL already has a query string, so a redirect_url of
+    // /payment-complete?ride=<id> came back as
+    // /payment-complete?ride=<id>?order_id=... — two question marks, and the
+    // ride id parsed with their parameters glued to the end of it. The backend
+    // now sends the ride as a path segment so our side carries no query at all.
+    //
+    // The query fallback stays for links already in flight, and strips anything
+    // Safepay glued on rather than trusting the raw value.
+    const rideId = path.rideId || (params.get("ride") || "").split("?")[0] || null;
+
+    const cancelled =
+        path.state === "cancelled" || params.get("state") === "cancelled";
 
     // Revealed only if we are still on screen after the close attempt, which
     // means closing was refused — i.e. this is a normal browser tab.

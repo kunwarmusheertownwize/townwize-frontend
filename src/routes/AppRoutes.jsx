@@ -112,7 +112,16 @@ const AppRoutes = () => {
         {/* Where Safepay's checkout returns to. MUST stay public — the payment
             tab has no session, so a guarded route sends a passenger who just
             paid to the login screen. */}
+        {/* Safepay appends its own return params with "?" WITHOUT checking for an
+            existing query string, so a redirect_url of
+            /payment-complete?ride=<id> comes back as
+            /payment-complete?ride=<id>?order_id=... — two question marks, and
+            the ride id parses with the rest glued onto it. Carrying the ride in
+            the PATH leaves our URL query-free, so their "?" appends cleanly.
+            The bare path stays for links already in flight. */}
         <Route path="/payment-complete" element={<PaymentComplete />} />
+        <Route path="/payment-complete/:rideId" element={<PaymentComplete />} />
+        <Route path="/payment-complete/:rideId/:state" element={<PaymentComplete />} />
         <Route path="/careers"    element={<Careers />} />
         <Route path="/community"  element={<Community />} />
 
