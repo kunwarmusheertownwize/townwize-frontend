@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 
 /**
@@ -10,22 +10,42 @@ import { useSearchParams } from "react-router-dom";
  * login screen — a passenger who had just paid was asked to sign in again, on
  * what looked like a different website.
  *
- * It is deliberately inert: no API calls, no app chrome, no navigation. The app
- * itself is polling underneath and is the only thing that decides whether a
- * payment succeeded. This page exists so the tab has somewhere harmless to land.
+ * It makes no API calls. The app is polling underneath and is the only thing
+ * that decides whether a payment succeeded.
+ *
+ * WHAT CHANGED, AND WHY:
+ *
+ * The page used to be entirely inert — no navigation at all — which is correct
+ * for a Custom Tab that the app closes itself. On the web it stranded people.
+ * `window.close()` only works on a tab OPENED BY SCRIPT; here the browser
+ * navigated the SAME tab to Safepay and back, so the close is silently refused
+ * and the passenger is told to close a window that will not close. There was no
+ * link anywhere, because there was no app underneath any more — the SPA had
+ * been replaced by this page.
+ *
+ * So: still try to close (Custom Tab behaviour is unchanged), but when that
+ * does not happen, show a real way back.
  */
 const PaymentComplete = () => {
     const [params] = useSearchParams();
     const cancelled = params.get("state") === "cancelled";
+    // Passed by the backend on both return URLs. Absent only for an old link.
+    const rideId = params.get("ride");
+
+    // Revealed only if we are still on screen after the close attempt, which
+    // means closing was refused — i.e. this is a normal browser tab.
+    const [stranded, setStranded] = useState(false);
 
     useEffect(() => {
-        // Works when the tab was opened by script (desktop web). A Custom Tab
-        // ignores it, which is fine — the app closes that one itself.
-        const t = setTimeout(() => {
+        const closeAttempt = setTimeout(() => {
             try { window.close(); } catch { /* not permitted here */ }
-        }, 1500);
-        return () => clearTimeout(t);
+        }, 1200);
+        // If the close worked, nothing below ever renders.
+        const reveal = setTimeout(() => setStranded(true), 1800);
+        return () => { clearTimeout(closeAttempt); clearTimeout(reveal); };
     }, []);
+
+    const backHref = rideId ? `/passenger/trip-receipt/${rideId}` : "/passenger/trips";
 
     // Plain white with near-black text, and the colour forced on <html>/<body>.
     // The first version used brand green with 75%-opacity white text, which came
@@ -52,9 +72,33 @@ const PaymentComplete = () => {
                     </h1>
                     <p style={{ fontSize: 16, lineHeight: 1.65, color: "#333333", margin: 0 }}>
                         {cancelled
-                            ? "You have not been charged. Close this window to return to Townwize — your ride is still booked."
-                            : "Thank you. You can close this window and return to Townwize."}
+                            // NEVER "your ride is still booked". Card is collected at the
+                            // END of a trip, so anyone seeing this has already travelled
+                            // and still owes the fare. The old wording implied the
+                            // opposite of the truth at the exact moment money was due.
+                            ? "You have not been charged, and your fare is still due."
+                            : "Thank you. Your fare has been paid."}
                     </p>
+
+                    {stranded && (
+                        <div style={{ marginTop: 26 }}>
+                            <a
+                                href={backHref}
+                                style={{
+                                    display: "inline-block", padding: "13px 26px", borderRadius: 12,
+                                    background: "#03311C", color: "#ffffff", fontSize: 16,
+                                    fontWeight: 700, textDecoration: "none",
+                                }}
+                            >
+                                {cancelled ? "Return to your trip" : "Back to Townwize"}
+                            </a>
+                            {cancelled && (
+                                <p style={{ fontSize: 14, lineHeight: 1.6, color: "#666666", margin: "14px 0 0" }}>
+                                    You can pay from your trip receipt.
+                                </p>
+                            )}
+                        </div>
+                    )}
                 </div>
             </div>
         </>
