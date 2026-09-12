@@ -23,6 +23,14 @@ const GROUP_OPTIONS = [
   { value: "precinct", label: "Group by Precinct" },
 ];
 
+// Mirrors the server's tidy-up so a row typed as "12" reads "Precinct 12" in the
+// table too. Display only — the stored value is never touched.
+const showPrecinct = (value) => {
+  const raw = String(value ?? "").trim();
+  const m = raw.match(/^(?:precinct\s*)?(\d{1,2})\s*[-–\s]?\s*([abAB])?$/i);
+  return m ? `Precinct ${m[1]}${m[2] ? `-${m[2].toUpperCase()}` : ""}` : raw;
+};
+
 const toPKT = (d) =>
   d ? new Date(d).toLocaleString("en-US", {
     timeZone: "Asia/Karachi", year: "numeric", month: "short",
@@ -199,6 +207,38 @@ function DailyChart({ data }) {
       <div className="flex justify-between mt-1">
         <span className="text-[10px] text-gray-400">{recent[0]?.date.slice(5)}</span>
         <span className="text-[10px] text-gray-400">{recent[recent.length - 1]?.date.slice(5)}</span>
+      </div>
+    </div>
+  );
+}
+
+// Probable duplicate people. Read-only on purpose: which address is the real
+// one is a human call, and merging automatically loses the other row.
+function DuplicatesCard({ groups, onSearch }) {
+  if (!groups || groups.length === 0) return null;
+  return (
+    <div className="rounded-xl border border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/20 p-4">
+      <p className="text-xs font-semibold text-amber-800 dark:text-amber-200 mb-2">
+        ⚠ {groups.length} possible duplicate {groups.length === 1 ? "person" : "people"} — same phone or same
+        name at another domain. Each one takes a second founding spot and would get a second invitation.
+      </p>
+      <div className="space-y-1.5">
+        {groups.slice(0, 6).map((g, i) => (
+          <div key={i} className="flex flex-wrap items-center gap-2 text-xs">
+            <span className="rounded bg-amber-200/70 dark:bg-amber-800/50 px-1.5 py-0.5 font-medium text-amber-900 dark:text-amber-100">
+              {g.reason === "phone" ? "same phone" : "same name"}
+            </span>
+            {g.entries.map((e) => (
+              <button key={e._id} type="button" onClick={() => onSearch(e.email)}
+                className="text-amber-900 dark:text-amber-200 underline decoration-dotted">
+                {e.email}
+              </button>
+            ))}
+          </div>
+        ))}
+        {groups.length > 6 && (
+          <p className="text-xs text-amber-700 dark:text-amber-300">…and {groups.length - 6} more</p>
+        )}
       </div>
     </div>
   );
@@ -388,6 +428,8 @@ export default function WaitlistPage() {
   const [statusFilter,   setStatusFilter]   = useState("all");
   const [suspiciousOnly, setSuspiciousOnly] = useState(false);
   const [q,              setQ]              = useState("");
+  const [dateFrom,       setDateFrom]       = useState("");
+  const [dateTo,         setDateTo]         = useState("");
   const [page,           setPage]           = useState(1);
   const [meta,           setMeta]           = useState({ total: 0, totalPages: 1 });
   const [sortBy,         setSortBy]         = useState("createdAt");
@@ -399,12 +441,18 @@ export default function WaitlistPage() {
   const [inviteType,     setInviteType]     = useState("passenger");
   const [inviting,       setInviting]       = useState(false);
   const [inviteResult,   setInviteResult]   = useState(null);
+  const [selectedIds,    setSelectedIds]    = useState(() => new Set());
+  const [invitingSel,    setInvitingSel]    = useState(false);
 
   const load = async () => {
+    // Selection is per view. Carrying it across a filter or page change means
+    // inviting rows you can no longer see, which is exactly how a wave goes to
+    // the wrong people.
+    setSelectedIds(new Set());
     setLoading(true); setError("");
     try {
       const limitVal = groupBy !== "none" ? 1000 : 50;
-      const params = { type: typeFilter, status: statusFilter, q, page, limit: limitVal, sortBy, sortOrder };
+      const params = { type: typeFilter, status: statusFilter, q, from: dateFrom, to: dateTo, page, limit: limitVal, sortBy, sortOrder };
       if (suspiciousOnly) params.suspicious = "true";
       const [listRes, statsRes] = await Promise.all([fetchWaitlist(params), fetchWaitlistStats()]);
       setItems(listRes?.data?.items || []);
@@ -414,7 +462,7 @@ export default function WaitlistPage() {
     finally { setLoading(false); }
   };
 
-  useEffect(() => { load(); }, [typeFilter, statusFilter, suspiciousOnly, q, page, sortBy, sortOrder, groupBy]);
+  useEffect(() => { load(); }, [typeFilter, statusFilter, suspiciousOnly, q, dateFrom, dateTo, page, sortBy, sortOrder, groupBy]);
 
   const handleSort = (col) => {
     if (sortBy === col) setSortOrder((o) => (o === "desc" ? "asc" : "desc"));
@@ -425,7 +473,7 @@ export default function WaitlistPage() {
   const handleExport = async (format = "csv") => {
     setExporting(true);
     try {
-      const params = { type: typeFilter, status: statusFilter, q, format };
+      const params = { type: typeFilter, status: statusFilter, q, from: dateFrom, to: dateTo, format };
       if (suspiciousOnly) params.suspicious = "true";
       await downloadWaitlistExport(params);
     } catch (e) { alert("Export failed: " + e.message); }
@@ -442,6 +490,11 @@ export default function WaitlistPage() {
       const res = await fetchWaitlist({
         type: inviteType,
         status: "pending",
+        // The wave honours the signup-date range when one is set, so "invite the
+        // July pool" is a range plus a count. Every other filter above the table
+        // is deliberately ignored — a wave is queue order, not a search result.
+        from: dateFrom,
+        to: dateTo,
         sortBy: "createdAt",
         sortOrder: "asc",   // longest-waiting first
         limit: inviteCount,
@@ -452,8 +505,15 @@ export default function WaitlistPage() {
         setInviteResult({ message: "No pending entries match that selection." });
         return;
       }
+      // Show WHO, not just how many. The table defaults to newest first while
+      // the wave takes the longest waiting, so the rows on screen are not the
+      // rows about to be emailed — and that is only obvious once you see them.
+      const picked  = res?.data?.items || [];
+      const preview = picked.slice(0, 5).map((i) => `  ${i.email}  (${toPKT(i.createdAt).split(",")[0]})`).join("\n");
       if (!window.confirm(
-        `Send ${ids.length} invitation email${ids.length === 1 ? "" : "s"}? ` +
+        `Send ${ids.length} invitation email${ids.length === 1 ? "" : "s"} to the longest-waiting ` +
+        `${inviteType === "all" ? "entries" : inviteType === "driver" ? "Wizers" : "Towners"}?\n\n` +
+        `${preview}${picked.length > 5 ? `\n  …and ${picked.length - 5} more` : ""}\n\n` +
         `Each recipient will be able to register immediately.`
       )) return;
 
@@ -464,6 +524,53 @@ export default function WaitlistPage() {
       setInviteResult({ message: `Could not send invitations: ${e.message}`, failed: [] });
     } finally {
       setInviting(false);
+    }
+  };
+
+  // ── Hand-picked invitations ─────────────────────────────────────────────────
+  // The wave card above invites in queue order; this is the other half. Only
+  // pending rows can be picked: the endpoint ignores any other status, and a
+  // checkbox that silently does nothing is worse than no checkbox at all.
+  const selectablePageIds = items.filter((i) => i.status === "pending").map((i) => i._id);
+  const allPageSelected   = selectablePageIds.length > 0 && selectablePageIds.every((id) => selectedIds.has(id));
+  const somePageSelected  = selectablePageIds.some((id) => selectedIds.has(id));
+
+  const toggleOne = (id) =>
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+
+  const toggleAllOnPage = () =>
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      selectablePageIds.forEach((id) => (allPageSelected ? next.delete(id) : next.add(id)));
+      return next;
+    });
+
+  const handleInviteSelected = async () => {
+    const ids = [...selectedIds];
+    if (!ids.length) return;
+    const rows  = items.filter((i) => selectedIds.has(i._id));
+    const names = rows.slice(0, 5).map((r) => r.email).join("\n");
+    if (!window.confirm(
+      `Send ${ids.length} invitation email${ids.length === 1 ? "" : "s"}?\n\n${names}` +
+      `${rows.length > 5 ? `\n…and ${rows.length - 5} more` : ""}\n\n` +
+      `Each recipient will be able to register immediately.`
+    )) return;
+
+    setInvitingSel(true);
+    setInviteResult(null);
+    try {
+      const out = await inviteWaitlistBatch(ids);
+      setInviteResult({ message: out?.message || "Invitations sent.", failed: out?.data?.failed || [] });
+      await load();
+    } catch (e) {
+      setInviteResult({ message: `Could not send invitations: ${e.message}`, failed: [] });
+    } finally {
+      setInvitingSel(false);
     }
   };
 
@@ -524,6 +631,10 @@ export default function WaitlistPage() {
         </div>
       )}
 
+      {stats?.duplicates?.length > 0 && (
+        <DuplicatesCard groups={stats.duplicates} onSearch={(email) => { setQ(email); setPage(1); }} />
+      )}
+
       {/* ── Filters ── */}
       <div className="flex flex-wrap gap-2">
         <select value={typeFilter} onChange={(e) => { setTypeFilter(e.target.value); setPage(1); }}
@@ -547,6 +658,26 @@ export default function WaitlistPage() {
         <input value={q} onChange={(e) => { setQ(e.target.value); setPage(1); }}
           placeholder="Search email / name / precinct…"
           className="rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-white px-3 py-2 text-sm w-56" />
+
+        {/* Signed-up range. Both ends are inclusive and read in Pakistan time,
+            matching the dates printed in the table. */}
+        <div className="flex items-center gap-1.5 rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-1.5">
+          <span className="text-xs font-medium text-gray-500 dark:text-gray-400">Signed up</span>
+          <input type="date" value={dateFrom} max={dateTo || undefined}
+            onChange={(e) => { setDateFrom(e.target.value); setPage(1); }}
+            aria-label="Signed up from"
+            className="rounded border border-gray-200 dark:border-gray-600 dark:bg-gray-800 dark:text-white px-2 py-1 text-xs" />
+          <span className="text-xs text-gray-400">→</span>
+          <input type="date" value={dateTo} min={dateFrom || undefined}
+            onChange={(e) => { setDateTo(e.target.value); setPage(1); }}
+            aria-label="Signed up to"
+            className="rounded border border-gray-200 dark:border-gray-600 dark:bg-gray-800 dark:text-white px-2 py-1 text-xs" />
+          {(dateFrom || dateTo) && (
+            <button type="button"
+              onClick={() => { setDateFrom(""); setDateTo(""); setPage(1); }}
+              className="text-xs text-gray-500 dark:text-gray-400 underline">clear</button>
+          )}
+        </div>
         <label className="flex items-center gap-2 text-sm text-orange-700 dark:text-orange-300 cursor-pointer rounded-lg border border-orange-300 dark:border-orange-700 px-3 py-2 select-none">
           <input type="checkbox" checked={suspiciousOnly} onChange={(e) => { setSuspiciousOnly(e.target.checked); setPage(1); }} />
           ⚠ Suspicious only
@@ -587,8 +718,10 @@ export default function WaitlistPage() {
             {inviting ? "Sending…" : "Send invitations"}
           </button>
           <p className="text-xs text-gray-500 dark:text-gray-400 max-w-md">
-            Takes the longest-waiting pending entries first. Each one gets an email with a
-            registration link; only those that send successfully are marked Invited.
+            Takes the longest-waiting pending entries first{(dateFrom || dateTo) ? " within the signup dates set above" : ""}.
+            Each one gets an email with a registration link; only those that send
+            successfully are marked Invited. To choose people yourself instead, tick
+            their rows in the table below.
           </p>
         </div>
         {inviteResult && (
@@ -611,11 +744,51 @@ export default function WaitlistPage() {
 
       {error && <p className="text-sm text-red-600">{error}</p>}
 
+      {/* ── Selected rows ──
+          Shown only when something is ticked. The 50 limit is the server's, so
+          the button disables rather than letting the request fail after sending
+          half the emails. */}
+      {selectedIds.size > 0 && (
+        <div className="flex flex-wrap items-center gap-3 rounded-xl border border-teal-300 dark:border-teal-700 bg-teal-50 dark:bg-teal-900/20 px-4 py-3">
+          <span className="text-sm font-semibold text-gray-800 dark:text-gray-100">
+            {selectedIds.size} selected
+          </span>
+          <button type="button" onClick={handleInviteSelected}
+            disabled={invitingSel || selectedIds.size > 50}
+            className="rounded-lg bg-townwize-primary px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">
+            {invitingSel ? "Sending…" : `Invite selected (${selectedIds.size})`}
+          </button>
+          <button type="button" onClick={() => setSelectedIds(new Set())}
+            className="text-sm text-gray-600 dark:text-gray-300 underline">Clear</button>
+          {selectedIds.size > 50 && (
+            <span className="text-xs font-medium text-amber-700 dark:text-amber-300">
+              Up to 50 at a time — untick {selectedIds.size - 50}.
+            </span>
+          )}
+          <span className="text-xs text-gray-500 dark:text-gray-400">
+            Only Pending rows can be picked. Changing a filter or page clears the selection.
+          </span>
+        </div>
+      )}
+
       {/* ── Table ── */}
       <div className="overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
         <table className="w-full text-sm">
           <thead className="bg-gray-50 dark:bg-gray-700">
             <tr>
+              <th className="px-4 py-3 w-10">
+                <input
+                  type="checkbox"
+                  aria-label="Select all pending entries on this page"
+                  className="cursor-pointer"
+                  checked={allPageSelected}
+                  // No indeterminate attribute exists in JSX — it is a DOM
+                  // property only, so it has to be set on the node itself.
+                  ref={(el) => { if (el) el.indeterminate = !allPageSelected && somePageSelected; }}
+                  onChange={toggleAllOnPage}
+                  disabled={selectablePageIds.length === 0}
+                />
+              </th>
               <SortTh col="email"     label="Email"           sortBy={sortBy} sortOrder={sortOrder} onSort={handleSort} />
               <SortTh col="name"      label="Name"            sortBy={sortBy} sortOrder={sortOrder} onSort={handleSort} />
               <SortTh col="type"      label="Type"            sortBy={sortBy} sortOrder={sortOrder} onSort={handleSort} />
@@ -627,15 +800,15 @@ export default function WaitlistPage() {
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={7} className="px-4 py-10 text-center text-gray-500">Loading…</td></tr>
+              <tr><td colSpan={8} className="px-4 py-10 text-center text-gray-500">Loading…</td></tr>
             ) : items.length === 0 ? (
-              <tr><td colSpan={7} className="p-8">
+              <tr><td colSpan={8} className="p-8">
                 <EmptyState title="No entries found" description="No waitlist signups match these filters." />
               </td></tr>
             ) : groups.map((group) => (
               <>{group.label && (
                 <tr key={`grp-${group.key}`} className="bg-gray-100 dark:bg-gray-700/60">
-                  <td colSpan={7} className="px-4 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                  <td colSpan={8} className="px-4 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
                     {group.label} <span className="font-normal text-gray-400">({group.items.length})</span>
                   </td>
                 </tr>
@@ -645,12 +818,25 @@ export default function WaitlistPage() {
                   className={`border-t border-gray-100 dark:border-gray-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors ${
                     item.suspicious ? "bg-orange-50/40 dark:bg-orange-900/10" : ""
                   }`}>
+                  {/* stopPropagation: the row opens the detail panel, and ticking
+                      a box must not also slide a panel over the table. */}
+                  <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                    <input
+                      type="checkbox"
+                      aria-label={`Select ${item.email}`}
+                      className="cursor-pointer disabled:cursor-not-allowed"
+                      checked={selectedIds.has(item._id)}
+                      onChange={() => toggleOne(item._id)}
+                      disabled={item.status !== "pending"}
+                      title={item.status === "pending" ? "Select for invitation" : `Already ${item.status}`}
+                    />
+                  </td>
                   <td className="px-4 py-3 font-medium dark:text-white max-w-[180px] truncate">{item.email}</td>
                   <td className="px-4 py-3 text-gray-600 dark:text-gray-300">{item.name || "—"}</td>
                   <td className="px-4 py-3">
                     <Badge cls={TYPE_COLORS[item.type]} label={TYPE_LABELS[item.type] || item.type} />
                   </td>
-                  <td className="px-4 py-3 text-gray-600 dark:text-gray-300">{item.precinct || "—"}</td>
+                  <td className="px-4 py-3 text-gray-600 dark:text-gray-300">{showPrecinct(item.precinct) || "—"}</td>
                   <td className="px-4 py-3">
                     <Badge cls={STATUS_META[item.status]?.cls || ""} label={item.status} />
                   </td>
