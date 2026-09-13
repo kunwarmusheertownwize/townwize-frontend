@@ -42,6 +42,10 @@ export default function Profile() {
   const [coupons, setCoupons] = useState([]);
   const [guestInvites, setGuestInvites] = useState([]);
   const [guestSlotsRemaining, setGuestSlotsRemaining] = useState(6);
+  // Guest invites sit behind a flag: a guest code bypasses the waitlist, so it
+  // stays off until Wizer supply can absorb extra riders. Assume OFF until the
+  // server says otherwise, so the button never appears and then fails.
+  const [guestInvitesEnabled, setGuestInvitesEnabled] = useState(false);
   const [generatingInvite, setGeneratingInvite] = useState(false);
 
   const [emergencyContacts, setEmergencyContacts] = useState([]);
@@ -62,6 +66,7 @@ export default function Profile() {
         const d = invitesRes.data.data;
         setGuestInvites(d.invites || []);
         setGuestSlotsRemaining(d.slotsRemaining ?? 6);
+        setGuestInvitesEnabled(Boolean(d.enabled));
       }
     } catch {
       // non-critical — silently ignore
@@ -350,7 +355,7 @@ export default function Profile() {
                               {6 - guestSlotsRemaining}/6
                             </span>
                           </div>
-                          {guestSlotsRemaining > 0 && (
+                          {guestInvitesEnabled && guestSlotsRemaining > 0 && (
                             <button
                               onClick={handleGenerateInvite}
                               disabled={generatingInvite}
@@ -364,6 +369,11 @@ export default function Profile() {
                         <p className="text-[11px] text-gray-500 dark:text-gray-400 mb-2.5 leading-relaxed">
                           Non-BTK residents — <span className="font-semibold text-gray-700 dark:text-gray-200">Karachi ↔ BTK only</span>. No rewards — you vouch for them.
                         </p>
+                        {!guestInvitesEnabled && (
+                          <p className="text-[11px] text-amber-700 dark:text-amber-400 mb-2.5 leading-relaxed">
+                            Guest invites are paused while we open Early Access area by area. We will let you know when you can invite friends.
+                          </p>
+                        )}
                         {guestInvites.length === 0 ? (
                           <div className="p-3 rounded-xl bg-amber-50/60 dark:bg-amber-900/10 border border-dashed border-amber-200 dark:border-amber-800/40">
                             <p className="text-[11px] text-gray-400 dark:text-gray-500">No guest invites yet — up to 6 total.</p>
