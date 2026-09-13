@@ -12,6 +12,7 @@ import Refunds from "../pages/Public/Refunds";
 import Pricing from "../pages/Public/Pricing";
 import PaymentReturn from "../pages/passenger/Payment/PaymentReturn";
 import PaymentComplete from "../pages/Public/PaymentComplete";
+import ConfirmPrecinct from "../pages/Public/ConfirmPrecinct";
 import Careers from "../pages/Public/Careers";
 import Community from "../pages/Public/Community";
 
@@ -122,6 +123,11 @@ const AppRoutes = () => {
         <Route path="/payment-complete" element={<PaymentComplete />} />
         <Route path="/payment-complete/:rideId" element={<PaymentComplete />} />
         <Route path="/payment-complete/:rideId/:state" element={<PaymentComplete />} />
+
+        {/* Signed link from the waitlist "confirm your precinct" email. Public on
+            purpose: the signature in the link is the authorisation, and asking
+            someone to log in to fix one field is why the July email failed. */}
+        <Route path="/confirm-precinct" element={<ConfirmPrecinct />} />
         <Route path="/careers"    element={<Careers />} />
         <Route path="/community"  element={<Community />} />
 
