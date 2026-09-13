@@ -81,6 +81,12 @@ export const saveDraft = async (role, stepKey, values, fileFields, phoneVerifica
   }
   delete text.selfieAngles;
 
+  // Never persist the password. localStorage is plain text that outlives the
+  // tab, is readable by any script on the origin, and on a shared or family
+  // phone hands the next person to open registration someone else's password
+  // pre-filled. Register.jsx asks for it again when a draft is resumed.
+  delete text.password;
+
   try {
     localStorage.setItem(
       META_KEY,
@@ -103,6 +109,14 @@ export const loadDraft = async () => {
     meta = JSON.parse(localStorage.getItem(META_KEY) || "null");
   } catch { return null; }
   if (!meta) return null;
+
+  // Drafts saved before passwords were excluded still hold one. Strip it and
+  // write the draft back, so the stored copy is cleaned the first time it is
+  // read rather than lingering until the registration finishes.
+  if (meta.data && "password" in meta.data) {
+    delete meta.data.password;
+    try { localStorage.setItem(META_KEY, JSON.stringify(meta)); } catch { /* ignore */ }
+  }
 
   const files = {};
   try {

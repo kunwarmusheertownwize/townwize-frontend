@@ -14,12 +14,16 @@ import { GiSteeringWheel } from "react-icons/gi";
  */
 
 const REQUIREMENTS = {
+  // Mirrors WIZER_STEPS in Register.jsx and the Wizer invite email in
+  // mailer.js. Change all three together — they drifted apart once already, and
+  // the email was telling people to bring bank details registration never asks for.
   driver: [
     "Your CNIC — both sides",
     "Your driving licence — both sides",
+    "A quick live face check — use your phone's camera",
     "Proof of BTK residency and your BTK ID",
-    "Vehicle registration document",
-    "Your vehicle, for 7 condition photos",
+    "Vehicle registration document, and your M-Tag if you have one",
+    "Your vehicle, for 7 photos — outside, inside and the odometer",
   ],
   passenger: [
     "Proof of BTK residency",
@@ -52,7 +56,9 @@ export default function RegistrationIntro({ role, onStart, onChangeRole }) {
             : "Book verified rides with Wizers from your own community."}
         </p>
         <span className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-600 dark:bg-gray-800 dark:text-gray-300">
-          ⏱ About {isDriver ? "10" : "3"} minutes
+          {/* No time estimate until real completion times are measured: a
+              guessed "10 minutes" that takes someone 25 reads as failing. */}
+          💾 Progress saved as you go
         </span>
       </header>
 
@@ -95,13 +101,16 @@ export default function RegistrationIntro({ role, onStart, onChangeRole }) {
         >
           {isDriver ? "Let's get you on the road →" : "Let's get you set up →"}
         </button>
-        <button
-          type="button"
-          onClick={onChangeRole}
-          className="w-full text-xs font-medium text-gray-400 underline-offset-2 transition-colors hover:text-townwize-primary hover:underline"
-        >
-          ← Choose a different role
-        </button>
+        {/* Hidden when Register passes no handler — an invitation is for one role. */}
+        {onChangeRole && (
+          <button
+            type="button"
+            onClick={onChangeRole}
+            className="w-full text-xs font-medium text-gray-400 underline-offset-2 transition-colors hover:text-townwize-primary hover:underline"
+          >
+            ← Choose a different role
+          </button>
+        )}
       </div>
     </main>
   );

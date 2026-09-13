@@ -314,6 +314,10 @@ export default function Register() {
   const [showResidency, setShowResidency] = useState(true);
   const [showIdentity, setShowIdentity] = useState(true);
   const draftRestored = useRef(false);
+  // Where a resumed draft really was. The password is never saved, so a resumed
+  // registration has to pass the account step again; once it does, this sends
+  // the applicant straight back here instead of walking every finished step.
+  const resumeStepKey = useRef(null);
 
   const isGuestTowner = referralCodeType === "GUEST_INVITE";
 
@@ -351,6 +355,23 @@ export default function Register() {
     (async () => {
       const draft = await loadDraft();
       if (!draft || cancelled) return;
+
+      // An invitation beats a draft that belongs to someone else. "A restored
+      // draft wins" is right for resuming your own registration, but a draft
+      // for a different address or role — an earlier attempt on this browser,
+      // or another person on a shared phone — used to overwrite the invited
+      // address after it had been filled in, and the gate then refused the
+      // invited person. A draft for the same address and role still resumes.
+      if (invite.isInvited && invite.email) {
+        const draftEmail = String(draft.data?.email || "").trim().toLowerCase();
+        const otherAddress = draftEmail && draftEmail !== invite.email;
+        const otherRole = invite.role && draft.role && draft.role !== invite.role;
+        if (otherAddress || otherRole) {
+          clearDraft();
+          return;
+        }
+      }
+
       draftRestored.current = true;
       // Someone resuming mid-registration has already seen the briefing.
       setIntroDone(true);
@@ -383,6 +404,21 @@ export default function Register() {
         toast.info("Your phone verification expired — please verify again to continue.", { autoClose: 6000 });
       }
 
+      // Passwords are not saved in drafts, and the final submit requires one, so
+      // a resumed registration past the account step would otherwise reach
+      // "Submit Application" unable to submit. Send them to the account step
+      // once, then back to where they were (handleNext reads resumeStepKey).
+      // Only when the phone token is still good: an expired token already sent
+      // them to the start, and jumping past the phone step would dead-end there.
+      if (idx > 0 && !draft.data?.password && !google) {
+        resumeStepKey.current = stepList[idx]?.key || null;
+        idx = 0;
+        toast.info(
+          "For your security we don't save passwords. Please re-enter yours — everything else is saved.",
+          { autoClose: 7000 }
+        );
+      }
+
       setCurrentStep(idx);
 
       // Count real uploads only — the store also holds the liveness frames,
@@ -399,7 +435,7 @@ export default function Register() {
       }
     })();
     return () => { cancelled = true; };
-  }, [mode, methods]);
+  }, [mode, methods, invite.isInvited, invite.email, invite.role, google]);
 
   // ── prefill the invited address ──
   // Only when the field is still empty, so a restored draft always wins: someone
@@ -500,6 +536,18 @@ export default function Register() {
     // upload before being told an address they typed at step two is in use.
     if (key === "account") {
       const email = methods.getValues("email");
+
+      // Invited as one address, about to register as another. The server would
+      // answer "join the waitlist at townwize.com" — true for the address typed,
+      // but it tells someone holding a valid invitation to go and queue. Say
+      // what is actually wrong, and do not spend the round trip.
+      if (invite.isInvited && invite.email && String(email || "").trim().toLowerCase() !== invite.email) {
+        const message = `You were invited as ${invite.email}. Please register with that address.`;
+        methods.setError("email", { type: "manual", message });
+        toast.error(message, { autoClose: 9000 });
+        return;
+      }
+
       if (email) {
         setCheckingEmail(true);
         try {
@@ -551,14 +599,22 @@ export default function Register() {
       }
     }
 
-    const nextStep = currentStep + 1;
+    let nextStep = currentStep + 1;
+    // A resumed draft re-entered its password on the account step; return it
+    // to the step it had reached. Every step in between was completed before
+    // that draft was saved, and its files were restored with it.
+    if (key === "account" && resumeStepKey.current) {
+      const resumeIdx = steps.findIndex((s) => s.key === resumeStepKey.current);
+      if (resumeIdx > nextStep) nextStep = resumeIdx;
+      resumeStepKey.current = null;
+    }
     setCurrentStep(nextStep);
     if (mode !== "referral") {
       saveDraft(selectedRole, steps[nextStep]?.key || "review", methods.getValues(),
         FILE_FIELDS, phoneVerificationToken);
     }
     window.scrollTo({ top: 0, behavior: "smooth" });
-  }, [currentStep, currentStepDef, methods, mode, phoneVerificationToken, selectedRole, steps, navigate, location.state]);
+  }, [currentStep, currentStepDef, methods, mode, phoneVerificationToken, selectedRole, steps, navigate, location.state, invite]);
 
   // Jump straight back to an already-completed step. Backwards only: a later
   // step may depend on fields not yet filled, and skipping forward would bypass
@@ -582,6 +638,20 @@ export default function Register() {
     }
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [currentStep, mode, methods, selectedRole, steps, phoneVerificationToken]);
+
+  // A required field is empty at submit. handleSubmit used to be called with no
+  // invalid handler, so "Submit Application" simply did nothing — no message,
+  // no way forward. Name what is missing and open the step that holds it.
+  const onInvalidSubmit = (errors) => {
+    const idx = steps.findIndex((s) => s.fields.some((f) => errors[f]));
+    if (idx >= 0) {
+      setCurrentStep(idx);
+      toast.error(describeMissing(steps[idx].fields, errors));
+    } else {
+      toast.error("Something on the form still needs attention. Please review your details.");
+    }
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   // ── submit ──
   const onSubmit = async (values) => {
@@ -744,7 +814,8 @@ export default function Register() {
         <RegistrationIntro
           role={selectedRole}
           onStart={() => setIntroDone(true)}
-          onChangeRole={() => { setSelectedRole(null); clearDraft(); }}
+          // An invitation is for one role; choosing another would fail the gate.
+          onChangeRole={invite.isInvited && invite.role ? null : () => { setSelectedRole(null); clearDraft(); }}
         />
       </div>
     );
@@ -913,6 +984,7 @@ export default function Register() {
                 errors={methods.formState.errors}
                 showPhone={false}
                 google={google}
+                invitedEmail={invite.isInvited ? invite.email : ""}
               />
             )}
 
@@ -1007,7 +1079,9 @@ export default function Register() {
                 had to scroll the whole way down to move on — or back. Standard
                 for multi-step forms and the single biggest friction fix here. */}
             <div className="sticky bottom-0 z-10 -mx-4 mt-2 flex gap-3 border-t border-gray-100 bg-white/95 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-white/80 dark:border-gray-700 dark:bg-gray-900/95 dark:supports-[backdrop-filter]:bg-gray-900/80 sm:static sm:mx-0 sm:border-0 sm:bg-transparent sm:px-0 sm:py-0 sm:pt-2 sm:backdrop-blur-none dark:sm:bg-transparent">
-              {(currentStep > 0 || (currentStep === 0 && mode === "normal" && !forcedRole)) && (
+              {/* No "Change role" for an invitation: it is for one role, and the
+                  gate checks the role together with the address. */}
+              {(currentStep > 0 || (currentStep === 0 && mode === "normal" && !forcedRole && !(invite.isInvited && invite.role))) && (
                 <button
                   type="button"
                   onClick={currentStep === 0 ? () => { setSelectedRole(null); clearDraft(); } : handleBack}
@@ -1040,7 +1114,7 @@ export default function Register() {
                 <button
                   key="submit"
                   type="button"
-                  onClick={methods.handleSubmit(onSubmit)}
+                  onClick={methods.handleSubmit(onSubmit, onInvalidSubmit)}
                   disabled={isSubmitting || !acceptedPolicies}
                   className={`flex-1 py-3 rounded-xl font-semibold text-white transition text-sm ${isSubmitting || !acceptedPolicies ? "bg-gray-400 cursor-not-allowed" : "bg-townwize-primary hover:bg-townwize-primaryDark"}`}
                 >

@@ -10,7 +10,11 @@ const passwordRules = [
   { label: "symbol",        test: (v) => /[^A-Za-z0-9]/.test(v) },
 ];
 
-export default function AccountInfo({ register, errors, showPhone = true, google = null }) {
+export default function AccountInfo({ register, errors, showPhone = true, google = null, invitedEmail = "" }) {
+  // Locked for Google (the server checks the verified address) and for an
+  // invitation (the gate matches this exact address). readOnly also keeps
+  // browser autofill from swapping in a different saved address.
+  const emailLocked = Boolean(google) || Boolean(invitedEmail);
   const { watch, setValue } = useFormContext();
   const phoneField = register("phone");
   const phoneValue = watch("phone") || "";
@@ -76,9 +80,9 @@ export default function AccountInfo({ register, errors, showPhone = true, google
         <input
           type="email"
           {...register("email")}
-          readOnly={Boolean(google)}
+          readOnly={emailLocked}
           className={`mt-1 w-full border border-gray-200 dark:border-gray-600 rounded-lg p-3 outline-none ${
-            google
+            emailLocked
               ? "bg-gray-100 dark:bg-gray-800 text-gray-500 cursor-not-allowed"
               : "bg-gray-50 dark:bg-gray-700"
           }`}
@@ -88,6 +92,9 @@ export default function AccountInfo({ register, errors, showPhone = true, google
             so editing it here could only fail at submit. */}
         {google && (
           <p className="mt-1 text-xs text-gray-400">Verified by Google — cannot be changed.</p>
+        )}
+        {!google && invitedEmail && (
+          <p className="mt-1 text-xs text-gray-400">This is the address your invitation was sent to.</p>
         )}
         {errors.email && (
           <p className="text-xs !text-townwize-error mt-1">{errors.email.message}</p>
@@ -153,8 +160,12 @@ export default function AccountInfo({ register, errors, showPhone = true, google
               enforced and looked identical for "aaaa" and a strong password.
               Per-rule colour means a failure says WHICH rule; a single red
               line cannot. */}
+          {/* Spacing is inline, not gap-x-2: on the live site the utility was
+              not applied and the rules ran together ("8+ characters• letter").
+              An inline style does not depend on which classes the CSS build kept. */}
           <p
-            className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] leading-tight"
+            className="mt-1 flex flex-wrap items-center text-[11px] leading-tight"
+            style={{ columnGap: "0.5rem", rowGap: "0.125rem" }}
             aria-live="polite"
           >
             {passwordRules.map((rule) => {
