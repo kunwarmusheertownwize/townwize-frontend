@@ -121,13 +121,21 @@ export default function ConfirmPrecinct() {
     <>
       <h1 className="text-lg font-bold text-gray-900 dark:text-white">Confirm your area</h1>
       {/* Say what actually happened. Telling someone their area "was missing"
-          when they did answer — they chose "Other / Not Listed" — reads as our
-          mistake being blamed on them. */}
+          when they did answer — they chose "Other / Not Listed", or already
+          confirmed once — reads as our mistake being blamed on them. */}
       <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">
-        {info.reason === "other"
-          ? "Your area was recorded as “Other / Not Listed” when you signed up, so we still don’t know where you live."
-          : "Your area was missing from your signup."}{" "}
-        We’re releasing Early Access precinct by precinct, so pick yours below to keep your place.
+        {info.reason === "set" ? (
+          <>
+            We have your area as <strong>{info.precinct}</strong>. Confirm it, or change it below.
+          </>
+        ) : (
+          <>
+            {info.reason === "other"
+              ? "Your area was recorded as “Other / Not Listed” when you signed up, so we still don’t know which precinct you’re in."
+              : "Your signup didn’t record an area, so we don’t know which precinct you’re in."}{" "}
+            We’re opening Early Access precinct by precinct, so pick yours below to keep your place.
+          </>
+        )}
       </p>
       <p className="mt-2 text-xs text-gray-400">Signed up as {email}{info.role ? ` · ${info.role}` : ""}</p>
 
