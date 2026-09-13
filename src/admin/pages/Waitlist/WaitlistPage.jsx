@@ -684,11 +684,40 @@ export default function WaitlistPage() {
         </label>
       </div>
 
-      {/* ── Invite a wave ──
-          Queue order, not hand-picked. Nobody selects fifty rows one at a time,
-          and doing it that way ends with half a wave sent and no record of
-          where you stopped. */}
-      <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
+      {/* ── Invite ──
+          One box, one send button. With nothing ticked it offers the queue
+          ("the next 25"); once any row is ticked it becomes "invite these" and
+          the queue controls step aside. Two live send buttons choosing people
+          two different ways is how the wrong wave goes out. The queue settings
+          are kept in state while hidden, so clearing the ticks restores them. */}
+      <div className={`rounded-xl border p-4 transition-colors ${
+        selectedIds.size > 0
+          ? "border-teal-300 dark:border-teal-700 bg-teal-50 dark:bg-teal-900/20"
+          : "border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800"
+      }`}>
+        {selectedIds.size > 0 ? (
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="text-sm font-semibold text-gray-800 dark:text-gray-100">
+              ✓ {selectedIds.size} selected
+            </span>
+            <button type="button" onClick={handleInviteSelected}
+              disabled={invitingSel || selectedIds.size > 50}
+              className="rounded-lg bg-townwize-primary px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">
+              {invitingSel ? "Sending…" : `Invite selected (${selectedIds.size})`}
+            </button>
+            <button type="button" onClick={() => setSelectedIds(new Set())}
+              className="text-sm text-gray-600 dark:text-gray-300 underline">Clear selection</button>
+            {selectedIds.size > 50 ? (
+              <span className="text-xs font-medium text-amber-700 dark:text-amber-300">
+                Up to 50 at a time — untick {selectedIds.size - 50}.
+              </span>
+            ) : (
+              <span className="text-xs text-gray-500 dark:text-gray-400">
+                Only the ticked people will be invited. Changing a filter or page clears the ticks.
+              </span>
+            )}
+          </div>
+        ) : (
         <div className="flex flex-wrap items-end gap-3">
           <div>
             <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Invite the next</label>
@@ -719,11 +748,11 @@ export default function WaitlistPage() {
           </button>
           <p className="text-xs text-gray-500 dark:text-gray-400 max-w-md">
             Takes the longest-waiting pending entries first{(dateFrom || dateTo) ? " within the signup dates set above" : ""}.
-            Each one gets an email with a registration link; only those that send
-            successfully are marked Invited. To choose people yourself instead, tick
-            their rows in the table below.
+            Only those whose email sends are marked Invited. Or tick rows in the
+            table to choose people yourself.
           </p>
         </div>
+        )}
         {inviteResult && (
           <div className={`mt-3 rounded-lg px-3 py-2 text-sm ${
             inviteResult.failed?.length
@@ -743,33 +772,6 @@ export default function WaitlistPage() {
       </div>
 
       {error && <p className="text-sm text-red-600">{error}</p>}
-
-      {/* ── Selected rows ──
-          Shown only when something is ticked. The 50 limit is the server's, so
-          the button disables rather than letting the request fail after sending
-          half the emails. */}
-      {selectedIds.size > 0 && (
-        <div className="flex flex-wrap items-center gap-3 rounded-xl border border-teal-300 dark:border-teal-700 bg-teal-50 dark:bg-teal-900/20 px-4 py-3">
-          <span className="text-sm font-semibold text-gray-800 dark:text-gray-100">
-            {selectedIds.size} selected
-          </span>
-          <button type="button" onClick={handleInviteSelected}
-            disabled={invitingSel || selectedIds.size > 50}
-            className="rounded-lg bg-townwize-primary px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">
-            {invitingSel ? "Sending…" : `Invite selected (${selectedIds.size})`}
-          </button>
-          <button type="button" onClick={() => setSelectedIds(new Set())}
-            className="text-sm text-gray-600 dark:text-gray-300 underline">Clear</button>
-          {selectedIds.size > 50 && (
-            <span className="text-xs font-medium text-amber-700 dark:text-amber-300">
-              Up to 50 at a time — untick {selectedIds.size - 50}.
-            </span>
-          )}
-          <span className="text-xs text-gray-500 dark:text-gray-400">
-            Only Pending rows can be picked. Changing a filter or page clears the selection.
-          </span>
-        </div>
-      )}
 
       {/* ── Table ── */}
       <div className="overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
