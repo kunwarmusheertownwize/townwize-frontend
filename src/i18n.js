@@ -30,7 +30,7 @@ const resources = {
             //Passenger Home Page
             //Hero Form
             heroHeadline: "From Bahria Town to anywhere — ride your way",
-            heroSubtext: "Safe Rides Townwize",
+            heroSubtext: "On the Move",
             addStop: "add a stop",
             addStopHint: "+ You can {{stop}} on the next screen - If you need to!",
             //Features Section
@@ -118,7 +118,7 @@ const resources = {
             //Passenger Home Page
             //Hero Form
             heroHeadline: "بحریہ ٹاؤن سے کہیں بھی — اپنی سواری کریں",
-            heroSubtext: "محفوظ سواری ٹاؤن وائز",
+            heroSubtext: "ہمہ وقت رواں",
             addStop: "ایک اسٹاپ شامل کریں",
             addStopHint: "+ آپ اگلی اسکرین پر {{stop}} کرسکتے ہیں - اگر ضرورت ہو!",
             //Features Section

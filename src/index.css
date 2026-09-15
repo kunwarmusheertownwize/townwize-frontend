@@ -816,7 +816,7 @@ body.trip-receipt-print-mode .passenger-layout-footer {
 
   /* Footer rule */
   body.trip-receipt-print-mode .trip-receipt-page::after {
-    content: "Townwize — Safe Rides in Bahria Town Karachi | townwize.com";
+    content: "Townwize — On the Move | townwize.com";
     display: block !important;
     margin-top: 24px !important;
     padding-top: 10px !important;
