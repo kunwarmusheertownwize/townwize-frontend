@@ -3,12 +3,23 @@ import Navbar from "../../components/shared/Navbar";
 import Footer from "../../components/shared/Footer";
 
 /**
- * Published rate card.
+ * Published charges.
  *
- * Every number comes from GET /public/config, which reads the same pricing
- * profile the fare engine charges from. Nothing on this page is hardcoded —
- * if an admin edits pricing, this page changes with it. A rate card that can
- * disagree with the app is worse than no rate card at all.
+ * What this page does and does NOT print is a deliberate line.
+ *
+ * It names every component that can appear on a fare, and it states the
+ * charges a person must be told about BEFORE they can be levied — the
+ * free-cancellation window, the cancellation fee, the no-show fee and the
+ * waiting rate. Those come live from GET /public/config, which reads the same
+ * config the fare engine charges from, so this page cannot drift from what is
+ * actually charged.
+ *
+ * It does NOT print the rate card — base fare, per km, per minute, minimum
+ * fare, class multipliers, platform fee. Those are the commercial terms, the
+ * endpoint now withholds them from an anonymous caller, and a passenger sees
+ * them as an itemised estimate in the app before booking and on the receipt
+ * afterwards. Fare transparency is owed to the person taking the ride, not to
+ * anyone who loads the marketing site.
  */
 
 const PKR = (n) => `PKR ${Number(n || 0).toLocaleString("en-PK")}`;
@@ -51,16 +62,17 @@ const Pricing = () => {
             .then((r) => (r.ok ? r.json() : Promise.reject(new Error("bad status"))))
             .then((json) => {
                 if (!mounted) return;
-                if (json?.data?.fares) setCfg(json.data);
+                if (json?.data?.charges) setCfg(json.data);
                 else setFailed(true);
             })
             .catch(() => mounted && setFailed(true));
         return () => { mounted = false; };
     }, []);
 
-    const fares = cfg?.fares;
+    const charges = cfg?.charges;
     const cancel = cfg?.cancellation;
     const waiting = cfg?.waiting;
+    const carClasses = charges?.carClasses || [];
 
     return (
         <div className="bg-white dark:bg-townwize-bgDark">
@@ -75,8 +87,9 @@ const Pricing = () => {
                         Fares &amp; Charges
                     </h1>
                     <p className="text-white/60 text-base max-w-xl mx-auto">
-                        Every rate we charge, published in full. You always see an estimated fare
-                        before you confirm a ride.
+                        Every charge that can appear on a Townwize fare, named in full. You see the
+                        exact amount in the app before you confirm a ride, and a line-by-line
+                        breakdown on your receipt.
                     </p>
                 </div>
             </section>
@@ -86,98 +99,114 @@ const Pricing = () => {
 
                     {failed && (
                         <div className="rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 px-4 py-3 text-sm text-amber-800 dark:text-amber-300">
-                            Live rates could not be loaded right now. Please check back shortly, or
-                            contact support@townwize.com for our current rate card.
+                            This page could not load right now. Please check back shortly, or
+                            contact support@townwize.com.
                         </div>
                     )}
 
-                    {fares && (
+                    {charges && (
                         <>
                             <Card
-                                title="Private Ride"
-                                subtitle="A vehicle to yourself, door to door."
+                                title="What makes up a fare"
+                                subtitle="Every trip is itemised against these lines — nothing else is added."
                             >
-                                <Row label="Base fare" value={PKR(fares.private.baseFare)} />
-                                <Row label="Per kilometre" value={PKR(fares.private.perKm)} />
-                                {fares.private.perMinute != null && (
-                                    <Row label="Per minute" value={PKR(fares.private.perMinute)} />
+                                <Row
+                                    label="Base fare"
+                                    value="Every trip"
+                                    note="A fixed amount that starts the fare."
+                                />
+                                <Row
+                                    label="Distance"
+                                    value="Per kilometre"
+                                    note="Charged on the route actually driven, recorded by GPS."
+                                />
+                                {charges.perMinuteEnabled && (
+                                    <Row
+                                        label="Time"
+                                        value="Per minute"
+                                        note="Charged while the trip is running."
+                                    />
                                 )}
-                                {fares.minimumFare != null && (
+                                {charges.minimumFareEnabled && (
                                     <Row
                                         label="Minimum fare"
-                                        value={PKR(fares.minimumFare)}
-                                        note="Short trips are never charged less than this."
+                                        value="Short trips"
+                                        note="A very short trip is never charged less than this."
                                     />
                                 )}
-                            </Card>
-
-                            {fares.rideTogether?.enabled && (
-                                <Card
-                                    title="RideTogether"
-                                    subtitle="Share the vehicle and the cost with another Towner going your way."
-                                >
-                                    <Row label="Base fare" value={PKR(fares.rideTogether.baseFare)} />
-                                    <Row label="Per kilometre" value={PKR(fares.rideTogether.perKm)} />
-                                    {fares.rideTogether.perMinute != null && (
-                                        <Row label="Per minute" value={PKR(fares.rideTogether.perMinute)} />
-                                    )}
-                                </Card>
-                            )}
-
-                            {fares.carTypeMultipliers && (
-                                <Card
-                                    title="Vehicle class"
-                                    subtitle="Applied to the base, distance and time components."
-                                >
-                                    {Object.entries(fares.carTypeMultipliers).map(([k, v]) => (
-                                        <Row
-                                            key={k}
-                                            label={CAR_LABELS[k] || k}
-                                            value={Number(v) === 1 ? "Standard rate" : `${Number(v)}×`}
-                                        />
-                                    ))}
-                                </Card>
-                            )}
-
-                            <Card title="Fees and charges">
-                                {fares.platformFee > 0 && (
+                                {carClasses.length > 1 && (
+                                    <Row
+                                        label="Vehicle class"
+                                        value={carClasses.map((k) => CAR_LABELS[k] || k).join(" · ")}
+                                        note="A larger or more comfortable vehicle costs more than Economy. You choose the class before you book."
+                                    />
+                                )}
+                                {charges.platformFeeEnabled && (
                                     <Row
                                         label="Platform fee"
-                                        value={PKR(fares.platformFee)}
-                                        note="Shown as its own line on every receipt."
+                                        value="Per trip"
+                                        note="Competitive, and shown as its own line on every receipt."
                                     />
-                                )}
-                                {fares.taxPercent > 0 && (
-                                    <Row label="Sindh Sales Tax (SST)" value={`${fares.taxPercent}%`} />
                                 )}
                                 <Row
                                     label="Tolls"
                                     value="At cost"
-                                    note="Passed through exactly as incurred on your route, with no mark-up, and itemised on your receipt."
+                                    note="Passed through exactly as incurred on your route, with no mark-up, and itemised separately."
                                 />
-                                {waiting?.pickupEnabled && (
-                                    <Row
-                                        label="Waiting time"
-                                        value={`${PKR(waiting.pickupPerMinute)} / min`}
-                                        note={`Charged only after ${waiting.pickupGraceMinutes} free minutes at pickup.`}
-                                    />
+                                {charges.taxEnabled && (
+                                    <Row label="Taxes" value="As applicable" />
                                 )}
                             </Card>
 
-                            {cancel?.feesEnabled && (
-                                <Card title="Cancellation">
+                            {charges.rideTogetherEnabled && (
+                                <Card
+                                    title="Private Ride and RideTogether"
+                                    subtitle="Two ways to travel, priced differently."
+                                >
                                     <Row
-                                        label="Free cancellation"
-                                        value={`${cancel.freeWindowMinutes} min`}
-                                        note="After a Wizer is matched to you. Always free within this window."
+                                        label="Private Ride"
+                                        value="Standard rate"
+                                        note="A vehicle to yourself, door to door."
                                     />
-                                    <Row label="Cancellation fee after that" value={PKR(cancel.fee)} />
-                                    {cancel.noShowEnabled && (
+                                    <Row
+                                        label="RideTogether"
+                                        value="Costs less"
+                                        note="Share the vehicle with another Towner going your way, and share the cost."
+                                    />
+                                </Card>
+                            )}
+
+                            {(waiting?.pickupEnabled || cancel?.feesEnabled) && (
+                                <Card
+                                    title="Waiting, cancellation and no-shows"
+                                    subtitle="The only charges that can apply when a trip is not completed. These are stated in full."
+                                >
+                                    {waiting?.pickupEnabled && (
                                         <Row
-                                            label="No-show fee"
-                                            value={PKR(cancel.noShowFee)}
-                                            note={`Your Wizer waits ${cancel.noShowWaitMinutes} minutes at the pickup point.`}
+                                            label="Waiting time at pickup"
+                                            value={`${PKR(waiting.pickupPerMinute)} / min`}
+                                            note={`Charged only after ${waiting.pickupGraceMinutes} free minutes.`}
                                         />
+                                    )}
+                                    {cancel?.feesEnabled && (
+                                        <>
+                                            <Row
+                                                label="Free cancellation"
+                                                value={`${cancel.freeWindowMinutes} min`}
+                                                note="After a Wizer is matched to you. Always free within this window."
+                                            />
+                                            <Row
+                                                label="Cancellation fee after that"
+                                                value={PKR(cancel.fee)}
+                                            />
+                                            {cancel.noShowEnabled && (
+                                                <Row
+                                                    label="No-show fee"
+                                                    value={PKR(cancel.noShowFee)}
+                                                    note={`Your Wizer waits ${cancel.noShowWaitMinutes} minutes at the pickup point before this applies.`}
+                                                />
+                                            )}
+                                        </>
                                     )}
                                     <div className="pt-4">
                                         <a
@@ -190,12 +219,23 @@ const Pricing = () => {
                                 </Card>
                             )}
 
+                            <div className="rounded-2xl bg-gray-50 dark:bg-gray-900/40 p-6">
+                                <h2 className="text-base font-bold text-townwize-primary dark:text-white">
+                                    Where to see the actual amount
+                                </h2>
+                                <p className="mt-2 text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+                                    Open Townwize, enter your destination, and the estimated fare is
+                                    shown before you confirm — broken down into the lines above. After
+                                    the trip, your receipt shows the final fare against the route
+                                    actually driven. Rates are set in Pakistani Rupees and can change.
+                                </p>
+                            </div>
+
                             <p className="text-xs text-gray-400 dark:text-gray-500 leading-relaxed">
-                                Your final fare is calculated from the route actually travelled, so it
-                                can differ from the upfront estimate if the route or destination
-                                changes during the trip. Every receipt shows the full breakdown and the
-                                route driven. Rates are in Pakistani Rupees and may change; this page
-                                always shows the rates currently in force.
+                                * plus applicable taxes. Your final fare is calculated from the route
+                                actually travelled, so it can differ from the upfront estimate if the
+                                route or destination changes during the trip. Every receipt shows the
+                                full breakdown and the route driven.
                             </p>
                         </>
                     )}

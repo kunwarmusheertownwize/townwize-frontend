@@ -341,10 +341,14 @@ const SelectRide = () => {
 
   useEffect(() => {
     let mounted = true;
-    fetch(`${import.meta.env.VITE_API_BASE_URL}/public/config`)
-      .then((r) => (r.ok ? r.json() : null))
-      .then((json) => {
-        const f = json?.data?.fares;
+    // Rates now need a session — /public/config withholds `fares` from an
+    // anonymous caller, so this must go through the authed client, not a
+    // bare fetch. The local fallback below is a last resort, NOT the live
+    // rate card.
+    api
+      .get("/public/config")
+      .then((res) => {
+        const f = res?.data?.data?.fares;
         if (mounted && f) setPricing((prev) => ({ ...prev, ...f }));
       })
       .catch(() => { /* keep the defaults */ });
