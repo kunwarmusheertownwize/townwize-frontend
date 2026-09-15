@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { FaCar, FaUserCheck, FaWallet, FaShieldAlt, FaPhone, FaEnvelope, FaChevronDown } from "react-icons/fa";
+import { FaCar, FaUserCheck, FaWallet, FaShieldAlt, FaEnvelope, FaChevronDown } from "react-icons/fa";
 import Navbar from "../../components/shared/Navbar";
 import Footer from "../../components/shared/Footer";
 
@@ -139,20 +139,13 @@ const Support = () => {
                     <p className="text-gray-500 dark:text-gray-400 text-sm mb-10">
                         We're available to help with any issue not covered above. Response time is typically within 24 hours.
                     </p>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-xl mx-auto">
+                    <div className="max-w-xs mx-auto">
                         <a
                             href="mailto:support@townwize.com"
                             className="flex items-center justify-center gap-3 px-6 py-4 rounded-2xl bg-townwize-primary text-white font-semibold hover:bg-townwize-accent hover:text-townwize-primary transition-all"
                         >
                             <FaEnvelope />
                             Email Support
-                        </a>
-                        <a
-                            href="tel:+923394009776"
-                            className="flex items-center justify-center gap-3 px-6 py-4 rounded-2xl border border-townwize-primary dark:border-white/20 text-townwize-primary dark:text-white font-semibold hover:bg-townwize-primary hover:text-white transition-all"
-                        >
-                            <FaPhone />
-                            +92 339 400 9776
                         </a>
                     </div>
                     <p className="mt-5 text-xs text-gray-400 dark:text-gray-500">

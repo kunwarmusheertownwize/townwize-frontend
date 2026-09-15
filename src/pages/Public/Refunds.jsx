@@ -47,7 +47,7 @@ const buildSections = (c) => [
     {
         title: "3. Disputing a fare or a charge",
         body: [
-            "**You have 30 days from the trip to raise a dispute.** Contact support@townwize.com, call +92 339 400 9776, or use Help in the app. Include the trip ID from your receipt.",
+            "**You have 30 days from the trip to raise a dispute.** Contact support@townwize.com or use Help in the app. Include the trip ID from your receipt.",
             "Every trip records the route actually driven. A disputed distance, route or fare is checked against that recorded GPS trail — not argued from memory — and we will show you what it says.",
             "Grounds for an adjustment include: a route materially longer than the reasonable one, a trip that ended somewhere other than your destination, a toll charged that your route did not pass, waiting time charged while the vehicle was moving, a duplicate charge, or a fare that does not add up to the breakdown on your receipt.",
             "**We acknowledge every dispute within 24 hours and decide within 3 business days.** If we need longer, we will tell you why and when to expect an answer.",
@@ -96,7 +96,7 @@ const buildSections = (c) => [
     {
         title: "8. Contact",
         body: [
-            "Refunds, cancellations and fare disputes: support@townwize.com or +92 339 400 9776.",
+            "Refunds, cancellations and fare disputes: support@townwize.com.",
             "Please include your trip ID — it is on your receipt and in your trip history.",
             "**Townwize (Private) Limited**, a company incorporated in Pakistan.",
         ],
