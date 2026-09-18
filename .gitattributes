@@ -1,0 +1,4 @@
+# Google checks this byte-for-byte when verifying package-name ownership.
+# A CRLF checkout would change its length and could fail a re-verification
+# in a way that is very hard to diagnose.
+android/app/src/main/assets/adi-registration.properties text eol=lf
