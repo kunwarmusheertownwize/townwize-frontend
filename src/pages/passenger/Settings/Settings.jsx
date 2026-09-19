@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import DeleteAccountPanel from "../../../components/account/DeleteAccountPanel";
 
 const STORAGE_KEY = "passengerSettings";
 
@@ -56,6 +57,8 @@ export default function PassengerSettings() {
           {saved ? <span className="text-sm text-green-600">Settings saved.</span> : null}
         </div>
       </div>
+
+      <DeleteAccountPanel />
     </div>
   );
 }

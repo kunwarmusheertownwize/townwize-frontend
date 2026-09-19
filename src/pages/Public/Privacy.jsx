@@ -39,8 +39,9 @@ const SECTIONS = [
         body: [
             "Account data is retained for as long as your account is active.",
             "Ride history and transaction records are retained for up to 7 years for legal and accounting compliance.",
-            "Verification documents are retained for 2 years after account closure.",
-            "You may request deletion of your account by contacting support@townwize.com. Note that some data may be retained for legal compliance even after deletion.",
+            "Verification documents — including CNIC images and verification photographs — are deleted when your account is deleted.",
+            "You may delete your account from Settings in the app, or at townwize.com/delete-account. Your account remains usable for 14 days so you can change your mind, after which your personal information is permanently removed.",
+            "Records of trips and payments are retained after deletion for the periods stated above, as tax and accounting law requires. They are no longer linked to your name or any other identifying detail.",
         ],
     },
     {

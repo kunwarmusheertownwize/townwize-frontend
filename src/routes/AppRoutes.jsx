@@ -10,6 +10,7 @@ import Privacy from "../pages/Public/Privacy";
 import Terms from "../pages/Public/Terms";
 import Refunds from "../pages/Public/Refunds";
 import Pricing from "../pages/Public/Pricing";
+import DeleteAccount from "../pages/Public/DeleteAccount";
 import PaymentReturn from "../pages/passenger/Payment/PaymentReturn";
 import PaymentComplete from "../pages/Public/PaymentComplete";
 import ConfirmPrecinct from "../pages/Public/ConfirmPrecinct";
@@ -110,6 +111,10 @@ const AppRoutes = () => {
             reviewer checks these without an account. */}
         <Route path="/refunds"    element={<Refunds />} />
         <Route path="/pricing"    element={<Pricing />} />
+        {/* Google Play requires a PUBLIC account-deletion URL, reachable without
+            reinstalling the app, and it is submitted in the Data safety form.
+            Must stay unguarded: a reviewer opens it signed out. */}
+        <Route path="/delete-account" element={<DeleteAccount />} />
         {/* Where Safepay's checkout returns to. MUST stay public — the payment
             tab has no session, so a guarded route sends a passenger who just
             paid to the login screen. */}

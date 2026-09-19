@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import { useTheme } from "../../../hooks/useTheme";
+import DeleteAccountPanel from "../../../components/account/DeleteAccountPanel";
 
 const APP_VERSION = "1.0.1";
 
@@ -141,6 +142,8 @@ const DriverSettings = () => {
                     <span>{APP_VERSION}</span>
                 </div>
             </Section>
+
+            <DeleteAccountPanel />
         </div>
     );
 };

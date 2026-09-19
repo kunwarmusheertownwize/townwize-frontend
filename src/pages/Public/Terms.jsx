@@ -91,7 +91,7 @@ const SECTIONS = [
         title: "10. Termination",
         body: [
             "Townwize may suspend or permanently terminate your account at any time for violations of these terms, Community Guidelines, or for any reason at our sole discretion.",
-            "You may close your account at any time by contacting support@townwize.com.",
+            "You may delete your account at any time from Settings in the app, or at townwize.com/delete-account.",
             "Termination does not affect any rights or obligations accrued prior to the date of termination.",
         ],
     },
