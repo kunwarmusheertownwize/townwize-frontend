@@ -166,9 +166,12 @@ export default function DeleteAccountPanel() {
           press the button, not after. */}
       <p className="text-xs text-gray-500 dark:text-gray-400">
         Records of trips you have taken and payments you have made are kept for
-        tax and dispute purposes, as our{" "}
-        <a href="/privacy" className="underline">Privacy Policy</a> explains.
-        They are no longer linked to your name.
+        tax and dispute purposes, and your identity documents are held in
+        restricted storage for a limited period so we can answer a lawful
+        request about a trip — see our{" "}
+        <a href="/delete-account" className="underline">deletion page</a> and{" "}
+        <a href="/privacy" className="underline">Privacy Policy</a>. None of it
+        stays linked to your name.
       </p>
 
       {!confirming ? (

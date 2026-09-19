@@ -58,6 +58,17 @@ export default function DeleteAccount() {
             describes. These records are no longer linked to your name or any
             other detail that identifies you.
           </p>
+          {/* Said plainly. A person deleting their account is entitled to know
+              that their CNIC is not destroyed the same afternoon, and why. */}
+          <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">
+            Your identity documents are removed from the service straight away,
+            then held in restricted storage for a limited period before being
+            destroyed. This is so that we can answer a lawful request from a
+            court, the police, an insurer or a regulator about a trip you took
+            — for example after a road accident or a safety complaint. Nobody at
+            Townwize uses them for anything else, and they are not linked to
+            your name in the app.
+          </p>
         </div>
 
         <div>
