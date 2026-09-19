@@ -1,7 +1,12 @@
 import { useEffect, useState, useRef, useCallback } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { FaChevronLeft, FaChevronRight, FaStar, FaUsers } from "react-icons/fa";
 import api from "../../../services/api";
+import {
+  paymentMethodIcon,
+  paymentMethodLabel,
+  paymentStatusNote,
+} from "../../../utils/paymentMethod";
 
 const STATUS_META = {
   COMPLETED:       { label: "Completed",      cls: "bg-green-100 text-green-700" },
@@ -65,12 +70,47 @@ function SkeletonCard() {
   );
 }
 
+/**
+ * How the trip was settled — the one thing the list never said.
+ *
+ * Labels come from the shared util the receipt already uses, so a trip reads
+ * the same in the list as it does when opened. Rides created before Aug 2026
+ * carry no paymentMethod; that util treats an absent value as cash, which is
+ * what every one of them was.
+ */
+function PaymentChip({ ride }) {
+  // A cancelled trip charges nothing. The fare column already says "Not
+  // charged", and a payment chip next to it would imply money moved.
+  if (ride.status === "CANCELLED") return null;
+
+  const method = ride.paymentMethod || "cash";
+  const note = paymentStatusNote(method, ride.paymentStatus);
+  // The only state the passenger has to act on: a card fare never captured.
+  const outstanding =
+    method !== "cash" &&
+    ride.paymentStatus !== "captured" &&
+    ride.paymentStatus !== "refunded";
+
+  return (
+    <span
+      className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium ${
+        outstanding
+          ? "bg-amber-50 text-amber-800 dark:bg-amber-900/30 dark:text-amber-200"
+          : "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300"
+      }`}
+    >
+      <span>{paymentMethodIcon(method)}</span>
+      <span>{paymentMethodLabel(method)}</span>
+      {note && <span className="opacity-75">· {note}</span>}
+    </span>
+  );
+}
+
 export default function PassengerTrips() {
   const navigate = useNavigate();
   const [rides, setRides]           = useState([]);
   const [total, setTotal]           = useState(0);
   const [pages, setPages]           = useState(1);
-  const [page, setPage]             = useState(1);
   const [loading, setLoading]       = useState(true);
   const [error, setError]           = useState("");
   const [refreshKey, setRefreshKey] = useState(0);
@@ -78,11 +118,44 @@ export default function PassengerTrips() {
 
   const touchStartY = useRef(null);
 
+  /* The page number lives in the URL, not in component state.
+   *
+   * It used to be useState(1). Opening a receipt from page 3 and pressing the
+   * browser's back button unmounted this component and remounted it fresh, so
+   * the passenger was returned to page 1 and had to page through again — on a
+   * 99-trip history that is a lot of clicking to get back to where they were.
+   *
+   * `replace` rather than push: paging is not a navigation step anyone wants to
+   * retrace, so it rewrites the current entry instead of stacking one per page.
+   * Back from a receipt then lands on the entry carrying ?page=3, and back from
+   * the list still leaves the history in one hop, as before.
+   */
+  const [searchParams, setSearchParams] = useSearchParams();
+  const page = Math.max(1, Number(searchParams.get("page")) || 1);
+  const setPage = useCallback(
+    (next) => {
+      setSearchParams(
+        (prev) => {
+          const p = new URLSearchParams(prev);
+          const n = typeof next === "function"
+            ? next(Math.max(1, Number(p.get("page")) || 1))
+            : next;
+          // Page 1 is the default, so it stays out of the URL entirely.
+          if (n <= 1) p.delete("page");
+          else p.set("page", String(n));
+          return p;
+        },
+        { replace: true }
+      );
+    },
+    [setSearchParams]
+  );
+
   const doRefresh = useCallback(() => {
     setRefreshing(true);
     setPage(1);
     setRefreshKey((k) => k + 1);
-  }, []);
+  }, [setPage]);
 
   useEffect(() => {
     const onTouchStart = (e) => {
@@ -248,6 +321,7 @@ export default function PassengerTrips() {
                     <span className="text-xs text-gray-400">
                       {formatDate(ride.createdAt)} · {formatTime(ride.createdAt)}
                     </span>
+                    <PaymentChip ride={ride} />
                     {isCompleted && rated && (
                       <span className="flex items-center gap-0.5 rounded-full bg-yellow-50 dark:bg-yellow-900/20 px-2 py-0.5">
                         {[1,2,3,4,5].map((n) => (
