@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!--
+  Towner (com.townwize.towner) — strip background location.
+
+  Both flavours share src/main/AndroidManifest.xml, so the passenger app was
+  shipping ACCESS_BACKGROUND_LOCATION for a code path it CANNOT REACH:
+
+    - BackgroundGeolocation is referenced in exactly one file,
+      src/pages/driver/LiveTracking/DriverLiveTracking.jsx. Passenger tracking
+      uses foreground watchPosition and nothing else.
+    - src/utils/appRole.js derives the role from the package id at runtime:
+      com.townwize.wizer is the only id that becomes "driver". The Towner build
+      is locked to passenger, and Login refuses a Wizer sign-in outright.
+
+  Why it is worth removing rather than leaving harmlessly in place:
+
+    1. Declaring ACCESS_BACKGROUND_LOCATION is what pulls an app into Google's
+       background-location review — the prominent-disclosure declaration, a
+       demo video, and a 2-6 week queue. The Wizer app genuinely needs that and
+       will go through it. There is no reason for the Towner app to.
+    2. Requesting a permission beyond an app's core functionality is itself a
+       Play policy violation, so this was also a standing rejection risk.
+
+  tools:node="remove" strips the element from the MERGED manifest, which means
+  it also removes what the background-geolocation library contributes — the
+  library declares the same permissions and service in its own manifest, which
+  is why src/main needs tools:replace on the service at all.
+
+  The service is removed too: without it the permissions would be meaningless,
+  and leaving a location-typed foreground service declared in an app that never
+  starts one invites exactly the questions we are avoiding.
+
+  ⚠️ If a passenger-side feature ever needs background location, delete this
+  file rather than working around it — and expect the review that follows.
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <uses-permission
+        android:name="android.permission.ACCESS_BACKGROUND_LOCATION"
+        tools:node="remove" />
+
+    <uses-permission
+        android:name="android.permission.FOREGROUND_SERVICE_LOCATION"
+        tools:node="remove" />
+
+    <!-- The background-geolocation service was the ONLY foreground service in
+         the app, and the merge blame report confirms this permission is
+         contributed by src/main alone — no library asks for it. With the
+         service gone there is nothing left to start. -->
+    <uses-permission
+        android:name="android.permission.FOREGROUND_SERVICE"
+        tools:node="remove" />
+
+    <application>
+        <service
+            android:name="com.equimaps.capacitor_background_geolocation.BackgroundGeolocationService"
+            tools:node="remove" />
+    </application>
+</manifest>
