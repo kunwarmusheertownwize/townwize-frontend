@@ -39,8 +39,10 @@ const SECTIONS = [
         body: [
             "Account data is retained for as long as your account is active.",
             "Ride history and transaction records are retained for up to 7 years for legal and accounting compliance.",
-            "When you delete your account, your identity documents — CNIC images, licence and verification photographs — are removed from the service immediately and are no longer linked to you. They are then held in restricted storage for a limited period before being destroyed, so that we can respond to a lawful request from a court, a law-enforcement agency, an insurer or a regulator arising from a trip you took.",
-            "If we receive such a request, or a serious incident or claim is under investigation, records connected to it are preserved until the matter is resolved, as the law requires and permits.",
+            "When you delete your account, your identity documents — CNIC images, licence and verification photographs — are removed from the service immediately and are no longer linked to you. They are then held in restricted storage before being destroyed, so that we can respond to a lawful request from a court, a law-enforcement agency, an insurer or a regulator arising from a trip you took.",
+            "For Towners that period is one year. For Wizers it is five years: driver verification records must be archived after an account closes under Pakistan's tax and companies legislation, and we cannot shorten it.",
+            "Trip metadata — booking history, timestamps, location and device information — is retained for at least one year, as the Prevention of Electronic Crimes Act 2016 requires of electronic service providers.",
+            "If an authority asks us to preserve records connected to an incident, or a claim or investigation is open, those records are kept until the matter is resolved. Preserving records is not the same as disclosing them: we release personal data to law enforcement only against a warrant from a competent court, or where the law otherwise compels us.",
             "You may delete your account from Settings in the app, or at townwize.com/delete-account. Your account remains usable for 14 days so you can change your mind, after which your personal information is permanently removed.",
             "Records of trips and payments are retained after deletion for the periods stated above, as tax and accounting law requires. They are no longer linked to your name or any other identifying detail.",
         ],

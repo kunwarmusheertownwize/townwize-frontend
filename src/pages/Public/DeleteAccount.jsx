@@ -58,16 +58,33 @@ export default function DeleteAccount() {
             describes. These records are no longer linked to your name or any
             other detail that identifies you.
           </p>
-          {/* Said plainly. A person deleting their account is entitled to know
-              that their CNIC is not destroyed the same afternoon, and why. */}
+          {/* Said plainly, with the real periods. A person deleting their
+              account is entitled to know their CNIC is not destroyed the same
+              afternoon — and a Wizer is entitled to know it is five years. */}
           <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">
-            Your identity documents are removed from the service straight away,
-            then held in restricted storage for a limited period before being
-            destroyed. This is so that we can answer a lawful request from a
-            court, the police, an insurer or a regulator about a trip you took
-            — for example after a road accident or a safety complaint. Nobody at
-            Townwize uses them for anything else, and they are not linked to
-            your name in the app.
+            Your identity documents are removed from the app straight away and
+            are no longer linked to you. They are then held in restricted
+            storage before being destroyed, so that we can answer a lawful
+            request from a court, the police, an insurer or a regulator about a
+            trip you took — for example after a road accident or a safety
+            complaint. Nobody at Townwize uses them for anything else.
+          </p>
+          <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-gray-600 dark:text-gray-300">
+            <li>
+              <strong>Towners:</strong> one year, matching the minimum period
+              Pakistani law requires us to keep trip records.
+            </li>
+            <li>
+              <strong>Wizers:</strong> five years. Driver verification records —
+              CNIC, licence and vehicle documents — must be archived after an
+              account closes under Pakistan&rsquo;s tax and companies
+              legislation. We cannot shorten this.
+            </li>
+          </ul>
+          <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">
+            If a court or an investigating authority asks us to preserve records
+            connected to an incident, those records are kept until the matter is
+            resolved.
           </p>
         </div>
 
