@@ -71,14 +71,14 @@ export default function DeleteAccount() {
           </p>
           <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-gray-600 dark:text-gray-300">
             <li>
-              <strong>Towners:</strong> one year, matching the minimum period
-              Pakistani law requires us to keep trip records.
+              <strong>Towners:</strong> one year.
             </li>
             <li>
-              <strong>Wizers:</strong> five years. Driver verification records —
-              CNIC, licence and vehicle documents — must be archived after an
-              account closes under Pakistan&rsquo;s tax and companies
-              legislation. We cannot shorten this.
+              <strong>Wizers:</strong> five years. A driver&rsquo;s verification
+              file &mdash; CNIC, licence and vehicle documents &mdash; is what
+              allows us to answer a question about a trip long afterwards, such
+              as an insurance claim or a police enquiry following a road
+              accident, so we keep it for longer.
             </li>
           </ul>
           <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">
