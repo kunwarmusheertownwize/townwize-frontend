@@ -36,7 +36,15 @@ const PayForRideButton = ({ ride, onPaid }) => {
     if (!feeOwed) {
         // Cash settles between passenger and Wizer; nothing to collect here.
         if (method === "cash") return null;
-        if (status === "captured" || status === "refunded") return null;
+        /* `partially_refunded` counts as settled too. The fare WAS paid; part
+           of it has since been returned. Without it here, a partly refunded
+           ride would show a "Pay" button again and ask for money the passenger
+           has already handed over. Refunds only began reaching us on 20 Sep —
+           the webhook had been dropping every one — so this state could not
+           occur before and the list was never wrong until now. */
+        if (status === "captured" || status === "refunded" || status === "partially_refunded") {
+            return null;
+        }
         // NEVER ask for the FARE on a ride that did not happen. A cancelled
         // card ride keeps paymentStatus "pending" and without this check that
         // state renders a "Pay 257 PKR" button for a trip nobody took.

@@ -85,11 +85,15 @@ function PaymentChip({ ride }) {
 
   const method = ride.paymentMethod || "cash";
   const note = paymentStatusNote(method, ride.paymentStatus);
-  // The only state the passenger has to act on: a card fare never captured.
+  /* The only state the passenger has to act on: a card fare never captured.
+   * A partly refunded fare WAS paid, so it is not outstanding and must not
+   * render in the amber "action needed" style. Refunds only began reaching us
+   * on 20 Sep, so this state could not occur before. */
   const outstanding =
     method !== "cash" &&
     ride.paymentStatus !== "captured" &&
-    ride.paymentStatus !== "refunded";
+    ride.paymentStatus !== "refunded" &&
+    ride.paymentStatus !== "partially_refunded";
 
   return (
     <span

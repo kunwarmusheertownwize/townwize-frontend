@@ -408,13 +408,24 @@ export default function PassengerTripReceipt() {
             <div className="mt-5">
               {/* "Total Paid" while the payment is still outstanding directly
                   contradicts the "Payment pending" line further down the same
-                  receipt. Say what is true. */}
+                  receipt. Say what is true.
+
+                  Refunds are handled BEFORE the outstanding check, and must be:
+                  a refunded fare is not "captured" either, so without this it
+                  would read "Total Due" — telling someone they owe money on a
+                  trip that was just refunded to them. Refunds only began
+                  reaching us at all on 20 Sep; the webhook had been dropping
+                  every one of them. */}
               <p className="text-xs text-white/70 uppercase tracking-wider">
                 {isPooled
                   ? "Your Share (Split Fare)"
-                  : ride?.paymentMethod && ride.paymentMethod !== "cash" && ride?.paymentStatus !== "captured"
-                    ? "Total Due"
-                    : "Total Paid"}
+                  : ride?.paymentStatus === "refunded"
+                    ? "Refunded"
+                    : ride?.paymentStatus === "partially_refunded"
+                      ? "Partially Refunded"
+                      : ride?.paymentMethod && ride.paymentMethod !== "cash" && ride?.paymentStatus !== "captured"
+                        ? "Total Due"
+                        : "Total Paid"}
               </p>
               <p className="text-5xl font-extrabold mt-1">{toMoney(isPooled && farePerSeat ? farePerSeat : fare.final)}</p>
               {isPooled && coRiderCount > 0 && (
