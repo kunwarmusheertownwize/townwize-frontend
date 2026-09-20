@@ -43,7 +43,7 @@ const PASSENGER_CANCEL_REASONS = [
 
 // `policy` defaults to the server's own defaults so this panel renders exactly
 // as it always did if the config fetch has not landed yet, or failed.
-const CancelReasonPanel = ({ ride, cancelReason, setCancelReason, cancelling, onKeep, onConfirm, compact, policy = { freeWindowMinutes: 3, fee: 75, feesEnabled: true } }) => {
+const CancelReasonPanel = ({ ride, cancelReason, setCancelReason, cancelling, cancelError, onKeep, onConfirm, compact, policy = { freeWindowMinutes: 3, fee: 75, feesEnabled: true } }) => {
   // Ticks so the countdown below is live. Without this the panel would show a
   // stale "free for another 2:41" for as long as it stayed open, and a
   // passenger could act on a number that had already run out.
@@ -108,6 +108,15 @@ const CancelReasonPanel = ({ ride, cancelReason, setCancelReason, cancelling, on
             <span>✓ Free cancellation</span>
           )}
         </div>
+      )}
+
+      {/* A refused cancellation is shown, never swallowed. Before this the
+          passenger was navigated home regardless and believed the ride was
+          over while a Wizer was still driving to them. */}
+      {cancelError && (
+        <p className="rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-xs text-red-700 dark:border-red-800 dark:bg-red-900/25 dark:text-red-300">
+          {cancelError}
+        </p>
       )}
 
       <div className="flex gap-2">
@@ -417,6 +426,7 @@ const LiveTracking = () => {
   const [cancelling, setCancelling] = useState(false);
   const [tripBlocked, setTripBlocked] = useState(false);
   const [cancelReason, setCancelReason] = useState("");
+  const [cancelError, setCancelError] = useState("");
 
   // The free window and the fee are admin-configurable on the server. They used
   // to be hardcoded here, so editing the policy in admin left this screen
@@ -1157,10 +1167,26 @@ const LiveTracking = () => {
   const handleCancelRide = async () => {
     if (!cancelReason) return;
     setCancelling(true);
+    setCancelError("");
     try {
       await updateRideStatus(rideId, "CANCELLED", { reason: cancelReason });
     } catch (err) {
+      /* A FAILED CANCELLATION MUST NOT LOOK LIKE A SUCCESSFUL ONE.
+       *
+       * This swallowed the error and navigated home regardless, so a passenger
+       * whose cancellation the server refused was sent away believing the ride
+       * was over — while a Wizer was still en route to them, or the trip was
+       * still running. More serious here than on the request screen, because
+       * by this point a driver has already been assigned.
+       *
+       * They stay put, see why, and can try again. */
       console.error("Cancel failed", err);
+      setCancelError(
+        err?.response?.data?.error?.message ||
+          "We couldn't cancel your ride. Please check your connection and try again."
+      );
+      setCancelling(false);
+      return;
     }
     localStorage.removeItem("activePassengerRideId");
     navigate("/passenger/home", { replace: true });
@@ -1424,6 +1450,7 @@ const LiveTracking = () => {
                   cancelReason={cancelReason}
                   setCancelReason={setCancelReason}
                   cancelling={cancelling}
+                  cancelError={cancelError}
                   onKeep={handleKeepRide}
                   onConfirm={handleCancelRide}
                   policy={cancelPolicy}
@@ -1710,6 +1737,7 @@ const LiveTracking = () => {
             cancelReason={cancelReason}
             setCancelReason={setCancelReason}
             cancelling={cancelling}
+            cancelError={cancelError}
             onKeep={handleKeepRide}
             onConfirm={handleCancelRide}
             policy={cancelPolicy}

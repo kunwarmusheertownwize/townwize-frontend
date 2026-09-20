@@ -19,6 +19,8 @@ const TripRequest = () => {
   const [rideId, setRideId] = useState(null);
   const [confirmCancel, setConfirmCancel] = useState(false);
   const [cancelling, setCancelling] = useState(false);
+  // Shown in the cancel dialog when the server refuses — see handleCancelRide.
+  const [cancelError, setCancelError] = useState("");
   const [slowSearch, setSlowSearch] = useState(false);
 
   useEffect(() => {
@@ -118,13 +120,32 @@ const TripRequest = () => {
 
   const handleCancelRide = async () => {
     setCancelling(true);
+    setCancelError("");
+
     if (rideId) {
       try {
         await updateRideStatus(rideId, "CANCELLED");
       } catch (err) {
+        /* A FAILED CANCELLATION MUST NOT LOOK LIKE A SUCCESSFUL ONE.
+         *
+         * This used to log to the console and carry straight on: the local
+         * ride id was cleared and the passenger was sent home believing they
+         * had cancelled, while the ride was still live on the server and a
+         * Wizer was still driving to a pickup nobody intended to be at.
+         *
+         * The passenger stays here, is told what happened, and can try again.
+         * Leaving them on this screen is the point — it is the only screen
+         * from which the ride can still be cancelled. */
         console.error("Cancel failed", err);
+        setCancelError(
+          err?.response?.data?.error?.message ||
+            "We couldn't cancel your ride. Please check your connection and try again."
+        );
+        setCancelling(false);
+        return;
       }
     }
+
     localStorage.removeItem("activePassengerRideId");
     navigate("/passenger/home", { replace: true });
   };
@@ -176,6 +197,14 @@ const TripRequest = () => {
           {confirmCancel ? (
             <div className="space-y-2">
               <p className="text-white/70 text-sm text-center">Cancel this ride request?</p>
+              {/* A failed cancellation is shown here rather than swallowed — see
+                  handleCancelRide. The passenger must not leave this screen
+                  believing a still-live ride was cancelled. */}
+              {cancelError && (
+                <p className="rounded-lg bg-red-500/20 border border-red-400/40 px-3 py-2 text-center text-xs text-red-100">
+                  {cancelError}
+                </p>
+              )}
               <div className="flex gap-2">
                 <button
                   onClick={handleKeepWaiting}
@@ -235,6 +264,12 @@ const TripRequest = () => {
           <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
             Cancel this ride request?
           </p>
+          {/* The web copy of the same dialog. */}
+          {cancelError && (
+            <p className="rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-xs text-red-700 dark:border-red-800 dark:bg-red-900/25 dark:text-red-300">
+              {cancelError}
+            </p>
+          )}
           <div className="flex gap-3">
             <button
               onClick={handleKeepWaiting}
