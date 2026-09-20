@@ -35,6 +35,9 @@ const NAV = [
             { label: "Terms of Use",             to: "/terms" },
             { label: "Privacy Policy",           to: "/privacy" },
             { label: "Refunds & Cancellations",  to: "/refunds" },
+            // Safepay's agreement (15.4) requires this to be PUBLISHED, which
+            // means reachable, not merely routed.
+            { label: "Service Delivery",         to: "/service-delivery" },
         ],
     },
 ];
