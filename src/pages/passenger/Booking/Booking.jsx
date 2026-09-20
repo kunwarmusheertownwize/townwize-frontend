@@ -20,6 +20,9 @@ const Booking = () => {
   const preCreatedWindowMin = state?.matchWindowMinutes || 3;
 
   const [rideId, setRideId] = useState(preCreatedRideId);
+  // Set when POST /rides fails — see the catch below. Without it the screen
+  // spins forever on a ride that was never created.
+  const [createError, setCreateError] = useState("");
   const [primaryRideId, setPrimaryRideId] = useState(null); // set when pool_matched
   const [pooling, setPooling] = useState(preCreatedPooling);
   const [poolMatched, setPoolMatched] = useState(false);
@@ -94,7 +97,22 @@ const Booking = () => {
         }
         // If !pooling → normal private ride, just wait for driver
       })
-      .catch(() => {});
+      /* An EMPTY catch left the passenger spinning forever.
+       *
+       * If POST /rides failed — no Wizers, a route restriction, an expired
+       * session, no signal — nothing happened at all: no message, no state
+       * change. The screen kept showing "Searching for a driver…" with its
+       * spinner, for a ride that had never been created, until the passenger
+       * gave up and killed the app.
+       *
+       * A search that cannot succeed must say so. */
+      .catch((err) => {
+        setCreateError(
+          err?.response?.data?.error?.message ||
+            err?.response?.data?.message ||
+            "We couldn't book your ride. Please check your connection and try again."
+        );
+      });
   }, [rideId]);
 
   // ── Pool countdown ─────────────────────────────────────────────────────
@@ -265,6 +283,31 @@ const Booking = () => {
           className="text-sm text-gray-400 hover:text-townwize-danger hover:underline"
         >
           Cancel
+        </button>
+      </div>
+    );
+  }
+
+  /* Booking failed outright — show it instead of a spinner that will never
+     resolve. Placed before the search states because none of them can be true
+     when the ride was never created. */
+  if (createError) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[70vh] space-y-5 px-6 text-center">
+        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-red-50 dark:bg-red-900/25 text-3xl">
+          ⚠️
+        </div>
+        <div className="space-y-2">
+          <h2 className="font-semibold text-xl text-gray-800 dark:text-white">
+            We couldn&rsquo;t book your ride
+          </h2>
+          <p className="text-sm text-gray-500 dark:text-gray-400 max-w-sm">{createError}</p>
+        </div>
+        <button
+          onClick={() => navigate("/passenger/home", { replace: true })}
+          className="rounded-xl bg-townwize-primary px-6 py-3 text-sm font-semibold text-white"
+        >
+          Try again
         </button>
       </div>
     );
