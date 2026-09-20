@@ -47,6 +47,25 @@ export default function Profile() {
   // stays off until Wizer supply can absorb extra riders. Assume OFF until the
   // server says otherwise, so the button never appears and then fails.
   const [guestInvitesEnabled, setGuestInvitesEnabled] = useState(false);
+
+  /* Which payment methods are actually live, asked of the same endpoint the
+   * booking screen asks. This tab used to show a "Current Balance PKR 0.00"
+   * and an "Add Funds" button for a stored-value wallet that does not exist:
+   * `walletBalance` is not a field on the backend, so the figure was
+   * permanently zero, and Add Funds only raised a toast saying rides were
+   * "cash only" — which was untrue, because card payments are live. */
+  const [cardLive, setCardLive] = useState(false);
+  useEffect(() => {
+    let mounted = true;
+    api
+      .get("/payments/methods")
+      .then((res) => {
+        const card = (res?.data?.data?.methods || []).find((m) => m.id === "card");
+        if (mounted) setCardLive(Boolean(card?.available));
+      })
+      .catch(() => {});
+    return () => { mounted = false; };
+  }, []);
   const [generatingInvite, setGeneratingInvite] = useState(false);
 
   const [emergencyContacts, setEmergencyContacts] = useState([]);
@@ -149,7 +168,8 @@ export default function Profile() {
     { key: "history", label: "Ride History", icon: <FaHistory /> },
     { key: "referral", label: "Referral & Rewards", icon: <FaGift /> },
     { key: "emergency", label: "Emergency Contacts", icon: <FaPhone /> },
-    { key: "wallet", label: "Wallet Balance", icon: <FaWallet /> },
+    // Not "Wallet Balance" — there is no balance and never will be.
+    { key: "wallet", label: "Payment", icon: <FaWallet /> },
     { key: "settings", label: "Settings", icon: <FaCog /> },
   ];
 
@@ -461,17 +481,34 @@ export default function Profile() {
                     </div>
                   )}
 
+                  {/* The mobile copy of the same panel. It previously showed a
+                      "Current Balance" that was always PKR 0.00 — walletBalance
+                      is not a field the backend has — above an "Add Funds"
+                      button that did nothing at all. */}
                   {tab.key === "wallet" && (
                     <div className="space-y-3">
-                      <div className="p-4 rounded-xl bg-townwize-primary text-white">
-                        <p className="text-xs text-white/70">Current Balance</p>
-                        <h4 className="text-2xl font-bold mt-1">
-                          PKR {user?.walletBalance?.toLocaleString() || "0.00"}
-                        </h4>
+                      <div className="flex items-center gap-3 rounded-xl border border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20 px-4 py-3">
+                        <span className="text-lg" aria-hidden="true">💵</span>
+                        <div>
+                          <p className="text-sm font-bold text-green-800 dark:text-green-300">Cash on Ride</p>
+                          <p className="text-xs text-gray-600 dark:text-gray-400">Pay your Wizer at the end of the trip.</p>
+                        </div>
                       </div>
-                      <button className="w-full py-3 bg-townwize-primary text-white text-sm font-semibold rounded-xl">
-                        Add Funds
-                      </button>
+
+                      {cardLive && (
+                        <div className="flex items-center gap-3 rounded-xl border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20 px-4 py-3">
+                          <span className="text-lg" aria-hidden="true">💳</span>
+                          <div>
+                            <p className="text-sm font-bold text-blue-800 dark:text-blue-300">Card</p>
+                            <p className="text-xs text-gray-600 dark:text-gray-400">Pay after the trip, once the fare is settled.</p>
+                          </div>
+                        </div>
+                      )}
+
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        Townwize doesn&rsquo;t hold a balance for you — you pay
+                        per trip, so there is nothing to top up.
+                      </p>
                     </div>
                   )}
 
@@ -889,22 +926,40 @@ export default function Profile() {
         {activeTab === "wallet" && (
           <div className="p-6 rounded-2xl bg-white dark:bg-townwize-primaryDark border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-all duration-300">
             <h3 className="text-lg font-semibold mb-3 text-townwize-primary dark:text-white">
-              Wallet Overview
+              How you pay
             </h3>
-            <div className="p-5 rounded-2xl bg-gray-50 dark:bg-townwize-primary border border-gray-200 dark:border-gray-700 shadow-sm mb-5">
-              <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Current Balance</p>
-              <h4 className="text-2xl font-bold text-townwize-primary dark:text-townwize-accent">
-                PKR {user?.walletBalance?.toLocaleString() || "0.00"}
-              </h4>
+            <div className="space-y-3">
+              <div className="flex items-center gap-3 rounded-2xl border border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20 px-4 py-3">
+                <span className="text-lg" aria-hidden="true">💵</span>
+                <div>
+                  <p className="text-sm font-bold text-green-800 dark:text-green-300">Cash on Ride</p>
+                  <p className="text-xs text-gray-600 dark:text-gray-400">
+                    Pay your Wizer directly at the end of the trip.
+                  </p>
+                </div>
+              </div>
+
+              {cardLive && (
+                <div className="flex items-center gap-3 rounded-2xl border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20 px-4 py-3">
+                  <span className="text-lg" aria-hidden="true">💳</span>
+                  <div>
+                    <p className="text-sm font-bold text-blue-800 dark:text-blue-300">Card</p>
+                    <p className="text-xs text-gray-600 dark:text-gray-400">
+                      Choose card when you book. You pay once the trip is finished
+                      and the fare is settled — never before.
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
-            <div className="text-center">
-              <button
-                onClick={() => toast.info("Digital payments are coming soon. Rides are currently cash only.")}
-                className="px-5 py-2.5 bg-townwize-primary text-white rounded-xl hover:bg-townwize-primaryDark transition"
-              >
-                Add Funds
-              </button>
-            </div>
+
+            {/* Says what is true. Townwize holds no balance for anyone: storing
+                value is a regulated activity in Pakistan and we deliberately do
+                not do it. */}
+            <p className="mt-4 text-xs text-gray-500 dark:text-gray-400">
+              Townwize doesn&rsquo;t hold a balance for you — you pay per trip,
+              so there is nothing to top up.
+            </p>
           </div>
         )}
 

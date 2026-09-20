@@ -359,27 +359,31 @@ export default function MobileHome() {
       {/* Locate-me button */}
       <button
         onClick={locate}
-        className="absolute top-4 right-4 z-10 w-11 h-11 bg-white rounded-full shadow-lg flex items-center justify-center active:scale-95 touch-manipulation"
+        className="absolute top-4 right-4 z-10 w-11 h-11 bg-white dark:bg-townwize-primaryDark rounded-full shadow-lg flex items-center justify-center active:scale-95 touch-manipulation"
       >
         <FaCrosshairs
-          className={`text-townwize-primary text-base ${locating ? "animate-spin" : ""}`}
+          className={`text-townwize-primary dark:text-townwize-accent text-base ${locating ? "animate-spin" : ""}`}
         />
       </button>
 
-      {/* ── Bottom card (map view) ──────────────────────────────────────── */}
+      {/* ── Bottom card (map view) ──────────────────────────────────────────
+          This screen carried NO dark-mode styling at all, and it is the first
+          thing a passenger sees in the native app (AppRoutes routes
+          /passenger/home to MobileHome when isNative()). With dark mode on,
+          every other screen turned dark and the home screen stayed white. */}
       <div
-        className={`absolute bottom-0 left-0 right-0 z-10 bg-white rounded-t-3xl shadow-2xl px-5 pt-3 pb-5 transition-transform duration-300 ${
+        className={`absolute bottom-0 left-0 right-0 z-10 bg-white dark:bg-townwize-primaryDark rounded-t-3xl shadow-2xl px-5 pt-3 pb-5 transition-transform duration-300 ${
           searchMode ? "pointer-events-none" : ""
         }`}
         style={{ transform: searchMode ? "translateY(120%)" : "translateY(0)" }}
       >
         {/* Drag handle */}
-        <div className="w-10 h-[3px] bg-gray-200 rounded-full mx-auto mb-4" />
+        <div className="w-10 h-[3px] bg-gray-200 dark:bg-gray-600 rounded-full mx-auto mb-4" />
 
-        <h2 className="text-xl font-bold text-townwize-primary">
+        <h2 className="text-xl font-bold text-townwize-primary dark:text-white">
           {greeting()}, {firstName}
         </h2>
-        <p className="text-sm text-gray-400 mt-0.5 mb-4">Where are you going today?</p>
+        <p className="text-sm text-gray-400 dark:text-gray-400 mt-0.5 mb-4">Where are you going today?</p>
 
         {/* Where to? tap target */}
         <button
@@ -387,12 +391,12 @@ export default function MobileHome() {
             setSearchMode(true);
             setActiveField("dropoff");
           }}
-          className="w-full flex items-center gap-3 bg-gray-100 px-4 py-3.5 rounded-2xl active:scale-[0.98] touch-manipulation transition-transform"
+          className="w-full flex items-center gap-3 bg-gray-100 dark:bg-gray-800 px-4 py-3.5 rounded-2xl active:scale-[0.98] touch-manipulation transition-transform"
         >
           <div className="w-8 h-8 bg-townwize-primary rounded-full flex items-center justify-center flex-shrink-0">
             <FaSearch className="text-white text-[11px]" />
           </div>
-          <span className="text-gray-500 text-sm font-medium">
+          <span className="text-gray-500 dark:text-gray-300 text-sm font-medium">
             {dropoff || "Where to?"}
           </span>
         </button>
@@ -411,7 +415,7 @@ export default function MobileHome() {
       {/* ── Search overlay — Portal so it escapes all parent stacking contexts ── */}
       {createPortal(
         <div
-          className={`fixed inset-0 z-[9999] bg-white flex flex-col transition-transform duration-300 ${
+          className={`fixed inset-0 z-[9999] bg-white dark:bg-townwize-primaryDark flex flex-col transition-transform duration-300 ${
             !searchMode ? "pointer-events-none" : ""
           }`}
           style={{ transform: searchMode ? "translateY(0)" : "translateY(100%)" }}
@@ -420,25 +424,25 @@ export default function MobileHome() {
         >
           {/* Header — padded below status bar */}
           <div
-            className="flex items-center gap-2 px-2 border-b border-gray-100 flex-shrink-0"
+            className="flex items-center gap-2 px-2 border-b border-gray-100 dark:border-gray-700 flex-shrink-0"
             style={{ paddingTop: "calc(env(safe-area-inset-top, 20px) + 8px)", paddingBottom: "8px" }}
           >
             <button
               onTouchStart={(e) => { e.stopPropagation(); closeSearch(); }}
               onClick={closeSearch}
-              className="p-3 rounded-full active:bg-gray-100 touch-manipulation"
+              className="p-3 rounded-full active:bg-gray-100 dark:active:bg-gray-800 touch-manipulation"
               style={{ minWidth: 48, minHeight: 48 }}
             >
               <FaArrowLeft className="text-townwize-primary text-base" />
             </button>
-            <span className="font-semibold text-gray-900 text-[15px]">Plan your ride</span>
+            <span className="font-semibold text-gray-900 dark:text-white text-[15px]">Plan your ride</span>
           </div>
 
           {/* Inputs */}
           <div className="px-4 pt-3 pb-2 flex-shrink-0">
             <div className="relative space-y-2">
               {/* Vertical connector line */}
-              <span className="absolute left-[11px] top-[26px] bottom-[18px] w-px bg-gray-200 z-10" />
+              <span className="absolute left-[11px] top-[26px] bottom-[18px] w-px bg-gray-200 dark:bg-gray-600 z-10" />
 
               {/* Pickup */}
               <div className="relative">
@@ -458,7 +462,7 @@ export default function MobileHome() {
                     clearTimeout(window.__tw_mp);
                     window.__tw_mp = setTimeout(() => fetchSuggestions(e.target.value), 300);
                   }}
-                  className="w-full pl-8 pr-10 py-3.5 bg-gray-100 rounded-xl text-sm text-gray-900 placeholder-gray-400 outline-none focus:bg-gray-50 focus:ring-2 focus:ring-townwize-primary/20"
+                  className="w-full pl-8 pr-10 py-3.5 bg-gray-100 dark:bg-gray-800 rounded-xl text-sm text-gray-900 dark:text-white placeholder-gray-400 outline-none focus:bg-gray-50 dark:focus:bg-gray-700 focus:ring-2 focus:ring-townwize-primary/20"
                 />
                 <button
                   onClick={locate}
@@ -474,7 +478,7 @@ export default function MobileHome() {
               <div className="flex justify-center z-20 relative my-0.5">
                 <button
                   onClick={handleSwap}
-                  className="bg-white border border-gray-200 rounded-full p-1.5 shadow-sm active:scale-95 touch-manipulation"
+                  className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-full p-1.5 shadow-sm active:scale-95 touch-manipulation"
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -511,7 +515,7 @@ export default function MobileHome() {
                     clearTimeout(window.__tw_md);
                     window.__tw_md = setTimeout(() => fetchSuggestions(e.target.value), 200);
                   }}
-                  className="w-full pl-8 pr-3 py-3.5 bg-gray-100 rounded-xl text-sm text-gray-900 placeholder-gray-400 outline-none focus:bg-gray-50 focus:ring-2 focus:ring-townwize-primary/20"
+                  className="w-full pl-8 pr-3 py-3.5 bg-gray-100 dark:bg-gray-800 rounded-xl text-sm text-gray-900 dark:text-white placeholder-gray-400 outline-none focus:bg-gray-50 dark:focus:bg-gray-700 focus:ring-2 focus:ring-townwize-primary/20"
                 />
               </div>
             </div>
@@ -528,7 +532,7 @@ export default function MobileHome() {
                 </div>
               </div>
               {mapDropoffResolving && (
-                <div className="absolute top-3 left-1/2 -translate-x-1/2 bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-full text-xs text-gray-600 shadow-md z-20 flex items-center gap-1.5">
+                <div className="absolute top-3 left-1/2 -translate-x-1/2 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm px-3 py-1.5 rounded-full text-xs text-gray-600 dark:text-gray-300 shadow-md z-20 flex items-center gap-1.5">
                   <div className="w-2.5 h-2.5 border-2 border-townwize-primary border-t-transparent rounded-full animate-spin" />
                   Locating…
                 </div>
@@ -536,15 +540,15 @@ export default function MobileHome() {
             </div>
             {/* Suggestions overlay — white background covers the map */}
             {suggestions.length > 0 && (
-              <ul className="absolute inset-0 overflow-y-auto bg-white z-10">
+              <ul className="absolute inset-0 overflow-y-auto bg-white dark:bg-townwize-primaryDark z-10">
                 {suggestions.map((p, idx) => (
                   <li
                     key={p?.placePrediction?.placeId || idx}
                     onTouchStart={(e) => { e.stopPropagation(); resolvePlace(p); }}
                     onClick={() => resolvePlace(p)}
-                    className="flex items-center gap-3 px-4 py-3.5 active:bg-gray-50 border-b border-gray-50 touch-manipulation cursor-pointer"
+                    className="flex items-center gap-3 px-4 py-3.5 active:bg-gray-50 dark:active:bg-gray-800 border-b border-gray-50 dark:border-gray-700 touch-manipulation cursor-pointer"
                   >
-                    <div className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
+                    <div className="w-9 h-9 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center flex-shrink-0">
                       <FaMapMarkerAlt className="text-gray-400 text-sm" />
                     </div>
                     <span className="text-[13px] text-gray-800 leading-snug">
