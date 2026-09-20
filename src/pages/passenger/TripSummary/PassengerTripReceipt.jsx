@@ -349,6 +349,12 @@ export default function PassengerTripReceipt() {
       // was added to the settled breakdown.
       tollAmount: f.tollAmount ?? ride?.tollAmount ?? 0,
       taxAmount: f.taxAmount || 0,
+      /* The minimum-fare uplift. Without it the printed lines do not add up to
+       * the total on any short trip — a real receipt showed 191.95 of lines
+       * against 257 charged, and an unexplained gap on a receipt reads as an
+       * overcharge. The backend previously emitted only a boolean, which a
+       * receipt cannot render, so nothing was shown at all. */
+      minimumFareAdjustment: f.minimumFareAdjustment || 0,
       distanceKm: ride?.status === "CANCELLED"
         ? null
         : (f.distanceKm ?? ride?.actualDistanceKm ?? ride?.distanceKm ?? null),
@@ -472,6 +478,12 @@ export default function PassengerTripReceipt() {
                   ...(Number(fare.waitFare || 0) > 0   ? [["Wait Fare",   fare.waitFare]]   : []),
                   ["Platform Fee", fare.platformFee],
                   ...(Number(fare.tollAmount || 0) > 0 ? [["Toll",        fare.tollAmount]] : []),
+                  // Shown BEFORE tax, which is where it is actually applied:
+                  // tax is charged on the uplifted subtotal, so listing it
+                  // after SST would make the arithmetic wrong again.
+                  ...(Number(fare.minimumFareAdjustment || 0) > 0
+                    ? [["Minimum Fare Adjustment", fare.minimumFareAdjustment]]
+                    : []),
                   ...(Number(fare.taxAmount || 0) > 0  ? [["SST",         fare.taxAmount]]  : []),
                 ].map(([label, value]) => (
                   <div key={label} className="flex justify-between">
@@ -711,6 +723,14 @@ export default function PassengerTripReceipt() {
               <div className="flex justify-between"><span>Platform Fee</span><span>{toMoney(fare.platformFee)}</span></div>
               {Number(fare.tollAmount || 0) > 0 ? (
                 <div className="flex justify-between"><span>Toll</span><span>{toMoney(fare.tollAmount)}</span></div>
+              ) : null}
+              {/* Before tax, matching the order in the on-screen summary and
+                  the order the fare engine actually applies them. */}
+              {Number(fare.minimumFareAdjustment || 0) > 0 ? (
+                <div className="flex justify-between">
+                  <span>Minimum Fare Adjustment</span>
+                  <span>{toMoney(fare.minimumFareAdjustment)}</span>
+                </div>
               ) : null}
               {Number(fare.taxAmount || 0) > 0 ? (
                 <div className="flex justify-between"><span>Sindh Sales Tax (SST)</span><span>{toMoney(fare.taxAmount)}</span></div>

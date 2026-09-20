@@ -1,4 +1,5 @@
 import AppLegalLinks from "../../../components/common/AppLegalLinks";
+import FoundingBadge from "../../../components/common/FoundingBadge";
 import { useCallback, useContext, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { FaStar, FaGift, FaCopy, FaShareAlt, FaTicketAlt, FaCamera, FaCar } from "react-icons/fa";
@@ -318,7 +319,7 @@ function DocumentSections({ profile, onUploaded }) {
 
 const DriverProfile = () => {
   const navigate = useNavigate();
-  const { logout } = useContext(AuthContext);
+  const { logout, user } = useContext(AuthContext);
 
   const handleLogout = () => {
     toast.info("Logging you out...", { autoClose: 800 });
@@ -406,6 +407,9 @@ const DriverProfile = () => {
           <div>
             <h1 className="text-2xl font-bold dark:text-white">Driver Profile</h1>
             <p className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">Registration and verification status</p>
+            {/* Elite Wizer — promised in the welcome email and shown nowhere
+                in the app until now. */}
+            <FoundingBadge badge={user?.foundingBadge} className="mt-2" />
           </div>
         </div>
       </div>

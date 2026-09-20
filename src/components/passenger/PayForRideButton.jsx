@@ -20,17 +20,32 @@ const PayForRideButton = ({ ride, onPaid }) => {
     const method = ride?.paymentMethod || "cash";
     const status = ride?.paymentStatus;
 
-    // Cash settles between passenger and Wizer; nothing to collect here.
-    if (method === "cash") return null;
-    if (status === "captured" || status === "refunded") return null;
-    // NEVER ask for money on a ride that did not happen. A cancelled card ride
-    // keeps paymentStatus "pending" — nothing will ever be collected against it
-    // — and without this check that state renders a "Pay 257 PKR" button for a
-    // trip the passenger never took. The server refuses it too, but a button
-    // that should not exist must not be drawn in the first place.
-    if (ride?.status !== "COMPLETED") return null;
+    /* A cancelled ride can carry a LATE-CANCELLATION FEE, which is a different
+     * debt from a fare. It was previously written to the ride and announced to
+     * the passenger with no way to pay it and nothing collecting it.
+     *
+     * Note it ignores `paymentMethod`: once a ride is cancelled there is no
+     * cash moment, because nobody meets anybody, so card is the only way to
+     * settle it whatever was picked at booking. */
+    const feeOwed =
+        ride?.status === "CANCELLED" &&
+        Number(ride?.cancellationFee || 0) > 0 &&
+        ride?.cancellationFeeStatus !== "paid" &&
+        ride?.cancellationFeeStatus !== "waived";
 
-    const fare = Number(ride?.finalFare ?? ride?.fareEstimate ?? 0);
+    if (!feeOwed) {
+        // Cash settles between passenger and Wizer; nothing to collect here.
+        if (method === "cash") return null;
+        if (status === "captured" || status === "refunded") return null;
+        // NEVER ask for the FARE on a ride that did not happen. A cancelled
+        // card ride keeps paymentStatus "pending" and without this check that
+        // state renders a "Pay 257 PKR" button for a trip nobody took.
+        if (ride?.status !== "COMPLETED") return null;
+    }
+
+    const fare = feeOwed
+        ? Number(ride.cancellationFee)
+        : Number(ride?.finalFare ?? ride?.fareEstimate ?? 0);
 
     const pay = async () => {
         if (busy) return;
@@ -66,12 +81,14 @@ const PayForRideButton = ({ ride, onPaid }) => {
         <div className="rounded-2xl border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 p-4 space-y-3">
             <div>
                 <p className="text-sm font-bold text-amber-900 dark:text-amber-200">
-                    Payment due
+                    {feeOwed ? "Cancellation fee due" : "Payment due"}
                 </p>
                 <p className="text-xs text-amber-800 dark:text-amber-300 mt-0.5">
-                    {status === "failed"
-                        ? "That payment didn't go through — you have not been charged. Try again, or pay your Wizer in cash."
-                        : "Your trip is complete. Pay the fare below to settle it."}
+                    {feeOwed
+                        ? "This ride was cancelled after a Wizer had already set off. Paying the fee settles it."
+                        : status === "failed"
+                          ? "That payment didn't go through — you have not been charged. Try again, or pay your Wizer in cash."
+                          : "Your trip is complete. Pay the fare below to settle it."}
                 </p>
             </div>
             <button
@@ -83,7 +100,10 @@ const PayForRideButton = ({ ride, onPaid }) => {
             >
                 {busy ? "Opening payment…" : `Pay ${fare.toLocaleString("en-PK")} PKR`}
             </button>
-            {onPaid && (
+            {/* Not offered for a cancellation fee: there was no trip and no
+                Wizer to hand cash to, so the escape hatch would be a way to
+                dismiss the debt rather than settle it. */}
+            {onPaid && !feeOwed && (
                 <button
                     onClick={onPaid}
                     className="w-full text-xs font-medium text-amber-800 dark:text-amber-300 underline underline-offset-2"

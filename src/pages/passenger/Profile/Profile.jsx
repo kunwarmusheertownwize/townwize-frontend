@@ -1,5 +1,6 @@
 // File: src/pages/passenger/Profile/Profile.jsx
 import AppLegalLinks from "../../../components/common/AppLegalLinks";
+import FoundingBadge from "../../../components/common/FoundingBadge";
 import { useState, useContext, useEffect, useCallback } from "react";
 import {
   FaUser,
@@ -191,6 +192,9 @@ export default function Profile() {
                 <span className="text-[10px] px-2 py-0.5 bg-green-500/30 text-green-200 rounded-full">
                   Verified Rider
                 </span>
+                {/* Promised in the welcome email since launch prep and never
+                    shown anywhere in the app until now. */}
+                <FoundingBadge badge={user?.foundingBadge} />
               </div>
             </div>
           </div>

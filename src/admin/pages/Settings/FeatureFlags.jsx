@@ -15,8 +15,19 @@ import { fetchFeatureFlags, updateFeatureFlag } from "../../../api/adminApi";
  * ask before turning ON.
  */
 
-// Keys the backend actually reads at runtime (domain/enums/featureFlags.js).
+/* Fallback only. The BACKEND is now the authority: it stamps
+ * `payload.implemented` on every flag it returns, and refuses a toggle on one
+ * that nothing reads. This list stays for older responses that predate that,
+ * but it must never be the primary answer — a hardcoded copy of "what the
+ * backend reads", maintained by hand in a different repo half, drifts the
+ * first time someone wires a flag up and forgets this file.
+ */
 const WIRED = new Set(["card_payments", "public_registration", "guest_invites"]);
+
+const isWired = (flag) =>
+  typeof flag?.payload?.implemented === "boolean"
+    ? flag.payload.implemented
+    : WIRED.has(flag.key);
 
 // Turning these ON changes what real people can do, so they confirm first.
 // Turning them OFF is always allowed without a prompt — that is the safe direction.
@@ -171,8 +182,8 @@ export default function FeatureFlags() {
   };
 
   const { live, dead, onCount } = useMemo(() => {
-    const live = items.filter((f) => WIRED.has(f.key));
-    const dead = items.filter((f) => !WIRED.has(f.key));
+    const live = items.filter(isWired);
+    const dead = items.filter((f) => !isWired(f));
     return { live, dead, onCount: live.filter((f) => f.enabled).length };
   }, [items]);
 
