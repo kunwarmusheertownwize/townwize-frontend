@@ -1,6 +1,7 @@
 // File: src/pages/passenger/Profile/Profile.jsx
 import AppLegalLinks from "../../../components/common/AppLegalLinks";
 import FoundingBadge from "../../../components/common/FoundingBadge";
+import SavedCards from "../../../components/passenger/SavedCards";
 import { useState, useContext, useEffect, useCallback } from "react";
 import {
   FaUser,
@@ -960,6 +961,12 @@ export default function Profile() {
               Townwize doesn&rsquo;t hold a balance for you — you pay per trip,
               so there is nothing to top up.
             </p>
+
+            {/* Renders nothing at all when card payments are switched off, so
+                this cannot offer a feature that is not live. */}
+            <div className="mt-6 border-t border-gray-100 dark:border-gray-700 pt-5">
+              <SavedCards />
+            </div>
           </div>
         )}
 

@@ -25,6 +25,7 @@
     "@headlessui/react": "^2.2.7",
     "@heroicons/react": "^2.2.0",
     "@hookform/resolvers": "^5.2.2",
+    "@sfpy/atoms": "^0.3.7",
     "@vladmandic/face-api": "^1.7.15",
     "axios": "^1.13.2",
     "canvas-confetti": "^1.9.3",
