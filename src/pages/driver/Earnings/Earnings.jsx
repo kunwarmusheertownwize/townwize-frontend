@@ -28,6 +28,9 @@ const STATUS_STYLE = {
   APPROVED: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300",
   PAID:     "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300",
   REJECTED: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300",
+  // Abandoned checkout: neutral grey. Nothing is wrong and nothing is owed
+  // any differently — the driver simply did not finish.
+  INCOMPLETE: "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400",
 };
 
 const STATUS_LABEL = {
@@ -35,6 +38,7 @@ const STATUS_LABEL = {
   APPROVED: "Approved",
   PAID: "Confirmed",
   REJECTED: "Rejected",
+  INCOMPLETE: "Not completed",
 };
 
 // Aggregate daily breakdown rows into weekly buckets for 30-day view
@@ -176,12 +180,21 @@ function PaymentModal({ balanceOwed, onClose, onSubmit }) {
               settles the ledger the moment the payment captures, with nobody in
               the path. */}
           <div className="rounded-xl border border-townwize-primary/30 bg-townwize-primary/5 dark:bg-townwize-primary/10 p-4">
-            <p className="text-sm font-bold text-townwize-primary dark:text-townwize-accent">
-              Pay now, in the app
-            </p>
+            {/* The badge earns its place by naming the DIFFERENCE between the
+                two routes — this one clears immediately, the other is confirmed
+                within a day. "Recommended" would assert a preference without
+                saying why. */}
+            <div className="flex items-center gap-2">
+              <p className="text-sm font-bold text-townwize-primary dark:text-townwize-accent">
+                Pay now, in the app
+              </p>
+              <span className="rounded-full bg-townwize-primary px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
+                Instant
+              </span>
+            </div>
             <p className="mt-1 text-xs text-gray-600 dark:text-gray-400">
-              Card, EasyPaisa, JazzCash or bank transfer. Your balance updates
-              automatically — no reference to type and nothing to wait for.
+              Card, EasyPaisa, JazzCash or bank transfer. Your balance clears
+              straight away — no reference to type and nothing to wait for.
             </p>
             <button
               type="button"
@@ -201,13 +214,41 @@ function PaymentModal({ balanceOwed, onClose, onSubmit }) {
               account details, an amount field and a reference box permanently
               open gave the slow path more of the dialog than the fast one, on
               a screen a blocked driver reads in a hurry. */}
+          <div className="flex items-center gap-3">
+            <span className="h-px flex-1 bg-gray-200 dark:bg-gray-700" />
+            <span className="text-[11px] uppercase tracking-wide text-gray-400">or pay another way</span>
+            <span className="h-px flex-1 bg-gray-200 dark:bg-gray-700" />
+          </div>
+
+          {/* Presented as a SECOND PAYMENT METHOD, not as a link — the pattern
+              Stripe, PayPal and Careem all use: two option cards, one
+              recommended, each naming what it is.
+
+              It read "I'd rather transfer it myself", which states a preference
+              instead of naming the option, so a driver could not tell what they
+              would get by tapping it. It also hid the real trade-off: this route
+              is slower and needs a receipt, and that belongs on the card rather
+              than being discovered two steps in. */}
           <button
             type="button"
             onClick={() => setShowManual((v) => !v)}
             aria-expanded={showManual}
-            className="w-full text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 underline underline-offset-2"
+            className="w-full flex items-center gap-3 rounded-xl border border-gray-200 dark:border-gray-700 px-4 py-3 text-start hover:border-gray-300 dark:hover:border-gray-600 transition-colors"
           >
-            {showManual ? "Hide" : "I'd rather transfer it myself"}
+            <span className="flex-1 min-w-0">
+              <span className="block text-sm font-semibold text-gray-800 dark:text-gray-100">
+                Bank transfer, EasyPaisa or JazzCash
+              </span>
+              <span className="block mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+                Send it yourself, then submit the receipt. We confirm it within a day.
+              </span>
+            </span>
+            <span
+              className={`shrink-0 text-gray-400 text-lg leading-none transition-transform ${showManual ? "rotate-180" : ""}`}
+              aria-hidden="true"
+            >
+              ▾
+            </span>
           </button>
 
           {showManual && (
@@ -420,7 +461,21 @@ const Earnings = () => {
 
   useEffect(() => { load(chartPeriod); }, [chartPeriod]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const hasPending = requests.some((r) => r.status === "PENDING");
+  /* ONLY a manual submission blocks. It is awaiting a human decision, and
+     letting a driver file a second claim for the same transfer would have an
+     admin confirm the same money twice.
+
+     An abandoned IN-APP checkout must never block. Opening the payment page
+     and backing out left a `pending` Payment, which locked the button to
+     "Pending…" — so a Wizer who changed their mind could no longer pay at all,
+     and the balance kept climbing toward the PKR 3,000 block with no way to
+     stop it. Tapping Pay again resumes the same session, by design. */
+  /* APPROVED counts too: approval is two-step on the admin side and only the
+     second step credits the balance, so an approved claim is a credit still
+     queued rather than one already applied. */
+  const hasPending = requests.some(
+    (r) => r.kind !== "in_app" && (r.status === "PENDING" || r.status === "APPROVED")
+  );
   const balanceOwed = data.balance < 0 ? Math.abs(data.balance) : 0;
   const isBlocked = data.balanceStatus === "blocked";
   const isWarning = data.balanceStatus === "warning";
@@ -827,11 +882,33 @@ const Earnings = () => {
                         </p>
                       )}
                     </div>
-                    <p className="text-xs text-gray-400 shrink-0 text-end">
-                      {fmtDate(r.createdAt)}
-                      <br />
-                      <span className="text-[10px]">{fmtTime(r.createdAt)}</span>
-                    </p>
+                    {/* An unfinished payment gets the action ON THE ROW.
+                        The note used to read "tap Pay to finish it" while the
+                        only way back in was the Submit Commission button at the
+                        top of the screen — pointing at a control that is not
+                        where the driver is looking. Same mistake as telling
+                        them to quote a Wizer ID that does not exist. */}
+                    {/* NOT while a manual claim is awaiting review. The driver
+                        has already told us they paid by other means, and an
+                        admin is about to credit it. Offering to finish an
+                        in-app session for the same debt at the same time is an
+                        invitation to pay twice — and it contradicted the
+                        "Pending…" button at the top of this very screen, which
+                        was blocking payment for exactly that reason. */}
+                    {r.status === "INCOMPLETE" && balanceOwed > 0 && !hasPending ? (
+                      <button
+                        onClick={() => setShowModal(true)}
+                        className="shrink-0 rounded-lg bg-townwize-primary px-3 py-1.5 text-xs font-semibold text-white"
+                      >
+                        Finish payment
+                      </button>
+                    ) : (
+                      <p className="text-xs text-gray-400 shrink-0 text-end">
+                        {fmtDate(r.createdAt)}
+                        <br />
+                        <span className="text-[10px]">{fmtTime(r.createdAt)}</span>
+                      </p>
+                    )}
                   </div>
                 ))}
               </div>
