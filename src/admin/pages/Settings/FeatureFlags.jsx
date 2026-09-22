@@ -70,10 +70,14 @@ function Switch({ on, busy, disabled, onChange, label }) {
   );
 }
 
-function FlagRow({ flag, busy, onToggle, wired }) {
+function FlagRow({ flag, busy, onToggle, onLimit, wired }) {
   const allow = flag.payload?.allowUserIds || [];
   const on = Boolean(flag.enabled);
   const updated = fmtDate(flag.updatedAt);
+  const [editing, setEditing] = useState(false);
+  /* Seeded from the EMAILS the server resolved and stored alongside the ids,
+     so reopening this shows what was typed rather than a row of ObjectIds. */
+  const [draft, setDraft] = useState((flag.payload?.allowEmails || []).join(", "));
 
   return (
     <div className={`rounded-xl border p-4 transition-colors ${
@@ -123,10 +127,70 @@ function FlagRow({ flag, busy, onToggle, wired }) {
                 <strong className="font-semibold text-gray-600 dark:text-gray-300">
                   {allow.length ? `${allow.length} named account${allow.length === 1 ? "" : "s"}` : "everyone"}
                 </strong>
+                {" · "}
+                <button
+                  type="button"
+                  onClick={() => setEditing((v) => !v)}
+                  className="font-semibold text-townwize-primary hover:underline dark:text-townwize-accent"
+                >
+                  {editing ? "cancel" : "change"}
+                </button>
               </span>
             )}
             {updated && <span>Last changed {updated} PKT</span>}
           </div>
+
+          {/* LIMITING A FLAG TO NAMED ACCOUNTS — the whole point of a risky
+              flag, and until now impossible from this screen. The field was
+              read-only here and matches raw ObjectIds underneath, so narrowing
+              a flag meant looking up a 24-character id in the database. In
+              practice nobody did, which left every switch an all-or-nothing
+              choice: on for EVERYONE, or off.
+
+              Emails in, ids resolved server-side. An address with no account
+              is refused rather than dropped — silently ignoring a typo would
+              narrow the flag to fewer people than asked for, or, if every
+              address was wrong, to an empty list, which means EVERYONE. */}
+          {wired && editing && (
+            <div className="mt-3 max-w-xl rounded-lg border border-gray-200 p-3 dark:border-gray-700">
+              <label className="block text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                Limit to these accounts
+              </label>
+              <textarea
+                value={draft}
+                onChange={(e) => setDraft(e.target.value)}
+                rows={2}
+                placeholder="you@example.com, someone@example.com"
+                className="mt-1 w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-xs dark:border-gray-700 dark:bg-gray-800"
+              />
+              <p className="mt-1 text-[11px] text-gray-400">
+                Email addresses, separated by commas. <strong>Leave empty for everyone</strong> —
+                an empty list is not &ldquo;nobody&rdquo;.
+              </p>
+              <div className="mt-2 flex items-center gap-2">
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() =>
+                    onLimit(
+                      flag.key,
+                      draft.split(/[,\s]+/).map((s) => s.trim()).filter(Boolean)
+                    )
+                  }
+                  className="rounded-lg bg-townwize-primary px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-60"
+                >
+                  {busy ? "Saving…" : "Save"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setDraft(""); onLimit(flag.key, []); }}
+                  className="text-xs text-gray-500 hover:underline dark:text-gray-400"
+                >
+                  Apply to everyone
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="flex shrink-0 flex-col items-center gap-1">
@@ -181,6 +245,24 @@ export default function FeatureFlags() {
     }
   };
 
+  /* Sends the flag's EXISTING payload back with the new list, because the
+     server replaces `payload` wholesale — posting only the emails would drop
+     the label, the description and the `implemented` marker, and the row would
+     come back nameless. */
+  const onLimit = async (key, allowEmails) => {
+    setSavingKey(key);
+    setError("");
+    try {
+      const current = items.find((f) => f.key === key)?.payload || {};
+      await updateFeatureFlag(key, { payload: { ...current, allowEmails } });
+      await load();
+    } catch (e) {
+      setError(e.message || "Failed to update who the flag applies to");
+    } finally {
+      setSavingKey("");
+    }
+  };
+
   const { live, dead, onCount } = useMemo(() => {
     const live = items.filter(isWired);
     const dead = items.filter((f) => !isWired(f));
@@ -227,6 +309,7 @@ export default function FeatureFlags() {
                   wired
                   busy={savingKey === flag.key}
                   onToggle={onToggle}
+                  onLimit={onLimit}
                 />
               ))
             )}
