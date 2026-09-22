@@ -49,7 +49,7 @@ const Row = ({ label, value, copyable }) => {
     if (!value) return null;
 
     return (
-        <div className="flex items-start justify-between gap-3 py-1.5">
+        <div className="flex items-baseline justify-between gap-3 py-1">
             <span className="text-xs text-gray-500 dark:text-gray-400 shrink-0">{label}</span>
             {copyable ? (
                 <CopyValue value={value} />
@@ -62,9 +62,10 @@ const Row = ({ label, value, copyable }) => {
     );
 };
 
-export default function RemittanceDetails({ compact = false }) {
+export default function RemittanceDetails({ compact = false, collapsible = false }) {
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [open, setOpen] = useState(false);
 
     useEffect(() => {
         let mounted = true;
@@ -99,16 +100,12 @@ export default function RemittanceDetails({ compact = false }) {
 
     const hasWallet = data.easypaisaNumber || data.jazzcashNumber;
 
-    return (
-        <div className={`rounded-xl border border-gray-200 dark:border-gray-700 ${compact ? "px-4 py-3" : "p-4"}`}>
-            <p className="text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                Send your payment to
-            </p>
-
+    const details = (
+        <>
             {/* Wallets first — most Wizers will use one of these rather than
                 making a bank transfer. */}
             {hasWallet && (
-                <div className="mt-2 space-y-0.5">
+                <div className="space-y-px">
                     <Row label="EasyPaisa" value={data.easypaisaNumber} copyable />
                     <Row label="Account name" value={data.easypaisaTitle} />
                     <Row label="JazzCash" value={data.jazzcashNumber} copyable />
@@ -117,43 +114,84 @@ export default function RemittanceDetails({ compact = false }) {
             )}
 
             {data.iban && (
-                <div className={`space-y-0.5 ${hasWallet ? "mt-3 border-t border-gray-100 dark:border-gray-700 pt-2" : "mt-2"}`}>
+                <div className={`space-y-px ${hasWallet ? "mt-2 border-t border-gray-100 dark:border-gray-700/60 pt-2" : ""}`}>
                     <Row label="Bank" value={data.bankName} />
                     <Row label="Account title" value={data.accountTitle} />
                     <Row label="IBAN" value={data.iban} copyable />
                 </div>
             )}
 
-            {/* The reference the driver types into the BANK's narration field —
-                not the one they read back off the receipt afterwards. It is what
-                lets a credit landing in Townwize's account be matched to them
-                without anybody asking. Given its own block, and stated as an
-                instruction, because a row among the account details reads as
-                one more thing to look at rather than something to do. */}
+            {/* The reference goes in the BANK's narration field — it is not the
+                one read back off the receipt afterwards. It is what lets a
+                credit landing in Townwize's account be matched to this driver
+                without anybody asking, so it is set apart from the account rows
+                rather than listed as one more thing to look at. */}
             {data.paymentReference && (
-                <div className="mt-3 rounded-lg border border-townwize-primary/25 bg-townwize-primary/5 dark:border-townwize-accent/25 dark:bg-townwize-accent/10 px-3 py-2">
-                    <div className="flex items-center justify-between gap-3">
-                        <span className="text-xs font-semibold text-gray-700 dark:text-gray-200">
-                            Your payment reference
+                <div className="mt-2 border-t border-gray-100 dark:border-gray-700/60 pt-2">
+                    <div className="flex items-baseline justify-between gap-3">
+                        <span className="text-xs text-gray-500 dark:text-gray-400 shrink-0">
+                            Reference
                         </span>
                         <CopyValue value={data.paymentReference} className="text-sm tracking-wide" />
                     </div>
-                    <p className="mt-0.5 text-[11px] text-gray-500 dark:text-gray-400">
-                        Put this in the reference or remarks box when you send the
-                        money, so we know the payment is yours.
+                    <p className="mt-1 text-[11px] leading-snug text-gray-400 dark:text-gray-500">
+                        Quote this when you send the money so we can match it to you.
                     </p>
                 </div>
             )}
 
             {data.instructions && (
-                <p className="mt-3 border-t border-gray-100 dark:border-gray-700 pt-2 text-xs text-gray-500 dark:text-gray-400">
+                <p className="mt-2 text-[11px] leading-snug text-gray-400 dark:text-gray-500">
                     {data.instructions}
                 </p>
             )}
+        </>
+    );
 
-            <p className="mt-3 text-[11px] text-gray-400 dark:text-gray-500">
-                Keep your transaction receipt — you will need its reference number on
-                the next step.
+    /* Collapsed by default where the balance is CLEAR. The details have to be
+       findable before a driver is blocked — that was the original bug — but a
+       full account listing does not deserve half the screen on a day when
+       nothing is owed. Open where the driver is actually paying. */
+    if (collapsible) {
+        return (
+            <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white/60 dark:bg-gray-900/30">
+                <button
+                    type="button"
+                    onClick={() => setOpen((o) => !o)}
+                    aria-expanded={open}
+                    className="flex w-full items-center justify-between gap-2 px-3 py-2 text-start"
+                >
+                    <span className="text-xs font-semibold text-gray-600 dark:text-gray-300">
+                        Where to send payment
+                    </span>
+                    <span
+                        className={`shrink-0 text-gray-400 transition-transform ${open ? "rotate-180" : ""}`}
+                        aria-hidden="true"
+                    >
+                        ▾
+                    </span>
+                </button>
+                {open && (
+                    <div className="border-t border-gray-100 dark:border-gray-700/60 px-3 pb-3 pt-2">
+                        {details}
+                    </div>
+                )}
+            </div>
+        );
+    }
+
+    return (
+        <div className={`rounded-lg border border-gray-200 dark:border-gray-700 ${compact ? "px-3 py-2.5" : "p-3"}`}>
+            <p className="mb-1.5 text-[11px] font-bold uppercase tracking-wide text-gray-400 dark:text-gray-500">
+                Send your payment to
+            </p>
+            {details}
+
+            {/* Only here. This form has a Transaction Reference field below it,
+                so there genuinely is a next step; on the earnings card there is
+                not, and the line dangled with nothing to refer to. */}
+            <p className="mt-2 border-t border-gray-100 dark:border-gray-700/60 pt-2 text-[11px] leading-snug text-gray-400 dark:text-gray-500">
+                Keep your receipt — the next step asks for its reference number.
             </p>
         </div>
     );

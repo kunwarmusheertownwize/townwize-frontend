@@ -51,3 +51,15 @@ export async function startCommissionPayment(amountMinor) {
   const res = await api.post("/driver/commission/pay", amountMinor ? { amountMinor } : {});
   return unwrap(res) || null;
 }
+
+/**
+ * Commission the driver has paid — BOTH ways, merged on the server.
+ *
+ * Not the same as fetchPayoutRequests(), which returns only the manual
+ * submissions. Using that for the history meant a Wizer who paid in the app
+ * saw "No payments submitted yet" next to a balance that had just cleared.
+ */
+export async function fetchCommissionHistory() {
+  const res = await api.get("/driver/commission/history");
+  return unwrap(res)?.requests || [];
+}

@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from "react";
 import { toast } from "react-toastify";
 import {
   fetchDriverEarnings,
-  fetchPayoutRequests,
+  fetchCommissionHistory,
   submitPayoutRequest,
   fetchPayoutDetails,
   savePayoutDetails,
@@ -13,6 +13,12 @@ import RemittanceDetails from "../../../components/driver/RemittanceDetails";
 const toMoney = (n) => `PKR ${Number(n || 0).toLocaleString()}`;
 const fmtDate = (iso) =>
   iso ? new Date(iso).toLocaleDateString("en-PK", { day: "numeric", month: "short", year: "numeric" }) : "—";
+
+/* Payments need a time, not just a day. Several can settle on the same date —
+   three did on 22 Sep — and a row reading only "22 Sept 2026" cannot be told
+   apart from the one above it. */
+const fmtTime = (iso) =>
+  iso ? new Date(iso).toLocaleTimeString("en-PK", { hour: "numeric", minute: "2-digit" }) : "";
 
 const fmtShortDate = (iso) =>
   iso ? new Date(iso).toLocaleDateString("en-PK", { day: "numeric", month: "short" }) : "—";
@@ -117,6 +123,7 @@ function PaymentModal({ balanceOwed, onClose, onSubmit }) {
   const [note, setNote] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [payingNow, setPayingNow] = useState(false);
+  const [showManual, setShowManual] = useState(false);
 
   /* Hands off to Safepay's checkout. The amount is NOT sent: the server reads
      what is owed from the driver's own ledger, so a stale screen cannot ask
@@ -186,16 +193,25 @@ function PaymentModal({ balanceOwed, onClose, onSubmit }) {
             </button>
           </div>
 
-          <div className="flex items-center gap-3">
-            <span className="h-px flex-1 bg-gray-200 dark:bg-gray-700" />
-            <span className="text-[11px] uppercase tracking-wide text-gray-400">or pay manually</span>
-            <span className="h-px flex-1 bg-gray-200 dark:bg-gray-700" />
-          </div>
+          {/* THE MANUAL ROUTE, COLLAPSED.
+              Kept as a fallback for a driver who would rather transfer the
+              money themselves, and for when card payments are switched off —
+              it used to be the ONLY route, and it never said where to send the
+              money. But it is no longer the recommended one, and leaving the
+              account details, an amount field and a reference box permanently
+              open gave the slow path more of the dialog than the fast one, on
+              a screen a blocked driver reads in a hurry. */}
+          <button
+            type="button"
+            onClick={() => setShowManual((v) => !v)}
+            aria-expanded={showManual}
+            className="w-full text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 underline underline-offset-2"
+          >
+            {showManual ? "Hide" : "I'd rather transfer it myself"}
+          </button>
 
-          {/* The manual route, kept as a fallback for a driver who would rather
-              transfer it themselves — or for when card payments are switched
-              off. It used to be the ONLY route, and it never said where to
-              send the money. */}
+          {showManual && (
+          <>
           <RemittanceDetails compact />
 
           <div>
@@ -231,6 +247,9 @@ function PaymentModal({ balanceOwed, onClose, onSubmit }) {
           >
             {submitting ? "Submitting…" : "Submit Payment"}
           </button>
+          </>
+          )}
+
           <button type="button" onClick={onClose} className="w-full py-2 text-sm text-gray-400 hover:text-gray-600">
             Cancel
           </button>
@@ -369,7 +388,11 @@ const Earnings = () => {
     try {
       const [earnings, reqs, bank] = await Promise.all([
         fetchDriverEarnings(period),
-        fetchPayoutRequests(),
+        // BOTH kinds of commission payment, merged server-side. Was
+        // fetchPayoutRequests(), which returns only the manual submissions —
+        // so paying in the app cleared the balance and left the history saying
+        // "No payments submitted yet".
+        fetchCommissionHistory(),
         // Non-blocking: a Wizer who has never earned on card still sees their
         // cash commission screen if this call fails.
         fetchPayoutDetails().catch(() => null),
@@ -604,12 +627,19 @@ const Earnings = () => {
 
           {/* Education card — shown when commission is clear */}
           {!balanceOwed && (
-            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 rounded-2xl px-4 py-3.5">
-              <p className="text-sm font-semibold text-blue-800 dark:text-blue-300 mb-0.5">How cash commission works</p>
-              <p className="text-xs text-blue-700 dark:text-blue-400 leading-relaxed">
-                You collect fares directly in cash. Townwize's commission is tracked here. When your balance reaches{" "}
-                <strong>PKR 1,500</strong>, you'll get a warning. At <strong>PKR 3,000</strong>, you'll be temporarily
-                blocked until you pay via EasyPaisa / JazzCash and submit proof below.
+            <div className="bg-blue-50/70 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 rounded-xl px-3.5 py-3">
+              <p className="text-[13px] font-semibold text-blue-900 dark:text-blue-300 mb-1">How cash commission works</p>
+              <p className="text-xs text-blue-800/80 dark:text-blue-400 leading-snug">
+                {/* Said "blocked until you pay via EasyPaisa / JazzCash and
+                    submit proof below" — describing the manual loop as though
+                    it were the only route, after paying in the app had replaced
+                    it. A driver reading this would go and make a transfer by
+                    hand when a button on this screen would have cleared it
+                    instantly. The user raised this wording once already; the
+                    dialog was corrected and this card was missed. */}
+                You collect fares in cash, and Townwize's commission is tracked here. You'll be
+                warned at <strong>PKR 1,500</strong> and temporarily blocked at <strong>PKR 3,000</strong>{" "}
+                until it's paid — in the app in one step, or by transferring it yourself.
               </p>
 
               {/* WHERE to pay, shown even at a zero balance.
@@ -619,8 +649,11 @@ const Earnings = () => {
                   at PKR 3,000 — by then they cannot earn, and hunting for an
                   account number is the worst possible moment to discover it is
                   not written down anywhere. */}
-              <div className="mt-3">
-                <RemittanceDetails compact />
+              {/* Collapsed here. Findable before a driver is blocked, which was
+                  the original bug, without a full account listing taking half
+                  the screen on a day when nothing is owed. */}
+              <div className="mt-2.5">
+                <RemittanceDetails collapsible />
               </div>
             </div>
           )}
@@ -785,8 +818,20 @@ const Earnings = () => {
                       {r.rejectionReason && (
                         <p className="text-xs text-red-500 mt-0.5">Rejected: {r.rejectionReason}</p>
                       )}
+                      {/* Something to quote if a payment is ever disputed.
+                          Without it, several payments on one day are
+                          indistinguishable and the driver has nothing to name. */}
+                      {r.reference && (
+                        <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-0.5 font-mono truncate">
+                          {r.reference}
+                        </p>
+                      )}
                     </div>
-                    <p className="text-xs text-gray-400 shrink-0">{fmtDate(r.createdAt)}</p>
+                    <p className="text-xs text-gray-400 shrink-0 text-end">
+                      {fmtDate(r.createdAt)}
+                      <br />
+                      <span className="text-[10px]">{fmtTime(r.createdAt)}</span>
+                    </p>
                   </div>
                 ))}
               </div>
