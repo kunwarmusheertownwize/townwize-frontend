@@ -39,3 +39,15 @@ export async function savePayoutDetails(details) {
   const res = await api.put("/driver/payout/details", details);
   return unwrap(res) || null;
 }
+
+/**
+ * Starts an in-app commission payment and returns a checkout URL.
+ *
+ * `amountMinor` is optional — omitted means "settle the whole balance". The
+ * SERVER caps it at what is actually owed, so this can never overpay a driver
+ * into credit however it is called.
+ */
+export async function startCommissionPayment(amountMinor) {
+  const res = await api.post("/driver/commission/pay", amountMinor ? { amountMinor } : {});
+  return unwrap(res) || null;
+}

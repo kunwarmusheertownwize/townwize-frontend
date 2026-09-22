@@ -6,7 +6,9 @@ import {
   submitPayoutRequest,
   fetchPayoutDetails,
   savePayoutDetails,
+  startCommissionPayment,
 } from "../../../api/driverApi";
+import RemittanceDetails from "../../../components/driver/RemittanceDetails";
 
 const toMoney = (n) => `PKR ${Number(n || 0).toLocaleString()}`;
 const fmtDate = (iso) =>
@@ -114,6 +116,23 @@ function PaymentModal({ balanceOwed, onClose, onSubmit }) {
   const [amount, setAmount] = useState(balanceOwed > 0 ? balanceOwed : "");
   const [note, setNote] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [payingNow, setPayingNow] = useState(false);
+
+  /* Hands off to Safepay's checkout. The amount is NOT sent: the server reads
+     what is owed from the driver's own ledger, so a stale screen cannot ask
+     for the wrong figure and nothing here can overpay them into credit. */
+  const payNow = async () => {
+    if (payingNow) return;
+    setPayingNow(true);
+    try {
+      const { checkoutUrl } = await startCommissionPayment();
+      if (!checkoutUrl) throw new Error("Could not start the payment");
+      window.location.href = checkoutUrl;
+    } catch (e) {
+      toast.error(e?.message || "Could not open the payment page. Please try again.");
+      setPayingNow(false);
+    }
+  };
 
   const handleSubmit = async () => {
     const val = Number(amount);
@@ -133,12 +152,52 @@ function PaymentModal({ balanceOwed, onClose, onSubmit }) {
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 px-4 pb-6 sm:pb-0">
       <div className="w-full max-w-sm bg-white dark:bg-gray-900 rounded-2xl shadow-2xl overflow-hidden">
         <div className="bg-gradient-to-br from-townwize-primary to-townwize-primaryDark px-6 py-5 text-white">
-          <h3 className="text-lg font-bold">Submit Commission Payment</h3>
+          <h3 className="text-lg font-bold">Pay your commission</h3>
+          {/* Was "Send payment via EasyPaisa / JazzCash, then submit proof
+              here" — which described the only route that existed, told the
+              driver nothing about WHERE to send it, and is no longer the
+              recommended way to do it. */}
           <p className="text-xs text-white/70 mt-0.5">
-            Send payment via EasyPaisa / JazzCash, then submit proof here
+            Pay in the app and your balance clears straight away
           </p>
         </div>
         <div className="px-6 py-5 space-y-4">
+          {/* PAY IN THE APP — the primary route.
+              Before this, every commission payment was a manual loop: transfer
+              the money yourself, type the amount and a reference, then wait for
+              an admin to confirm it by hand before your balance moved. This
+              settles the ledger the moment the payment captures, with nobody in
+              the path. */}
+          <div className="rounded-xl border border-townwize-primary/30 bg-townwize-primary/5 dark:bg-townwize-primary/10 p-4">
+            <p className="text-sm font-bold text-townwize-primary dark:text-townwize-accent">
+              Pay now, in the app
+            </p>
+            <p className="mt-1 text-xs text-gray-600 dark:text-gray-400">
+              Card, EasyPaisa, JazzCash or bank transfer. Your balance updates
+              automatically — no reference to type and nothing to wait for.
+            </p>
+            <button
+              type="button"
+              onClick={payNow}
+              disabled={payingNow || balanceOwed <= 0}
+              className="mt-3 w-full py-3 rounded-xl bg-townwize-primary text-white font-semibold disabled:opacity-60"
+            >
+              {payingNow ? "Opening payment…" : `Pay ${toMoney(balanceOwed)} now`}
+            </button>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <span className="h-px flex-1 bg-gray-200 dark:bg-gray-700" />
+            <span className="text-[11px] uppercase tracking-wide text-gray-400">or pay manually</span>
+            <span className="h-px flex-1 bg-gray-200 dark:bg-gray-700" />
+          </div>
+
+          {/* The manual route, kept as a fallback for a driver who would rather
+              transfer it themselves — or for when card payments are switched
+              off. It used to be the ONLY route, and it never said where to
+              send the money. */}
+          <RemittanceDetails compact />
+
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
               Amount Paid (PKR)
@@ -552,6 +611,17 @@ const Earnings = () => {
                 <strong>PKR 1,500</strong>, you'll get a warning. At <strong>PKR 3,000</strong>, you'll be temporarily
                 blocked until you pay via EasyPaisa / JazzCash and submit proof below.
               </p>
+
+              {/* WHERE to pay, shown even at a zero balance.
+                  This paragraph says "pay via EasyPaisa / JazzCash" and used to
+                  stop there, exactly like the dialog did. A Wizer should be
+                  able to find out where the money goes BEFORE they are blocked
+                  at PKR 3,000 — by then they cannot earn, and hunting for an
+                  account number is the worst possible moment to discover it is
+                  not written down anywhere. */}
+              <div className="mt-3">
+                <RemittanceDetails compact />
+              </div>
             </div>
           )}
 

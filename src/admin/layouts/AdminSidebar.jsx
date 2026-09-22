@@ -22,6 +22,7 @@ const navItems = [
   { to: "/admin/settings/features", label: "Feature Flags" },
   { to: "/admin/settings/zones", label: "Zones" },
   { to: "/admin/settings/pricing", label: "Pricing" },
+  { to: "/admin/settings/remittance", label: "Commission Payments" },
   { to: "/admin/settings/cancellation", label: "Cancellation Policy" },
 
   { to: "/admin/referral", label: "Referral" },

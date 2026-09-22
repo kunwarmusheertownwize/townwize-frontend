@@ -21,6 +21,7 @@ import DriverPayoutRequests from "../pages/Finance/DriverPayoutRequests";
 import FeatureFlags from "../pages/Settings/FeatureFlags";
 import Zones from "../pages/Settings/Zones";
 import PricingSettings from "../pages/Settings/PricingSettings";
+import RemittanceSettings from "../pages/Settings/RemittanceSettings";
 import CancellationPolicy from "../pages/Settings/CancellationPolicy";
 import ReferralDashboard from "../pages/Referral/ReferralDashboard";
 import WaitlistPage from "../pages/Waitlist/WaitlistPage";
@@ -47,6 +48,8 @@ export default function AdminRoutes() {
             <Route path="settings/features" element={<FeatureFlags />} />
             <Route path="settings/zones" element={<Zones />} />
             <Route path="settings/pricing" element={<PricingSettings />} />
+            {/* Townwize's OWN receiving details — not a driver payout account. */}
+            <Route path="settings/remittance" element={<RemittanceSettings />} />
             <Route path="settings/cancellation" element={<CancellationPolicy />} />
 
             <Route path="referral" element={<ReferralDashboard />} />
