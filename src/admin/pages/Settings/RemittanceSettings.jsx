@@ -146,7 +146,12 @@ export default function RemittanceSettings() {
                         value={form.instructions}
                         onChange={set("instructions")}
                         rows={2}
-                        placeholder="e.g. Quote your Wizer ID as the reference."
+                        /* NOT the place to ask for a reference. Every driver is
+                         * already shown a generated payment reference of their
+                         * own; a second instruction to quote something else is
+                         * how this came to say "Quote your Wizer ID" — an
+                         * identifier that exists nowhere in the app or the data. */
+                        placeholder="e.g. Transfers are matched within one working day."
                         className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2.5 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-townwize-primary"
                     />
                 </div>

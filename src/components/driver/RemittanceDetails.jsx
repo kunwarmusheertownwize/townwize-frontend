@@ -13,9 +13,9 @@ import api from "../../services/api";
  * where — no account number, no wallet number, nothing. A Wizer owing
  * PKR 2,151 had no way to pay it, and no amount of reading the screen helped.
  */
-const Row = ({ label, value, copyable }) => {
+/** The value plus its copy button, without the label/row layout around it. */
+const CopyValue = ({ value, className = "" }) => {
     const [copied, setCopied] = useState(false);
-    if (!value) return null;
 
     const copy = async () => {
         try {
@@ -30,22 +30,34 @@ const Row = ({ label, value, copyable }) => {
     };
 
     return (
+        <span className="flex items-center gap-2 min-w-0">
+            <span className={`font-semibold text-gray-900 dark:text-gray-100 break-all text-end ${className || "text-sm"}`}>
+                {value}
+            </span>
+            <button
+                type="button"
+                onClick={copy}
+                className="shrink-0 text-[10px] font-bold uppercase tracking-wide text-townwize-primary dark:text-townwize-accent"
+            >
+                {copied ? "copied" : "copy"}
+            </button>
+        </span>
+    );
+};
+
+const Row = ({ label, value, copyable }) => {
+    if (!value) return null;
+
+    return (
         <div className="flex items-start justify-between gap-3 py-1.5">
             <span className="text-xs text-gray-500 dark:text-gray-400 shrink-0">{label}</span>
-            <span className="flex items-center gap-2 min-w-0">
+            {copyable ? (
+                <CopyValue value={value} />
+            ) : (
                 <span className="text-sm font-semibold text-gray-900 dark:text-gray-100 break-all text-end">
                     {value}
                 </span>
-                {copyable && (
-                    <button
-                        type="button"
-                        onClick={copy}
-                        className="shrink-0 text-[10px] font-bold uppercase tracking-wide text-townwize-primary dark:text-townwize-accent"
-                    >
-                        {copied ? "copied" : "copy"}
-                    </button>
-                )}
-            </span>
+            )}
         </div>
     );
 };
@@ -112,6 +124,27 @@ export default function RemittanceDetails({ compact = false }) {
                 </div>
             )}
 
+            {/* The reference the driver types into the BANK's narration field —
+                not the one they read back off the receipt afterwards. It is what
+                lets a credit landing in Townwize's account be matched to them
+                without anybody asking. Given its own block, and stated as an
+                instruction, because a row among the account details reads as
+                one more thing to look at rather than something to do. */}
+            {data.paymentReference && (
+                <div className="mt-3 rounded-lg border border-townwize-primary/25 bg-townwize-primary/5 dark:border-townwize-accent/25 dark:bg-townwize-accent/10 px-3 py-2">
+                    <div className="flex items-center justify-between gap-3">
+                        <span className="text-xs font-semibold text-gray-700 dark:text-gray-200">
+                            Your payment reference
+                        </span>
+                        <CopyValue value={data.paymentReference} className="text-sm tracking-wide" />
+                    </div>
+                    <p className="mt-0.5 text-[11px] text-gray-500 dark:text-gray-400">
+                        Put this in the reference or remarks box when you send the
+                        money, so we know the payment is yours.
+                    </p>
+                </div>
+            )}
+
             {data.instructions && (
                 <p className="mt-3 border-t border-gray-100 dark:border-gray-700 pt-2 text-xs text-gray-500 dark:text-gray-400">
                     {data.instructions}
@@ -119,7 +152,8 @@ export default function RemittanceDetails({ compact = false }) {
             )}
 
             <p className="mt-3 text-[11px] text-gray-400 dark:text-gray-500">
-                Keep the transaction reference — you will need it on the next step.
+                Keep your transaction receipt — you will need its reference number on
+                the next step.
             </p>
         </div>
     );
