@@ -149,7 +149,7 @@ export default function CasesList() {
             <button
               key={row._id || row.id || idx}
               type="button"
-              className="w-full rounded-xl border border-gray-200 bg-white p-4 text-left"
+              className="w-full rounded-xl border border-gray-200 bg-white p-4 text-start"
               onClick={() => setSelectedId(row.caseId || row._id)}
             >
               <div className="flex items-start justify-between gap-3">
@@ -186,14 +186,14 @@ export default function CasesList() {
         <table className="w-full table-fixed text-sm min-w-[980px]">
           <thead className="bg-gray-50 dark:bg-townwize-primaryDark sticky top-0 z-10">
             <tr>
-              <th className="px-4 py-3 text-left w-[16%]">Case ID</th>
-              <th className="px-4 py-3 text-left w-[10%]">Entity</th>
-              <th className="px-4 py-3 text-left w-[14%]">Name</th>
-              <th className="px-4 py-3 text-left w-[12%]">Phone</th>
-              <th className="px-4 py-3 text-left w-[14%]">Assignee</th>
-              <th className="px-4 py-3 text-left w-[10%]">Status</th>
-              <th className="px-4 py-3 text-left w-[10%]">Priority</th>
-              <th className="px-4 py-3 text-left w-[14%]">Updated</th>
+              <th className="px-4 py-3 text-start w-[16%]">Case ID</th>
+              <th className="px-4 py-3 text-start w-[10%]">Entity</th>
+              <th className="px-4 py-3 text-start w-[14%]">Name</th>
+              <th className="px-4 py-3 text-start w-[12%]">Phone</th>
+              <th className="px-4 py-3 text-start w-[14%]">Assignee</th>
+              <th className="px-4 py-3 text-start w-[10%]">Status</th>
+              <th className="px-4 py-3 text-start w-[10%]">Priority</th>
+              <th className="px-4 py-3 text-start w-[14%]">Updated</th>
             </tr>
           </thead>
           <tbody>

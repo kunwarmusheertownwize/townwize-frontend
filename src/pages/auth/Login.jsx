@@ -222,7 +222,7 @@ function Login() {
                   Email
                 </label>
                 <div className="flex items-center rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2">
-                  <FaEnvelope className="mr-2 text-gray-400 ml-2" />
+                  <FaEnvelope className="me-2 text-gray-400 ms-2" />
                   <input
                     type="email"
                     disabled={isSubmitting}
@@ -240,7 +240,7 @@ function Login() {
                   Password
                 </label>
                 <div className="flex items-center rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2">
-                  <FaLock className="mr-2 text-gray-400" />
+                  <FaLock className="me-2 text-gray-400" />
                   <input
                     type="password"
                     disabled={isSubmitting}

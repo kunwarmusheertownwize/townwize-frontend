@@ -256,7 +256,7 @@ export default function RidesList() {
                 />
                 <button
                   type="button"
-                  className="flex-1 text-left"
+                  className="flex-1 text-start"
                   onClick={() => setSelectedId(r._id)}
                 >
                   <div className="flex items-start justify-between gap-3">
@@ -310,13 +310,13 @@ export default function RidesList() {
                   onChange={toggleAll}
                 />
               </th>
-              <th className="px-4 py-3 text-left w-[15%]">Ride ID</th>
-              <th className="px-4 py-3 text-left w-[10%]">Status</th>
-              <th className="px-4 py-3 text-left w-[14%]">Passenger</th>
-              <th className="px-4 py-3 text-left w-[14%]">Driver</th>
-              <th className="px-4 py-3 text-left w-[25%]">Route</th>
-              <th className="px-4 py-3 text-left w-[9%]">Estimate</th>
-              <th className="px-4 py-3 text-left w-[10%]">Created</th>
+              <th className="px-4 py-3 text-start w-[15%]">Ride ID</th>
+              <th className="px-4 py-3 text-start w-[10%]">Status</th>
+              <th className="px-4 py-3 text-start w-[14%]">Passenger</th>
+              <th className="px-4 py-3 text-start w-[14%]">Driver</th>
+              <th className="px-4 py-3 text-start w-[25%]">Route</th>
+              <th className="px-4 py-3 text-start w-[9%]">Estimate</th>
+              <th className="px-4 py-3 text-start w-[10%]">Created</th>
             </tr>
           </thead>
           <tbody>

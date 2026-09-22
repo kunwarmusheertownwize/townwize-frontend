@@ -61,7 +61,7 @@ const HeroForm = ({
       <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-none space-y-4 max-w-lg border border-gray-200 dark:border-gray-700">
         {/* Pickup + Dropoff */}
         <div className="relative space-y-2">
-          <span className="absolute left-[11px] top-[30px] bottom-[22px] w-px bg-black z-20 dark:bg-townwize-bgLight"></span>
+          <span className="absolute start-[11px] top-[30px] bottom-[22px] w-px bg-black z-20 dark:bg-townwize-bgLight"></span>
 
           <PickupField
             pickup={pickup}

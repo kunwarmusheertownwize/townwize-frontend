@@ -57,9 +57,9 @@ function SkeletonCard() {
             <div className="h-4 w-1/2 rounded-md bg-gray-200 dark:bg-gray-700" />
           </div>
         </div>
-        <div className="shrink-0 text-right space-y-1">
+        <div className="shrink-0 text-end space-y-1">
           <div className="h-5 w-20 rounded-md bg-gray-200 dark:bg-gray-700" />
-          <div className="h-3 w-12 rounded-md bg-gray-200 dark:bg-gray-700 ml-auto" />
+          <div className="h-3 w-12 rounded-md bg-gray-200 dark:bg-gray-700 ms-auto" />
         </div>
       </div>
       <div className="mt-3 flex items-center gap-2">
@@ -294,7 +294,7 @@ export default function PassengerTrips() {
                       </div>
                     </div>
 
-                    <div className="shrink-0 text-right">
+                    <div className="shrink-0 text-end">
                       {/* A cancelled trip costs nothing, but the list showed its
                           ESTIMATE in the same bold style as a real fare — so a
                           cancelled ride read as though it had charged 257 PKR.
@@ -348,7 +348,7 @@ export default function PassengerTrips() {
                         <FaUsers size={9} /> View shared ride receipt →
                       </span>
                     )}
-                    <span className="ml-auto text-xs text-gray-400 capitalize">
+                    <span className="ms-auto text-xs text-gray-400 capitalize">
                       {ride.carType}
                     </span>
                   </div>

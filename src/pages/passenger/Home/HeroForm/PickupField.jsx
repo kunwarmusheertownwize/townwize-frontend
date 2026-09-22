@@ -71,7 +71,7 @@ const PickupField = ({
 
   return (
     <div className="relative" ref={pickupWrapperRef}>
-      <span className="absolute left-2 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-townwize-primary z-20 dark:bg-townwize-bgLight" />
+      <span className="absolute start-2 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-townwize-primary z-20 dark:bg-townwize-bgLight" />
 
       <input
         type="text"
@@ -95,7 +95,7 @@ const PickupField = ({
             fetchPickupSuggestions(value);
           }, 1000);
         }}
-        className="w-full pl-8 pr-10 py-3 rounded-md bg-gray-100 dark:bg-gray-900 text-sm text-townwize-textPrimary dark:text-white placeholder-gray-500 outline-none transition
+        className="w-full ps-8 pe-10 py-3 rounded-md bg-gray-100 dark:bg-gray-900 text-sm text-townwize-textPrimary dark:text-white placeholder-gray-500 outline-none transition
                         focus-visible:outline-none
                         focus-visible:ring-2
                         focus-visible:ring-townwize-primary
@@ -105,7 +105,7 @@ const PickupField = ({
       <button
         type="button"
         onClick={handleGetCurrentLocation}
-        className="absolute right-3 top-1/2 -translate-y-1/2 text-townwize-primary hover:text-townwize-primaryDark"
+        className="absolute end-3 top-1/2 -translate-y-1/2 text-townwize-primary hover:text-townwize-primaryDark"
         title={t("useCurrentLocation")}
       >
         <FaCrosshairs className={`dark:text-townwize-bgLight text-base ${locating ? "animate-spin" : ""}`} />
@@ -113,7 +113,7 @@ const PickupField = ({
 
       {/* Autocomplete suggestions */}
       {showAutocomplete && (
-        <ul className="absolute z-50 left-0 right-0 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl shadow-lg mt-1 max-h-60 overflow-y-auto">
+        <ul className="absolute z-50 start-0 end-0 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl shadow-lg mt-1 max-h-60 overflow-y-auto">
           {pickupSuggestions.map((p, idx) => (
             <li
               key={p?.placePrediction?.placeId || p.place_id || idx}
@@ -138,7 +138,7 @@ const PickupField = ({
 
       {/* Recent pickups dropdown */}
       {showRecent && (
-        <div className="absolute z-50 left-0 right-0 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl shadow-lg mt-1 overflow-hidden">
+        <div className="absolute z-50 start-0 end-0 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl shadow-lg mt-1 overflow-hidden">
           <div className="px-3 py-2 border-b border-gray-100 dark:border-gray-700">
             <p className="text-[10px] uppercase tracking-wider font-semibold text-gray-400 dark:text-gray-500">
               Recent pickups

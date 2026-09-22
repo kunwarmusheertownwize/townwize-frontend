@@ -8,7 +8,7 @@ const API_BASE = import.meta.env.VITE_API_BASE_URL;
 const Row = ({ label, value, highlight }) => (
     <div className="flex justify-between items-start py-1.5 border-b border-gray-100 dark:border-gray-700 last:border-0">
         <span className="text-xs text-gray-500 dark:text-gray-400 shrink-0 w-36">{label}</span>
-        <span className={`text-xs font-medium text-right ${highlight ? "text-townwize-primary dark:text-white font-semibold" : "text-gray-800 dark:text-gray-200"}`}>
+        <span className={`text-xs font-medium text-end ${highlight ? "text-townwize-primary dark:text-white font-semibold" : "text-gray-800 dark:text-gray-200"}`}>
             {value ?? "—"}
         </span>
     </div>
@@ -102,7 +102,7 @@ export default function PassengerDetailPanel({ passengerId, onUpdated }) {
         <div className="text-sm space-y-4">
             {/* Toast */}
             {toast && (
-                <div className="fixed top-4 right-4 z-50 bg-townwize-primary text-white text-xs font-semibold px-4 py-2.5 rounded-xl shadow-lg">
+                <div className="fixed top-4 end-4 z-50 bg-townwize-primary text-white text-xs font-semibold px-4 py-2.5 rounded-xl shadow-lg">
                     {toast}
                 </div>
             )}

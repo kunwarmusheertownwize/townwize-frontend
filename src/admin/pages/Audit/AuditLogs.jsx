@@ -137,11 +137,11 @@ export default function AuditLogs() {
           <table className="w-full text-sm">
             <thead className="bg-gray-50 dark:bg-gray-800 dark:bg-townwize-primaryDark">
               <tr>
-                <th className="px-4 py-3 text-left">Timestamp</th>
-                <th className="px-4 py-3 text-left">Module</th>
-                <th className="px-4 py-3 text-left">Entity</th>
-                <th className="px-4 py-3 text-left">Event</th>
-                <th className="px-4 py-3 text-left">Actor</th>
+                <th className="px-4 py-3 text-start">Timestamp</th>
+                <th className="px-4 py-3 text-start">Module</th>
+                <th className="px-4 py-3 text-start">Entity</th>
+                <th className="px-4 py-3 text-start">Event</th>
+                <th className="px-4 py-3 text-start">Actor</th>
               </tr>
             </thead>
             <tbody>

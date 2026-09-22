@@ -73,7 +73,7 @@ export default function DriverPayoutRequests() {
 
       {/* Toast */}
       {toast && (
-        <div className="fixed top-4 right-4 z-50 bg-townwize-primary text-white text-sm font-semibold px-4 py-2.5 rounded-xl shadow-lg">
+        <div className="fixed top-4 end-4 z-50 bg-townwize-primary text-white text-sm font-semibold px-4 py-2.5 rounded-xl shadow-lg">
           {toast}
         </div>
       )}
@@ -140,13 +140,13 @@ export default function DriverPayoutRequests() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-100 dark:border-gray-700 text-[11px] uppercase tracking-wide text-gray-400">
-                  <th className="px-4 py-3 text-left font-semibold">Driver</th>
-                  <th className="px-4 py-3 text-left font-semibold">Amount</th>
-                  <th className="px-4 py-3 text-left font-semibold">Note</th>
-                  <th className="px-4 py-3 text-left font-semibold">Status</th>
-                  <th className="px-4 py-3 text-left font-semibold">Submitted</th>
-                  <th className="px-4 py-3 text-left font-semibold">Reviewed by</th>
-                  <th className="px-4 py-3 text-left font-semibold">Actions</th>
+                  <th className="px-4 py-3 text-start font-semibold">Driver</th>
+                  <th className="px-4 py-3 text-start font-semibold">Amount</th>
+                  <th className="px-4 py-3 text-start font-semibold">Note</th>
+                  <th className="px-4 py-3 text-start font-semibold">Status</th>
+                  <th className="px-4 py-3 text-start font-semibold">Submitted</th>
+                  <th className="px-4 py-3 text-start font-semibold">Reviewed by</th>
+                  <th className="px-4 py-3 text-start font-semibold">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-gray-700/60">

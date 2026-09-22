@@ -1204,14 +1204,14 @@ export default function Zones() {
         <table className="w-full text-sm">
           <thead className="bg-gray-50 dark:bg-gray-800">
             <tr>
-              <th className="px-4 py-3 text-left">Code</th>
-              <th className="px-4 py-3 text-left">Name</th>
-              <th className="px-4 py-3 text-left">Category</th>
-              <th className="px-4 py-3 text-left">Shape</th>
-              <th className="px-4 py-3 text-left">Priority</th>
-              <th className="px-4 py-3 text-left">Status</th>
-              <th className="px-4 py-3 text-left">Map</th>
-              <th className="px-4 py-3 text-left">Actions</th>
+              <th className="px-4 py-3 text-start">Code</th>
+              <th className="px-4 py-3 text-start">Name</th>
+              <th className="px-4 py-3 text-start">Category</th>
+              <th className="px-4 py-3 text-start">Shape</th>
+              <th className="px-4 py-3 text-start">Priority</th>
+              <th className="px-4 py-3 text-start">Status</th>
+              <th className="px-4 py-3 text-start">Map</th>
+              <th className="px-4 py-3 text-start">Actions</th>
             </tr>
           </thead>
           <tbody>

@@ -114,14 +114,14 @@ const PlacesInput = ({ value, onChange, placeholder, className, allowCurrentLoca
         value={value}
         onChange={handleChange}
         placeholder={placeholder}
-        className={`${className} ${allowCurrentLocation ? "pr-10" : ""}`}
+        className={`${className} ${allowCurrentLocation ? "pe-10" : ""}`}
       />
       {allowCurrentLocation && (
         <button
           type="button"
           onClick={handleCurrentLocation}
           disabled={locating}
-          className="absolute right-3 top-1/2 -translate-y-1/2 text-townwize-primary hover:text-townwize-primaryDark disabled:opacity-50 transition"
+          className="absolute end-3 top-1/2 -translate-y-1/2 text-townwize-primary hover:text-townwize-primaryDark disabled:opacity-50 transition"
           title="Use current location"
         >
           <svg xmlns="http://www.w3.org/2000/svg" className={`w-4 h-4 ${locating ? "animate-spin" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -130,7 +130,7 @@ const PlacesInput = ({ value, onChange, placeholder, className, allowCurrentLoca
         </button>
       )}
       {suggestions.length > 0 && (
-        <ul className="absolute z-50 left-0 right-0 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl shadow-lg max-h-52 overflow-y-auto">
+        <ul className="absolute z-50 start-0 end-0 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl shadow-lg max-h-52 overflow-y-auto">
           {suggestions.map((s) => (
             <li
               key={s.placeId}
@@ -194,10 +194,10 @@ function DateTimePicker({ value, onChange, required = false }) {
         />
       </div>
       {date && !time && (
-        <p className="text-[11px] text-gray-400 pl-1">Now select a time →</p>
+        <p className="text-[11px] text-gray-400 ps-1">Now select a time →</p>
       )}
       {preview && (
-        <p className="text-[11px] text-townwize-accent font-medium pl-1">{preview}</p>
+        <p className="text-[11px] text-townwize-accent font-medium ps-1">{preview}</p>
       )}
     </div>
   );
@@ -245,7 +245,7 @@ const RideCard = ({ ride, onJoin, joining }) => (
           </p>
         </div>
       </div>
-      <div className="shrink-0 text-right">
+      <div className="shrink-0 text-end">
         <p className="text-base font-extrabold text-townwize-primary dark:text-townwize-accent">
           {Number(ride.farePerSeat).toLocaleString()} PKR
         </p>
@@ -317,7 +317,7 @@ const MyRideCard = ({ ride }) => {
         <span className="flex items-center gap-1">
           <FaUsers /> {ride.bookedSeats}/{ride.maxSeats} seats
         </span>
-        <span className="ml-auto font-semibold text-townwize-primary dark:text-white">
+        <span className="ms-auto font-semibold text-townwize-primary dark:text-white">
           {Number(ride.farePerSeat || ride.fareEstimate || 0).toLocaleString()} PKR
         </span>
       </div>

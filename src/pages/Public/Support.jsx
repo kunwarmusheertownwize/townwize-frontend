@@ -111,7 +111,7 @@ const Support = () => {
                             <div key={i}>
                                 <button
                                     onClick={() => setOpenFaq(openFaq === i ? null : i)}
-                                    className="w-full flex justify-between items-center text-left py-5 gap-6 group focus:outline-none"
+                                    className="w-full flex justify-between items-center text-start py-5 gap-6 group focus:outline-none"
                                 >
                                     <span className="text-sm font-semibold text-townwize-primary dark:text-white group-hover:text-townwize-accent transition-colors">
                                         {item.q}

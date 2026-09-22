@@ -21,7 +21,7 @@ const AppPromo = () => {
         {/* Passenger App */}
         <div className="flex items-center justify-between bg-white dark:bg-townwize-primaryDark rounded-xl p-6 shadow-none">
           <QRCodeSVG value="https://townwize.com/passenger-app" size={150} />
-          <div className="flex flex-col items-start ml-4">
+          <div className="flex flex-col items-start ms-4">
             <h3 className="text-lg font-semibold text-townwize-textPrimary dark:text-white">
               {t("passengerAppTitle")}
             </h3>
@@ -48,7 +48,7 @@ const AppPromo = () => {
         {/* Driver App */}
         <div className="flex items-center justify-between bg-white dark:bg-townwize-primaryDark rounded-xl p-6 shadow-none">
           <QRCodeSVG value="https://townwize.com/driver-app" size={150} />
-          <div className="flex flex-col items-start ml-4">
+          <div className="flex flex-col items-start ms-4">
             <h3 className="text-lg font-semibold text-townwize-textPrimary dark:text-white">
               {t("driverAppTitle")}
             </h3>

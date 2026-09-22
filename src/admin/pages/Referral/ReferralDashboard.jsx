@@ -173,7 +173,7 @@ export default function ReferralDashboard() {
                             <option value="GENERAL">General</option>
                             <option value="GUEST_INVITE">Guest Invite</option>
                         </select>
-                        <span className="text-xs text-gray-400 ml-auto">{codesTotal} total</span>
+                        <span className="text-xs text-gray-400 ms-auto">{codesTotal} total</span>
                     </div>
 
                     {codesLoading ? <p className="text-sm text-gray-400">Loading codes…</p> : (
@@ -182,7 +182,7 @@ export default function ReferralDashboard() {
                                 <thead className="bg-gray-50 border-b border-gray-200">
                                     <tr>
                                         {["Code", "Type", "Owner", "Role", "Uses", "Rewards", "Active", "Action"].map((h) => (
-                                            <th key={h} className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{h}</th>
+                                            <th key={h} className="px-3 py-2.5 text-start text-xs font-semibold text-gray-500 uppercase tracking-wider">{h}</th>
                                         ))}
                                     </tr>
                                 </thead>
@@ -244,7 +244,7 @@ export default function ReferralDashboard() {
                                 <thead className="bg-amber-50 border-b border-amber-200">
                                     <tr>
                                         {["Name", "Email", "Phone", "Status", "Sponsor Towner", "Invite Code", "Joined", "Detail"].map((h) => (
-                                            <th key={h} className="px-3 py-2.5 text-left text-xs font-semibold text-amber-800 uppercase tracking-wider">{h}</th>
+                                            <th key={h} className="px-3 py-2.5 text-start text-xs font-semibold text-amber-800 uppercase tracking-wider">{h}</th>
                                         ))}
                                     </tr>
                                 </thead>
@@ -314,7 +314,7 @@ export default function ReferralDashboard() {
                             <option value="Towner">Towner</option>
                             <option value="GuestTowner">GuestTowner</option>
                         </select>
-                        <span className="text-xs text-gray-400 ml-auto">{passengersTotal} total</span>
+                        <span className="text-xs text-gray-400 ms-auto">{passengersTotal} total</span>
                     </div>
 
                     {passengersLoading ? <p className="text-sm text-gray-400">Loading…</p> : (
@@ -323,7 +323,7 @@ export default function ReferralDashboard() {
                                 <thead className="bg-gray-50 border-b border-gray-200">
                                     <tr>
                                         {["Name", "Email", "Phone", "Tier", "BTK Resident", "Sponsor", "Code Used", "Joined", "Detail"].map((h) => (
-                                            <th key={h} className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{h}</th>
+                                            <th key={h} className="px-3 py-2.5 text-start text-xs font-semibold text-gray-500 uppercase tracking-wider">{h}</th>
                                         ))}
                                     </tr>
                                 </thead>

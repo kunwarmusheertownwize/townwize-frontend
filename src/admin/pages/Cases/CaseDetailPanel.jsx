@@ -36,7 +36,7 @@ const DocLink = ({ url, label }) => {
       className="w-full flex items-center justify-between rounded border border-blue-200 bg-blue-50 px-3 py-2 text-xs text-blue-700 hover:bg-blue-100 disabled:opacity-60"
     >
       <span className="font-medium">{label}</span>
-      <span className="ml-2 shrink-0">{opening ? "Opening…" : "View ↗"}</span>
+      <span className="ms-2 shrink-0">{opening ? "Opening…" : "View ↗"}</span>
     </button>
   );
 };
@@ -93,7 +93,7 @@ const PassengerDocs = ({ profile }) => {
 };
 
 const PendingBadge = () => (
-  <span className="ml-2 inline-flex items-center rounded-full border border-amber-300 bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-800">
+  <span className="ms-2 inline-flex items-center rounded-full border border-amber-300 bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-800">
     Re-submitted — awaiting review
   </span>
 );
@@ -499,7 +499,7 @@ export default function CaseDetailPanel({ item, onUpdated }) {
           <div>
             Entity: <span className="font-medium capitalize">{item.entityType || "-"}</span>
             {tier && (
-              <span className={`ml-2 rounded px-1.5 py-0.5 text-xs font-semibold ${
+              <span className={`ms-2 rounded px-1.5 py-0.5 text-xs font-semibold ${
                 tier === "GuestTowner"
                   ? "bg-amber-100 text-amber-800"
                   : "bg-green-100 text-green-800"

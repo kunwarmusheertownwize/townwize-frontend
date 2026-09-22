@@ -40,7 +40,7 @@ export default function MapSelectionOverlay({
 
             {/* Top bar — instruction + cancel */}
             <div
-                className="absolute top-16 left-0 right-0 flex flex-col items-center gap-2 pointer-events-auto px-4"
+                className="absolute top-16 start-0 end-0 flex flex-col items-center gap-2 pointer-events-auto px-4"
             >
                 <div className="bg-white dark:bg-townwize-primaryDark rounded-xl shadow-lg px-4 py-2.5 flex items-center gap-3 w-full max-w-xs">
                     <span className="text-sm font-semibold text-gray-800 dark:text-gray-100 flex-1 text-center">
@@ -58,7 +58,7 @@ export default function MapSelectionOverlay({
 
             {/* Confirm button — floats above the bottom sheet */}
             <div
-                className="absolute left-0 right-0 flex justify-center pointer-events-auto"
+                className="absolute start-0 end-0 flex justify-center pointer-events-auto"
                 style={{ bottom: "calc(32vh + 16px)" }}
             >
                 <button

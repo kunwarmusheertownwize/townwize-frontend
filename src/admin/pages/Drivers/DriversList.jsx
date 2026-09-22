@@ -497,13 +497,13 @@ export default function DriversList() {
         <table className="w-full table-fixed text-sm min-w-[940px]">
           <thead className="bg-gray-50 sticky top-0 z-10">
             <tr>
-              <th className="px-4 py-3 text-left w-[20%]">Case ID</th>
-              <th className="px-4 py-3 text-left w-[14%]">Name</th>
-              <th className="px-4 py-3 text-left w-[14%]">Phone</th>
-              <th className="px-4 py-3 text-left w-[12%]">Status</th>
-              <th className="px-4 py-3 text-left w-[12%]">Priority</th>
-              <th className="px-4 py-3 text-left w-[14%]">Assigned To</th>
-              <th className="px-4 py-3 text-left w-[14%]">Updated</th>
+              <th className="px-4 py-3 text-start w-[20%]">Case ID</th>
+              <th className="px-4 py-3 text-start w-[14%]">Name</th>
+              <th className="px-4 py-3 text-start w-[14%]">Phone</th>
+              <th className="px-4 py-3 text-start w-[12%]">Status</th>
+              <th className="px-4 py-3 text-start w-[12%]">Priority</th>
+              <th className="px-4 py-3 text-start w-[14%]">Assigned To</th>
+              <th className="px-4 py-3 text-start w-[14%]">Updated</th>
             </tr>
           </thead>
           <tbody>
@@ -569,11 +569,11 @@ export default function DriversList() {
                     title="Select all"
                   />
                 </th>
-                <th className="px-4 py-3 text-left">Driver</th>
-                <th className="px-4 py-3 text-left">Vehicle</th>
-                <th className="px-4 py-3 text-left">Status</th>
-                <th className="px-4 py-3 text-left">Evidence</th>
-                <th className="px-4 py-3 text-left">Action</th>
+                <th className="px-4 py-3 text-start">Driver</th>
+                <th className="px-4 py-3 text-start">Vehicle</th>
+                <th className="px-4 py-3 text-start">Status</th>
+                <th className="px-4 py-3 text-start">Evidence</th>
+                <th className="px-4 py-3 text-start">Action</th>
               </tr>
             </thead>
             <tbody>

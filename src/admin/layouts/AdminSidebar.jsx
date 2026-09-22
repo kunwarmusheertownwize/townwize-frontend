@@ -45,8 +45,8 @@ export default function AdminSidebar({ isOpen = false, onClose = () => {} }) {
 
       <aside
         className={[
-          "fixed md:static inset-y-0 left-0 z-50 md:z-auto",
-          "w-64 shrink-0 bg-white dark:bg-townwize-primary border-r border-gray-200 dark:border-gray-700",
+          "fixed md:static inset-y-0 start-0 z-50 md:z-auto",
+          "w-64 shrink-0 bg-white dark:bg-townwize-primary border-e border-gray-200 dark:border-gray-700",
           "transform transition-transform duration-200 ease-out",
           isOpen ? "translate-x-0" : "-translate-x-full",
           "md:translate-x-0",

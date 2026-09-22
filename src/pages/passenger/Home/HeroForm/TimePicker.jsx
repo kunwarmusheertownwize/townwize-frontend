@@ -10,7 +10,7 @@ const TimePicker = ({ pickupTime, setPickupTime, timeSlots }) => {
     <Listbox value={pickupTime} onChange={setPickupTime}>
       <div className="relative w-full">
         <ListboxButton className="flex items-center px-4 py-3 rounded-md bg-gray-100 dark:bg-gray-900 w-full text-sm text-townwize-textPrimary dark:text-white cursor-pointer">
-          <FaClock className="text-townwize-primary dark:text-townwize-bgLight text-base mr-3 ml-2" />
+          <FaClock className="text-townwize-primary dark:text-townwize-bgLight text-base me-3 ms-2" />
           {timeSlots.find((s) => s.value === pickupTime)?.label || t("now")}
         </ListboxButton>
 
@@ -20,7 +20,7 @@ const TimePicker = ({ pickupTime, setPickupTime, timeSlots }) => {
               key={s.value}
               value={s.value}
               className={({ active, selected }) =>
-                `cursor-pointer select-none relative py-2 pl-10 pr-4
+                `cursor-pointer select-none relative py-2 ps-10 pe-4
                 ${active ? "bg-townwize-accent text-townwize-primary" : "text-gray-900 dark:text-white"}
                 ${selected ? "font-semibold" : "font-normal"}`
               }

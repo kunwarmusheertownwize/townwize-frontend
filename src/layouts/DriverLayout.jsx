@@ -292,7 +292,7 @@ const DriverLayout = ({ title }) => {
 
         {showDriverTabs && (
           <nav
-            className="fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800"
+            className="fixed bottom-0 start-0 end-0 z-50 bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800"
             style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
           >
             <div className="flex h-16">

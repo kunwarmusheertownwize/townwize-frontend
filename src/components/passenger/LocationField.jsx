@@ -114,7 +114,7 @@ const LocationField = ({
           />
           {value && (
             <FaTimes
-              className="ml-2 cursor-pointer text-gray-500 hover:text-gray-700"
+              className="ms-2 cursor-pointer text-gray-500 hover:text-gray-700"
               onClick={onClear}
             />
           )}

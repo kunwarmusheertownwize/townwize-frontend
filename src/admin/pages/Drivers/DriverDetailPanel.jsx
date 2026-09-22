@@ -155,7 +155,7 @@ export default function DriverDetailPanel({ driver, onRefresh }) {
                     <button className="mt-2 px-3 py-2 text-xs bg-green-100 text-green-700 rounded-md">
                         Verify
                     </button>
-                    <button className="ml-2 px-3 py-2 text-xs bg-red-100 text-red-700 rounded-md">
+                    <button className="ms-2 px-3 py-2 text-xs bg-red-100 text-red-700 rounded-md">
                         Reject
                     </button>
                 </>

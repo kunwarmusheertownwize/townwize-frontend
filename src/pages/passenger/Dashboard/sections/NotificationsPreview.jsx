@@ -64,7 +64,7 @@ const NotificationsPreview = () => {
           {items.map((n) => (
             <li
               key={n._id}
-              className={`p-3 rounded-lg bg-gray-50 dark:bg-gray-700 text-sm shadow-sm ${!n.read ? "border-l-2 border-townwize-accent" : ""}`}
+              className={`p-3 rounded-lg bg-gray-50 dark:bg-gray-700 text-sm shadow-sm ${!n.read ? "border-s-2 border-townwize-accent" : ""}`}
             >
               <div className={`font-medium ${n.read ? "text-gray-600 dark:text-gray-300" : "text-gray-800 dark:text-gray-100"}`}>
                 {n.title || n.message}

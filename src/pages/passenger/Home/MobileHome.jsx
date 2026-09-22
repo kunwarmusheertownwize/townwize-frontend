@@ -359,7 +359,7 @@ export default function MobileHome() {
       {/* Locate-me button */}
       <button
         onClick={locate}
-        className="absolute top-4 right-4 z-10 w-11 h-11 bg-white dark:bg-townwize-primaryDark rounded-full shadow-lg flex items-center justify-center active:scale-95 touch-manipulation"
+        className="absolute top-4 end-4 z-10 w-11 h-11 bg-white dark:bg-townwize-primaryDark rounded-full shadow-lg flex items-center justify-center active:scale-95 touch-manipulation"
       >
         <FaCrosshairs
           className={`text-townwize-primary dark:text-townwize-accent text-base ${locating ? "animate-spin" : ""}`}
@@ -372,7 +372,7 @@ export default function MobileHome() {
           /passenger/home to MobileHome when isNative()). With dark mode on,
           every other screen turned dark and the home screen stayed white. */}
       <div
-        className={`absolute bottom-0 left-0 right-0 z-10 bg-white dark:bg-townwize-primaryDark rounded-t-3xl shadow-2xl px-5 pt-3 pb-5 transition-transform duration-300 ${
+        className={`absolute bottom-0 start-0 end-0 z-10 bg-white dark:bg-townwize-primaryDark rounded-t-3xl shadow-2xl px-5 pt-3 pb-5 transition-transform duration-300 ${
           searchMode ? "pointer-events-none" : ""
         }`}
         style={{ transform: searchMode ? "translateY(120%)" : "translateY(0)" }}
@@ -442,11 +442,11 @@ export default function MobileHome() {
           <div className="px-4 pt-3 pb-2 flex-shrink-0">
             <div className="relative space-y-2">
               {/* Vertical connector line */}
-              <span className="absolute left-[11px] top-[26px] bottom-[18px] w-px bg-gray-200 dark:bg-gray-600 z-10" />
+              <span className="absolute start-[11px] top-[26px] bottom-[18px] w-px bg-gray-200 dark:bg-gray-600 z-10" />
 
               {/* Pickup */}
               <div className="relative">
-                <span className="absolute left-2 top-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full bg-townwize-primary z-20" />
+                <span className="absolute start-2 top-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full bg-townwize-primary z-20" />
                 <input
                   ref={pickupInputRef}
                   type="text"
@@ -462,11 +462,11 @@ export default function MobileHome() {
                     clearTimeout(window.__tw_mp);
                     window.__tw_mp = setTimeout(() => fetchSuggestions(e.target.value), 300);
                   }}
-                  className="w-full pl-8 pr-10 py-3.5 bg-gray-100 dark:bg-gray-800 rounded-xl text-sm text-gray-900 dark:text-white placeholder-gray-400 outline-none focus:bg-gray-50 dark:focus:bg-gray-700 focus:ring-2 focus:ring-townwize-primary/20"
+                  className="w-full ps-8 pe-10 py-3.5 bg-gray-100 dark:bg-gray-800 rounded-xl text-sm text-gray-900 dark:text-white placeholder-gray-400 outline-none focus:bg-gray-50 dark:focus:bg-gray-700 focus:ring-2 focus:ring-townwize-primary/20"
                 />
                 <button
                   onClick={locate}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1 touch-manipulation"
+                  className="absolute end-3 top-1/2 -translate-y-1/2 p-1 touch-manipulation"
                 >
                   <FaCrosshairs
                     className={`text-townwize-primary ${locating ? "animate-spin" : ""}`}
@@ -499,7 +499,7 @@ export default function MobileHome() {
 
               {/* Dropoff */}
               <div className="relative">
-                <span className="absolute left-2 top-1/2 -translate-y-1/2 w-2.5 h-2.5 bg-red-500 z-20" />
+                <span className="absolute start-2 top-1/2 -translate-y-1/2 w-2.5 h-2.5 bg-red-500 z-20" />
                 <input
                   ref={dropoffInputRef}
                   type="text"
@@ -515,7 +515,7 @@ export default function MobileHome() {
                     clearTimeout(window.__tw_md);
                     window.__tw_md = setTimeout(() => fetchSuggestions(e.target.value), 200);
                   }}
-                  className="w-full pl-8 pr-3 py-3.5 bg-gray-100 dark:bg-gray-800 rounded-xl text-sm text-gray-900 dark:text-white placeholder-gray-400 outline-none focus:bg-gray-50 dark:focus:bg-gray-700 focus:ring-2 focus:ring-townwize-primary/20"
+                  className="w-full ps-8 pe-3 py-3.5 bg-gray-100 dark:bg-gray-800 rounded-xl text-sm text-gray-900 dark:text-white placeholder-gray-400 outline-none focus:bg-gray-50 dark:focus:bg-gray-700 focus:ring-2 focus:ring-townwize-primary/20"
                 />
               </div>
             </div>

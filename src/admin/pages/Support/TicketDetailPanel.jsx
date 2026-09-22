@@ -205,11 +205,11 @@ export default function TicketDetailPanel({ ticket, onUpdated }) {
           <StatusBadge status={ticket.status || "-"} />
         </div>
         <div className="mt-2 space-y-1 text-sm text-gray-700 dark:text-gray-300">
-          <div><span className="text-xs text-gray-400 mr-1">Subject:</span>{ticket.subject || "-"}</div>
-          <div><span className="text-xs text-gray-400 mr-1">Category:</span>{ticket.category || "-"}</div>
+          <div><span className="text-xs text-gray-400 me-1">Subject:</span>{ticket.subject || "-"}</div>
+          <div><span className="text-xs text-gray-400 me-1">Category:</span>{ticket.category || "-"}</div>
           <div className="flex items-center gap-2"><span className="text-xs text-gray-400">Priority:</span><PriorityBadge priority={ticket.priority} /></div>
-          <div><span className="text-xs text-gray-400 mr-1">Requester:</span>{ticket.requesterEmail || "Unknown"}</div>
-          <div><span className="text-xs text-gray-400 mr-1">Assigned to:</span>{ticket.assigneeEmail || <span className="text-gray-400 italic">Unassigned</span>}</div>
+          <div><span className="text-xs text-gray-400 me-1">Requester:</span>{ticket.requesterEmail || "Unknown"}</div>
+          <div><span className="text-xs text-gray-400 me-1">Assigned to:</span>{ticket.assigneeEmail || <span className="text-gray-400 italic">Unassigned</span>}</div>
           {ticket.status === "escalated" && (
             <div className="mt-2 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 px-3 py-2 text-xs text-amber-800 dark:text-amber-300">
               ⚠ This ticket has been escalated. Assign it to a supervisor and update the status to <strong>in_progress</strong> to begin resolution.
@@ -232,7 +232,7 @@ export default function TicketDetailPanel({ ticket, onUpdated }) {
                   <span className="font-mono text-gray-400 dark:text-gray-500">…{ticket.linkedId.slice(-8)}</span>
                   <StatusBadge status={linkedRide.status || "-"} />
                   {(linkedRide.fareEstimate || linkedRide.fare?.final) && (
-                    <span className="ml-auto font-semibold text-gray-700 dark:text-gray-300">
+                    <span className="ms-auto font-semibold text-gray-700 dark:text-gray-300">
                       PKR {Number(linkedRide.fare?.final ?? linkedRide.fareEstimate ?? 0).toLocaleString()}
                     </span>
                   )}
@@ -306,7 +306,7 @@ export default function TicketDetailPanel({ ticket, onUpdated }) {
           <div>
             <label className="mb-1 block text-xs text-gray-500 dark:text-gray-400">
               Assign to admin
-              <span className="ml-1 text-gray-400">(paste admin user ID from Admin Users page)</span>
+              <span className="ms-1 text-gray-400">(paste admin user ID from Admin Users page)</span>
             </label>
             <input
               className="w-full rounded border dark:border-gray-600 dark:bg-gray-800 dark:text-white px-3 py-2 text-sm font-mono"

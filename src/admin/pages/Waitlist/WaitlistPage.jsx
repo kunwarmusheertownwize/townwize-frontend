@@ -168,7 +168,7 @@ function PrecinctChart({ data }) {
               <div className="h-1.5 rounded-full transition-all"
                 style={{ width: `${Math.round((row.count / max) * 100)}%`, backgroundColor: "#08110f" }} />
             </div>
-            <span className="text-[11px] font-semibold text-gray-700 dark:text-gray-200 w-5 text-right shrink-0">{row.count}</span>
+            <span className="text-[11px] font-semibold text-gray-700 dark:text-gray-200 w-5 text-end shrink-0">{row.count}</span>
           </div>
         ))}
       </div>
@@ -250,7 +250,7 @@ function SortTh({ col, label, sortBy, sortOrder, onSort }) {
   const active = sortBy === col;
   return (
     <th onClick={() => onSort(col)}
-      className="px-4 py-3 text-left font-medium text-gray-600 dark:text-gray-300 cursor-pointer select-none whitespace-nowrap hover:text-gray-900 dark:hover:text-white">
+      className="px-4 py-3 text-start font-medium text-gray-600 dark:text-gray-300 cursor-pointer select-none whitespace-nowrap hover:text-gray-900 dark:hover:text-white">
       <span className="flex items-center gap-1">
         {label}
         <span className="text-[10px] opacity-60">{active ? (sortOrder === "asc" ? "▲" : "▼") : "⇅"}</span>
@@ -761,7 +761,7 @@ export default function WaitlistPage() {
           }`}>
             <p>{inviteResult.message}</p>
             {inviteResult.failed?.length > 0 && (
-              <ul className="mt-1 list-disc pl-5 text-xs">
+              <ul className="mt-1 list-disc ps-5 text-xs">
                 {inviteResult.failed.map((f) => (
                   <li key={f.email}>{f.email} — {f.reason}</li>
                 ))}
@@ -796,7 +796,7 @@ export default function WaitlistPage() {
               <SortTh col="type"      label="Type"            sortBy={sortBy} sortOrder={sortOrder} onSort={handleSort} />
               <SortTh col="precinct"  label="Precinct"        sortBy={sortBy} sortOrder={sortOrder} onSort={handleSort} />
               <SortTh col="status"    label="Status"          sortBy={sortBy} sortOrder={sortOrder} onSort={handleSort} />
-              <th className="px-4 py-3 text-left font-medium text-gray-600 dark:text-gray-300">Flags</th>
+              <th className="px-4 py-3 text-start font-medium text-gray-600 dark:text-gray-300">Flags</th>
               <SortTh col="createdAt" label="Signed Up (PKT)" sortBy={sortBy} sortOrder={sortOrder} onSort={handleSort} />
             </tr>
           </thead>

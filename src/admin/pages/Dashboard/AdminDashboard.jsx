@@ -113,7 +113,7 @@ function RevenueChart({ slots, loading }) {
   return (
     <div className="flex gap-2">
       {/* Y-axis labels */}
-      <div className="flex flex-col justify-between text-[9px] text-gray-400 pb-5 text-right w-6 shrink-0">
+      <div className="flex flex-col justify-between text-[9px] text-gray-400 pb-5 text-end w-6 shrink-0">
         <span>{fmtPkr(max)}</span>
         <span>{fmtPkr(max / 2)}</span>
         <span>0</span>
@@ -193,7 +193,7 @@ function ActiveHoursGrid({ data, loading }) {
     <div className="overflow-x-auto">
       <div className="min-w-[420px]">
         {/* Hour labels top */}
-        <div className="flex ml-10 mb-1">
+        <div className="flex ms-10 mb-1">
           {Array.from({ length: 24 }, (_, h) => (
             <div key={h} className="flex-1 text-center" style={{ minWidth: 0 }}>
               {h % 6 === 0 && (
@@ -207,7 +207,7 @@ function ActiveHoursGrid({ data, loading }) {
         {/* Grid rows: days 1-7 (Sun=1 ... Sat=7) → reorder Mon–Sun for display */}
         {[2, 3, 4, 5, 6, 7, 1].map((dayNum, rowIdx) => (
           <div key={dayNum} className="flex items-center mb-0.5">
-            <div className="w-10 shrink-0 text-[9px] font-medium text-gray-500 dark:text-gray-400 text-right pr-1.5">
+            <div className="w-10 shrink-0 text-[9px] font-medium text-gray-500 dark:text-gray-400 text-end pe-1.5">
               {DAY_LABELS[dayNum - 1]}
             </div>
             <div className="flex flex-1">
@@ -372,7 +372,7 @@ export default function AdminDashboard() {
                 {pendingReviewCount} Docs Awaiting Review
               </span>
             )}
-            <button onClick={loadAlerts} className="ml-auto text-xs text-gray-400 hover:text-gray-600 underline">Refresh</button>
+            <button onClick={loadAlerts} className="ms-auto text-xs text-gray-400 hover:text-gray-600 underline">Refresh</button>
           </div>
           {alertsLoading ? (
             <div className="space-y-2">
@@ -390,7 +390,7 @@ export default function AdminDashboard() {
                         <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${meta.badge}`}>{TYPE_LABEL[alert.type] || alert.type}</span>
                         <span className="text-xs font-semibold text-gray-800">{alert.driverName}</span>
                         {alert.driverEmail && <span className="text-xs text-gray-500">{alert.driverEmail}</span>}
-                        {alert.occurredAt && <span className="ml-auto text-xs text-gray-400">{fmtTime(alert.occurredAt)}</span>}
+                        {alert.occurredAt && <span className="ms-auto text-xs text-gray-400">{fmtTime(alert.occurredAt)}</span>}
                       </div>
                       <p className="text-sm font-medium text-gray-900">{alert.message}</p>
                       {alert.detail && <p className="text-xs text-gray-500 mt-0.5">{alert.detail}</p>}

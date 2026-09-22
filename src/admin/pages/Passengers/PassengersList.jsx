@@ -119,7 +119,7 @@ export default function PassengersList() {
                         <button
                             key={it.caseId || it._id}
                             type="button"
-                            className="w-full rounded-xl border border-gray-200 bg-white p-4 text-left"
+                            className="w-full rounded-xl border border-gray-200 bg-white p-4 text-start"
                             onClick={() => setSelectedId(it.caseId || it._id)}
                         >
                             <div className="flex items-start justify-between gap-3">
@@ -156,13 +156,13 @@ export default function PassengersList() {
                 <table className="w-full table-fixed text-sm min-w-[940px]">
                     <thead className="bg-gray-50 sticky top-0 z-10">
                         <tr>
-                            <th className="px-4 py-3 text-left w-[20%]">Case ID</th>
-                            <th className="px-4 py-3 text-left w-[14%]">Name</th>
-                            <th className="px-4 py-3 text-left w-[14%]">Phone</th>
-                            <th className="px-4 py-3 text-left w-[12%]">Status</th>
-                            <th className="px-4 py-3 text-left w-[12%]">Priority</th>
-                            <th className="px-4 py-3 text-left w-[14%]">Assigned To</th>
-                            <th className="px-4 py-3 text-left w-[14%]">Updated</th>
+                            <th className="px-4 py-3 text-start w-[20%]">Case ID</th>
+                            <th className="px-4 py-3 text-start w-[14%]">Name</th>
+                            <th className="px-4 py-3 text-start w-[14%]">Phone</th>
+                            <th className="px-4 py-3 text-start w-[12%]">Status</th>
+                            <th className="px-4 py-3 text-start w-[12%]">Priority</th>
+                            <th className="px-4 py-3 text-start w-[14%]">Assigned To</th>
+                            <th className="px-4 py-3 text-start w-[14%]">Updated</th>
                         </tr>
                     </thead>
                     <tbody>

@@ -215,12 +215,12 @@ export default function NotificationsList() {
         <table className="w-full text-sm">
           <thead className="bg-gray-50 dark:bg-gray-800 dark:bg-townwize-primaryDark">
             <tr>
-              <th className="px-4 py-3 text-left">Channel</th>
-              <th className="px-4 py-3 text-left">Subject</th>
-              <th className="px-4 py-3 text-left">Audience</th>
-              <th className="px-4 py-3 text-left">Status</th>
-              <th className="px-4 py-3 text-left">Created</th>
-              <th className="px-4 py-3 text-left">Actions</th>
+              <th className="px-4 py-3 text-start">Channel</th>
+              <th className="px-4 py-3 text-start">Subject</th>
+              <th className="px-4 py-3 text-start">Audience</th>
+              <th className="px-4 py-3 text-start">Status</th>
+              <th className="px-4 py-3 text-start">Created</th>
+              <th className="px-4 py-3 text-start">Actions</th>
             </tr>
           </thead>
           <tbody>

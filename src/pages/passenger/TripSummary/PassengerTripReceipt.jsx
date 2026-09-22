@@ -595,7 +595,7 @@ export default function PassengerTripReceipt() {
                         {[1, 2, 3, 4, 5].map((n) => (
                           <span key={n} className={`text-xs ${n <= ride.passengerRating.stars ? "text-yellow-400" : "text-gray-200 dark:text-gray-700"}`}>★</span>
                         ))}
-                        <span className="text-[10px] text-gray-400 ml-1">your rating</span>
+                        <span className="text-[10px] text-gray-400 ms-1">your rating</span>
                       </div>
                     )}
                   </div>
@@ -833,7 +833,7 @@ export default function PassengerTripReceipt() {
                       {[1, 2, 3, 4, 5].map((n) => (
                         <span key={n} className={`text-sm ${n <= ride.passengerRating.stars ? "text-yellow-400" : "text-gray-200 dark:text-gray-700"}`}>★</span>
                       ))}
-                      <span className="text-xs text-gray-400 ml-1">your rating</span>
+                      <span className="text-xs text-gray-400 ms-1">your rating</span>
                     </div>
                   )}
                 </div>

@@ -81,7 +81,7 @@ const RecentTrips = () => {
                   </p>
                   <p className="text-xs text-gray-400">{formatDate(ride.createdAt)}</p>
                 </div>
-                <div className="shrink-0 text-right space-y-0.5">
+                <div className="shrink-0 text-end space-y-0.5">
                   <p className="text-sm font-bold text-townwize-primary dark:text-white">
                     {fareOf(ride)} PKR
                   </p>

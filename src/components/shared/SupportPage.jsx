@@ -293,7 +293,7 @@ const SupportPage = () => {
                 key={t._id}
                 type="button"
                 onClick={() => setActiveId(t._id)}
-                className="w-full text-left rounded-2xl border border-gray-100 dark:border-gray-700 bg-white dark:bg-townwize-primaryDark px-4 py-3 shadow-sm hover:shadow-md transition"
+                className="w-full text-start rounded-2xl border border-gray-100 dark:border-gray-700 bg-white dark:bg-townwize-primaryDark px-4 py-3 shadow-sm hover:shadow-md transition"
               >
                 <div className="flex items-center justify-between gap-2">
                   <p className="text-xs text-gray-400 font-mono">{t.ticketNo}</p>

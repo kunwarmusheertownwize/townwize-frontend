@@ -82,7 +82,7 @@ const DriverTripSummary = () => {
                         <p className="text-sm font-medium text-gray-800 dark:text-white">{trip.pickup || "—"}</p>
                     </div>
                 </div>
-                <div className="ml-[0.5rem] h-4 border-l-2 border-dashed border-gray-200 dark:border-gray-600" />
+                <div className="ms-[0.5rem] h-4 border-s-2 border-dashed border-gray-200 dark:border-gray-600" />
                 <div className="flex items-start gap-3">
                     <div className="mt-1.5 w-2.5 h-2.5 rounded-full bg-red-500 shrink-0" />
                     <div>

@@ -166,20 +166,20 @@ export default function PayoutBatches() {
         <table className="w-full text-sm">
           <thead className="bg-gray-50 dark:bg-gray-800">
             <tr>
-              <th className="px-4 py-3 text-left">Batch ID</th>
-              <th className="px-4 py-3 text-left">Period</th>
-              <th className="px-4 py-3 text-left">Trips</th>
-              <th className="px-4 py-3 text-left">Drivers</th>
-              <th className="px-4 py-3 text-left">Gross</th>
-              <th className="px-4 py-3 text-left">Tax</th>
-              <th className="px-4 py-3 text-left">Platform Fee</th>
-              <th className="px-4 py-3 text-left">Commission</th>
-              <th className="px-4 py-3 text-left">Townwize Revenue</th>
-              <th className="px-4 py-3 text-left">Wizer Earnings</th>
-              <th className="px-4 py-3 text-left">Commission Withheld</th>
-              <th className="px-4 py-3 text-left">Net to Pay</th>
-              <th className="px-4 py-3 text-left">Status</th>
-              <th className="px-4 py-3 text-left">Actions</th>
+              <th className="px-4 py-3 text-start">Batch ID</th>
+              <th className="px-4 py-3 text-start">Period</th>
+              <th className="px-4 py-3 text-start">Trips</th>
+              <th className="px-4 py-3 text-start">Drivers</th>
+              <th className="px-4 py-3 text-start">Gross</th>
+              <th className="px-4 py-3 text-start">Tax</th>
+              <th className="px-4 py-3 text-start">Platform Fee</th>
+              <th className="px-4 py-3 text-start">Commission</th>
+              <th className="px-4 py-3 text-start">Townwize Revenue</th>
+              <th className="px-4 py-3 text-start">Wizer Earnings</th>
+              <th className="px-4 py-3 text-start">Commission Withheld</th>
+              <th className="px-4 py-3 text-start">Net to Pay</th>
+              <th className="px-4 py-3 text-start">Status</th>
+              <th className="px-4 py-3 text-start">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -213,7 +213,7 @@ export default function PayoutBatches() {
                           type="button"
                           onClick={() => setExpandedId(isOpen ? null : id)}
                           aria-expanded={isOpen}
-                          className="text-left font-medium text-townwize-primary hover:underline"
+                          className="text-start font-medium text-townwize-primary hover:underline"
                         >
                           {isOpen ? "▾" : "▸"} {it.code || id}
                         </button>
@@ -301,13 +301,13 @@ export default function PayoutBatches() {
                           <table className="w-full text-xs">
                             <thead className="bg-gray-100 dark:bg-gray-800">
                               <tr>
-                                <th className="px-3 py-2 text-left">Wizer</th>
-                                <th className="px-3 py-2 text-left">Trips</th>
-                                <th className="px-3 py-2 text-left">Earned</th>
-                                <th className="px-3 py-2 text-left">Commission withheld</th>
-                                <th className="px-3 py-2 text-left">Credit added</th>
-                                <th className="px-3 py-2 text-left">Net to pay</th>
-                                <th className="px-3 py-2 text-left">Ledger at generation</th>
+                                <th className="px-3 py-2 text-start">Wizer</th>
+                                <th className="px-3 py-2 text-start">Trips</th>
+                                <th className="px-3 py-2 text-start">Earned</th>
+                                <th className="px-3 py-2 text-start">Commission withheld</th>
+                                <th className="px-3 py-2 text-start">Credit added</th>
+                                <th className="px-3 py-2 text-start">Net to pay</th>
+                                <th className="px-3 py-2 text-start">Ledger at generation</th>
                               </tr>
                             </thead>
                             <tbody>

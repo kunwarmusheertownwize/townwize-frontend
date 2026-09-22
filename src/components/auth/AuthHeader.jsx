@@ -32,7 +32,7 @@ const AuthHeader = () => {
                         <img
                             src="/images/logo-light.png"
                             alt="Townwize Logo Dark"
-                            className={`absolute left-0 top-0 h-9 w-auto transition-opacity duration-500  ${darkMode ? "opacity-100" : "opacity-0 "
+                            className={`absolute start-0 top-0 h-9 w-auto transition-opacity duration-500  ${darkMode ? "opacity-100" : "opacity-0 "
                                 }`}
                         />
                     </div>

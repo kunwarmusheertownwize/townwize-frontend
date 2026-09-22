@@ -835,7 +835,7 @@ export default function Register() {
           <div className="w-full max-w-xl grid grid-cols-1 sm:grid-cols-2 gap-6">
             <button
               onClick={() => setSelectedRole("passenger")}
-              className="rounded-2xl border-2 border-townwize-primary bg-white dark:bg-gray-800 p-8 text-left shadow hover:shadow-lg transition-shadow group"
+              className="rounded-2xl border-2 border-townwize-primary bg-white dark:bg-gray-800 p-8 text-start shadow hover:shadow-lg transition-shadow group"
             >
               <div className="mb-4 inline-flex items-center justify-center h-14 w-14 rounded-xl bg-townwize-primary/10 dark:bg-townwize-primary/20">
                 <FaShieldAlt className="text-3xl text-townwize-primary" />
@@ -845,7 +845,7 @@ export default function Register() {
             </button>
             <button
               onClick={() => setSelectedRole("driver")}
-              className="rounded-2xl border-2 border-townwize-accent bg-white dark:bg-gray-800 p-8 text-left shadow hover:shadow-lg transition-shadow group"
+              className="rounded-2xl border-2 border-townwize-accent bg-white dark:bg-gray-800 p-8 text-start shadow hover:shadow-lg transition-shadow group"
             >
               <div className="mb-4 inline-flex items-center justify-center h-14 w-14 rounded-xl bg-townwize-accent/10 dark:bg-townwize-accent/20">
                 <GiSteeringWheel className="text-3xl text-townwize-accent" />

@@ -64,7 +64,7 @@ const PaymentMethodSelector = ({ value, onChange, disabled = false }) => {
               type="button"
               disabled={disabled || !m.available}
               onClick={() => onChange(m.id)}
-              className={`text-left px-3 py-2.5 rounded-xl border transition-colors ${
+              className={`text-start px-3 py-2.5 rounded-xl border transition-colors ${
                 active
                   ? "border-townwize-primary bg-townwize-primary/5 dark:bg-townwize-primary/20"
                   : "border-gray-200 dark:border-gray-700"

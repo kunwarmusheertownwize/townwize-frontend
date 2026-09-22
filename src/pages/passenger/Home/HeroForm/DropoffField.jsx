@@ -54,7 +54,7 @@ const DropoffField = ({
 
   return (
     <div className="relative" ref={wrapperRef}>
-      <span className="absolute left-2 top-1/2 -translate-y-1/2 w-2 h-2 bg-townwize-primary z-20 dark:bg-townwize-bgLight" />
+      <span className="absolute start-2 top-1/2 -translate-y-1/2 w-2 h-2 bg-townwize-primary z-20 dark:bg-townwize-bgLight" />
 
       <input
         ref={dropoffRef}
@@ -72,7 +72,7 @@ const DropoffField = ({
             fetchDropoffSuggestions(value);
           }, 200);
         }}
-        className="w-full pl-8 pr-3 py-3 rounded-md bg-gray-100 dark:bg-gray-900 text-sm text-townwize-textPrimary dark:text-white placeholder-gray-500 outline-none transition
+        className="w-full ps-8 pe-3 py-3 rounded-md bg-gray-100 dark:bg-gray-900 text-sm text-townwize-textPrimary dark:text-white placeholder-gray-500 outline-none transition
                         focus-visible:outline-none
                         focus-visible:ring-2
                         focus-visible:ring-townwize-primary
@@ -80,7 +80,7 @@ const DropoffField = ({
       />
 
       {dropoffSuggestions.length > 0 && (
-        <ul className="absolute z-50 left-0 right-0 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg mt-1 max-h-60 overflow-y-auto">
+        <ul className="absolute z-50 start-0 end-0 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg mt-1 max-h-60 overflow-y-auto">
           {dropoffSuggestions.map((p, idx) => (
             <li
               key={p?.placePrediction?.placeId || p.place_id || idx}

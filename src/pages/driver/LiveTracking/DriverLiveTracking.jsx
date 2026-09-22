@@ -121,7 +121,7 @@ const SlideToEndTrip = ({ onConfirm, disabled }) => {
       </span>
       <div
         ref={thumbRef}
-        className="absolute left-0.5 top-0.5 bottom-0.5 flex w-14 cursor-grab items-center justify-center rounded-lg bg-red-600 text-white shadow-md active:cursor-grabbing"
+        className="absolute start-0.5 top-0.5 bottom-0.5 flex w-14 cursor-grab items-center justify-center rounded-lg bg-red-600 text-white shadow-md active:cursor-grabbing"
       >
         <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
@@ -1281,7 +1281,7 @@ const DriverLiveTracking = () => {
     return (
       <div className="fixed inset-0 bg-gray-900">
         <div
-          className="absolute top-0 left-0 right-0 z-10 border-b border-gray-200 bg-white shadow-sm dark:bg-townwize-primaryDark px-4 pb-3"
+          className="absolute top-0 start-0 end-0 z-10 border-b border-gray-200 bg-white shadow-sm dark:bg-townwize-primaryDark px-4 pb-3"
           style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 12px)" }}
         >
           <div className="flex items-center gap-2">
@@ -1297,7 +1297,7 @@ const DriverLiveTracking = () => {
         <div ref={mapRef} className="absolute inset-0 top-[76px] z-0" />
 
         <div
-          className="absolute bottom-0 left-0 right-0 z-50 rounded-t-2xl border-t border-gray-200 bg-white shadow-2xl dark:bg-townwize-primaryDark px-4 pt-4"
+          className="absolute bottom-0 start-0 end-0 z-50 rounded-t-2xl border-t border-gray-200 bg-white shadow-2xl dark:bg-townwize-primaryDark px-4 pt-4"
           style={{ paddingBottom: "env(safe-area-inset-bottom, 16px)" }}
         >
           <div className="w-10 h-1 bg-gray-300 dark:bg-gray-700 rounded-full mx-auto mb-3" />

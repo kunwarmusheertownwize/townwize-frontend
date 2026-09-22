@@ -915,7 +915,7 @@ navigate("/passenger/trip-summary", {
         }
       }
     },
-    icon: <FaMapMarkerAlt className="text-townwize-primary dark:text-townwize-textContent text-lg mr-3" />,
+    icon: <FaMapMarkerAlt className="text-townwize-primary dark:text-townwize-textContent text-lg me-3" />,
   }), [pickup, pickupSuggestions, handleGPS, updateMapMarker, coreMapInstanceRef, coreMapsReadyRef]);
 
   const stopProps = useMemo(() => ({
@@ -944,7 +944,7 @@ navigate("/passenger/trip-summary", {
       );
       setStopSuggestions([]);
     },
-    icon: <FaDotCircle className="text-blue-500 text-lg mr-3" />,
+    icon: <FaDotCircle className="text-blue-500 text-lg me-3" />,
   }), [stop, stopSuggestions, handleGPS, updateMapMarker, clearMarker, coreMapInstanceRef, coreMapsReadyRef]);
 
   const dropoffProps = useMemo(() => ({
@@ -973,7 +973,7 @@ navigate("/passenger/trip-summary", {
       );
       setDropoffSuggestions([]);
     },
-    icon: <FaRoute className="text-red-500 text-lg mr-3" />,
+    icon: <FaRoute className="text-red-500 text-lg me-3" />,
   }), [dropoff, dropoffSuggestions, handleGPS, updateMapMarker, coreMapInstanceRef, coreMapsReadyRef]);
 
 
@@ -1144,7 +1144,7 @@ navigate("/passenger/trip-summary", {
         {/* Form — bottom sheet on mobile, left column on desktop */}
         <div
           ref={sheetRef}
-          className="absolute bottom-0 left-0 right-0 z-10 bg-white dark:bg-townwize-primaryDark rounded-t-2xl shadow-2xl flex flex-col h-[92vh] overflow-hidden md:static md:order-1 md:rounded-2xl md:shadow-xl md:w-full md:max-w-[420px] md:mx-0 md:h-auto md:overflow-visible"
+          className="absolute bottom-0 start-0 end-0 z-10 bg-white dark:bg-townwize-primaryDark rounded-t-2xl shadow-2xl flex flex-col h-[92vh] overflow-hidden md:static md:order-1 md:rounded-2xl md:shadow-xl md:w-full md:max-w-[420px] md:mx-0 md:h-auto md:overflow-visible"
           style={window.innerWidth < 768 ? {
             transform: selectingFor
               ? "translateY(85vh)"
@@ -1293,7 +1293,7 @@ navigate("/passenger/trip-summary", {
                     <p className="text-xs text-gray-400 mt-0.5">Your car, just for you</p>
                   </div>
                 </div>
-                <div className="text-right shrink-0">
+                <div className="text-end shrink-0">
                   {effectiveDistanceKm > 0 ? (
                     <>
                       <p className="font-extrabold text-townwize-primary dark:text-townwize-accent text-base leading-tight">
@@ -1410,7 +1410,7 @@ navigate("/passenger/trip-summary", {
                     <p className="text-xs text-gray-400 mt-0.5">Share the ride · split the fare</p>
                   </div>
                 </div>
-                <div className="text-right shrink-0">
+                <div className="text-end shrink-0">
                   {effectiveDistanceKm > 0 ? (
                     <>
                       <p className="font-extrabold text-townwize-accent text-base leading-tight">
@@ -1580,7 +1580,7 @@ navigate("/passenger/trip-summary", {
           type="button"
           onTouchStart={(e) => { e.stopPropagation(); navigate(routeStateRaw?.from || "/passenger/home"); }}
           onClick={() => navigate(routeStateRaw?.from || "/passenger/home")}
-          className="absolute top-4 left-4 z-20 md:hidden bg-white dark:bg-gray-800 rounded-full p-2.5 shadow-lg text-gray-700 dark:text-white active:scale-95 transition-transform"
+          className="absolute top-4 start-4 z-20 md:hidden bg-white dark:bg-gray-800 rounded-full p-2.5 shadow-lg text-gray-700 dark:text-white active:scale-95 transition-transform"
         >
           <FaArrowLeft className="text-sm" />
         </button>

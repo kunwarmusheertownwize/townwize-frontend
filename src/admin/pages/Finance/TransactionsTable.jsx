@@ -99,18 +99,18 @@ export default function TransactionsTable() {
         <table className="w-full text-sm">
           <thead className="bg-gray-50 dark:bg-gray-800">
             <tr>
-              <th className="px-4 py-3 text-left">Txn ID</th>
-              <th className="px-4 py-3 text-left">Type</th>
-              <th className="px-4 py-3 text-left">Ride</th>
-              <th className="px-4 py-3 text-left">Driver</th>
-              <th className="px-4 py-3 text-left">Gross</th>
-              <th className="px-4 py-3 text-left">Tax</th>
-              <th className="px-4 py-3 text-left">Platform Fee</th>
-              <th className="px-4 py-3 text-left">Commission</th>
-              <th className="px-4 py-3 text-left">Townwize Revenue</th>
-              <th className="px-4 py-3 text-left">Driver Earning</th>
-              <th className="px-4 py-3 text-left">Status</th>
-              <th className="px-4 py-3 text-left">Created</th>
+              <th className="px-4 py-3 text-start">Txn ID</th>
+              <th className="px-4 py-3 text-start">Type</th>
+              <th className="px-4 py-3 text-start">Ride</th>
+              <th className="px-4 py-3 text-start">Driver</th>
+              <th className="px-4 py-3 text-start">Gross</th>
+              <th className="px-4 py-3 text-start">Tax</th>
+              <th className="px-4 py-3 text-start">Platform Fee</th>
+              <th className="px-4 py-3 text-start">Commission</th>
+              <th className="px-4 py-3 text-start">Townwize Revenue</th>
+              <th className="px-4 py-3 text-start">Driver Earning</th>
+              <th className="px-4 py-3 text-start">Status</th>
+              <th className="px-4 py-3 text-start">Created</th>
             </tr>
           </thead>
           <tbody>

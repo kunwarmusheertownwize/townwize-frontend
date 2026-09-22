@@ -263,7 +263,7 @@ const DriverHome = () => {
                 <p className="text-[10px] text-white/50">Trips today</p>
                 <p className="text-sm font-bold">{tripsToday}</p>
               </div>
-              <div className="ml-auto">
+              <div className="ms-auto">
                 {/* "Balance" beside a negative number is ambiguous — a driver
                     cannot tell whether they owe it or are owed it. The Earnings
                     screen already calls the same figure "Commission owed"; this

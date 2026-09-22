@@ -140,7 +140,7 @@ export default function FaceVerificationStep() {
         </p>
 
         {qrOriginIsUnreachable() && (
-          <div className="mx-auto mt-4 max-w-xs rounded-lg border border-amber-300 bg-amber-50 p-3 text-left dark:border-amber-700 dark:bg-amber-900/20">
+          <div className="mx-auto mt-4 max-w-xs rounded-lg border border-amber-300 bg-amber-50 p-3 text-start dark:border-amber-700 dark:bg-amber-900/20">
             <p className="text-[11px] font-semibold text-amber-800 dark:text-amber-300">
               Development only
             </p>

@@ -311,7 +311,7 @@ const TripRequests = () => {
                 style={{ width: `${timerPct}%` }}
               />
             </div>
-            <p className="mt-1 text-right text-xs text-gray-400">
+            <p className="mt-1 text-end text-xs text-gray-400">
               Expires in {timeLeft}s
             </p>
           </div>

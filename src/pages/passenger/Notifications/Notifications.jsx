@@ -36,7 +36,7 @@ const formatTime = (iso) => {
 
 function SkeletonNotification() {
   return (
-    <div className="animate-pulse rounded-2xl border-l-4 border-gray-200 dark:border-gray-700 bg-white dark:bg-townwize-primaryDark px-4 py-3 shadow-sm">
+    <div className="animate-pulse rounded-2xl border-s-4 border-gray-200 dark:border-gray-700 bg-white dark:bg-townwize-primaryDark px-4 py-3 shadow-sm">
       <div className="flex items-start gap-3">
         <div className="mt-1 h-2 w-2 shrink-0 rounded-full bg-gray-200 dark:bg-gray-700" />
         <div className="flex-1 space-y-2">
@@ -173,7 +173,7 @@ const Notifications = () => {
                 key={n._id}
                 type="button"
                 onClick={() => markOne(n)}
-                className={`w-full text-left rounded-2xl border-l-4 ${style.border} bg-white dark:bg-townwize-primaryDark px-4 py-3 shadow-sm transition hover:shadow-md`}
+                className={`w-full text-start rounded-2xl border-s-4 ${style.border} bg-white dark:bg-townwize-primaryDark px-4 py-3 shadow-sm transition hover:shadow-md`}
               >
                 <div className="flex items-start gap-3">
                   <span className={`mt-1 h-2 w-2 shrink-0 rounded-full ${style.dot} ${n.read ? "opacity-0" : ""}`} />

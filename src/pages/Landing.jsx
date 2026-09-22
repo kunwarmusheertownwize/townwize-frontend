@@ -122,7 +122,7 @@ const Landing = () => {
                 <div className="max-w-7xl mx-auto flex flex-col lg:flex-row items-center px-6 sm:px-10 gap-12">
 
                     {/* Left content */}
-                    <div className="flex-1 text-left">
+                    <div className="flex-1 text-start">
                         <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold leading-tight mb-4">
                             Trusted Rides by
                             <span className="text-townwize-accent"> Bahria Town Karachi Residents</span>
@@ -402,7 +402,7 @@ const Landing = () => {
                                 <div key={index}>
                                     <button
                                         onClick={() => toggleFaq(index)}
-                                        className="w-full flex justify-between items-center text-left py-5 gap-6 focus:outline-none group"
+                                        className="w-full flex justify-between items-center text-start py-5 gap-6 focus:outline-none group"
                                     >
                                         <span className="text-sm font-semibold text-townwize-primary dark:text-white group-hover:text-townwize-accent dark:group-hover:text-townwize-accent transition-colors">
                                             {item.q}
@@ -480,12 +480,12 @@ const Landing = () => {
                             <div className="flex items-center gap-2 px-5 py-3 rounded-xl bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 text-sm font-semibold cursor-default select-none">
                                 <FaApple className="text-xl" />
                                 App Store
-                                <span className="ml-1 text-[10px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded bg-townwize-accent/20 text-townwize-accent">Soon</span>
+                                <span className="ms-1 text-[10px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded bg-townwize-accent/20 text-townwize-accent">Soon</span>
                             </div>
                             <div className="flex items-center gap-2 px-5 py-3 rounded-xl bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 text-sm font-semibold cursor-default select-none">
                                 <FaGooglePlay className="text-xl" />
                                 Google Play
-                                <span className="ml-1 text-[10px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded bg-townwize-accent/20 text-townwize-accent">Soon</span>
+                                <span className="ms-1 text-[10px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded bg-townwize-accent/20 text-townwize-accent">Soon</span>
                             </div>
                         </div>
                         <p className="text-xs text-gray-400 mt-1">Get notified when we launch ↓</p>

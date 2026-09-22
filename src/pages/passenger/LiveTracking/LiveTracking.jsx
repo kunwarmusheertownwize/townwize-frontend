@@ -373,7 +373,7 @@ const ChangeDestination = ({ rideId, driverCoords, onSuccess, onCancel }) => {
         <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 overflow-hidden divide-y divide-gray-100 dark:divide-gray-700 shadow-lg">
           {suggestions.map((s, i) => (
             <button key={i} onClick={() => handleSelect(s)} disabled={loading}
-              className="w-full text-left px-3 py-2.5 text-sm text-gray-800 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50">
+              className="w-full text-start px-3 py-2.5 text-sm text-gray-800 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50">
               {s.description}
             </button>
           ))}
@@ -1270,7 +1270,7 @@ const LiveTracking = () => {
                 {effectivePoolStatus ? effectivePoolStatus.split(" — ")[0] : stage.title}
               </span>
             </div>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 ml-4">
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 ms-4">
               {stage.description}
             </p>
           </div>
@@ -1335,9 +1335,9 @@ const LiveTracking = () => {
                     </div>
                   )}
                 </div>
-                <div className="flex items-center gap-2 ml-auto shrink-0">
+                <div className="flex items-center gap-2 ms-auto shrink-0">
                   {showEta && (
-                    <div className="text-right">
+                    <div className="text-end">
                       <p className="text-[10px] text-gray-400">Arrives in</p>
                       <p className="text-lg font-extrabold text-townwize-primary dark:text-townwize-accent leading-tight">{etaMinutes} min</p>
                     </div>
@@ -1599,7 +1599,7 @@ const LiveTracking = () => {
           </div>
           <div className="flex items-center gap-3 shrink-0">
             {showEta && (
-              <div className="text-right">
+              <div className="text-end">
                 <p className="text-xs text-gray-400">Arrives in</p>
                 <p className="text-xl font-extrabold text-townwize-primary dark:text-townwize-accent">{etaMinutes} min</p>
               </div>

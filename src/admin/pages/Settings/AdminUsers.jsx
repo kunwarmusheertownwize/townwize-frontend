@@ -73,12 +73,12 @@ export default function AdminUsers() {
         <table className="w-full text-sm">
           <thead className="bg-gray-50 dark:bg-gray-800 dark:bg-townwize-primaryDark">
             <tr>
-              <th className="px-4 py-3 text-left">Email</th>
-              <th className="px-4 py-3 text-left">Role</th>
-              <th className="px-4 py-3 text-left">Admin Level</th>
-              <th className="px-4 py-3 text-left">Status</th>
-              <th className="px-4 py-3 text-left">Updated</th>
-              <th className="px-4 py-3 text-left">Actions</th>
+              <th className="px-4 py-3 text-start">Email</th>
+              <th className="px-4 py-3 text-start">Role</th>
+              <th className="px-4 py-3 text-start">Admin Level</th>
+              <th className="px-4 py-3 text-start">Status</th>
+              <th className="px-4 py-3 text-start">Updated</th>
+              <th className="px-4 py-3 text-start">Actions</th>
             </tr>
           </thead>
           <tbody>

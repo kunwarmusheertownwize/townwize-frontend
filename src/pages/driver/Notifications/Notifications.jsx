@@ -116,7 +116,7 @@ const DriverNotifications = () => {
                 key={n._id}
                 type="button"
                 onClick={() => markOne(n)}
-                className={`w-full text-left rounded-2xl border-l-4 ${style.border} bg-white dark:bg-townwize-primaryDark px-4 py-3 shadow-sm transition hover:shadow-md ${
+                className={`w-full text-start rounded-2xl border-s-4 ${style.border} bg-white dark:bg-townwize-primaryDark px-4 py-3 shadow-sm transition hover:shadow-md ${
                   n.read ? "opacity-70" : ""
                 }`}
               >

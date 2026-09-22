@@ -192,12 +192,12 @@ export default function TrailMap({ trail = [], gaps = [], pickup, dropoff }) {
       {err && <p className="text-xs text-red-600">{err}</p>}
       {ready && (
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-gray-500 dark:text-gray-400">
-          <span><span className="mr-1 inline-block h-[3px] w-4 align-middle bg-[#17BEBB]" />Recorded route ({trail.length} points)</span>
+          <span><span className="me-1 inline-block h-[3px] w-4 align-middle bg-[#17BEBB]" />Recorded route ({trail.length} points)</span>
           {movingGaps > 0 && (
-            <span><span className="mr-1 inline-block h-[3px] w-4 align-middle bg-[#D92D20]" />GPS gap, road route ({movingGaps})</span>
+            <span><span className="me-1 inline-block h-[3px] w-4 align-middle bg-[#D92D20]" />GPS gap, road route ({movingGaps})</span>
           )}
           {stoppedGaps > 0 && (
-            <span><span className="mr-1 inline-block h-2 w-2 rounded-full align-middle bg-[#9AA5A3]" />Stopped ({stoppedGaps})</span>
+            <span><span className="me-1 inline-block h-2 w-2 rounded-full align-middle bg-[#9AA5A3]" />Stopped ({stoppedGaps})</span>
           )}
         </div>
       )}

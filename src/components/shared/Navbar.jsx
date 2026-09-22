@@ -16,7 +16,6 @@ import { useLanguage } from "../../hooks/useLanguage";
 import LanguageModal from "../common/LanguageModal";
 
 import { useTranslation } from "react-i18next";
-import i18n from "../../i18n";
 import api from "../../services/api";
 import { getSocket } from "../../hooks/useRideSocket";
 
@@ -101,10 +100,9 @@ const Navbar = () => {
   const [languageModalOpen, setLanguageModalOpen] = useState(false);
   const { t } = useTranslation();
 
-  // keep language in sync with i18n
-  useEffect(() => {
-    i18n.changeLanguage(language);
-  }, [language]);
+  /* The i18n sync that used to live here has moved to LanguageContext, which
+     wraps the whole app. Here it only ran when the Navbar was mounted, so the
+     native app and the auth screens flipped to RTL without translating. */
 
   const handleLogoClick = () => {
     if (user?.role === "driver") {
@@ -212,7 +210,7 @@ const Navbar = () => {
                               handleNav(item.path);
                               setAboutOpen(false);
                             }}
-                            className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition cursor-pointer"
+                            className="w-full text-start px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition cursor-pointer"
                           >
                             {item.label}
                           </button>
@@ -282,7 +280,7 @@ const Navbar = () => {
               >
                 <FaBell className="text-lg" />
                 {unreadCount > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
+                  <span className="absolute -top-0.5 -end-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
                     {unreadCount > 9 ? "9+" : unreadCount}
                   </span>
                 )}
@@ -315,7 +313,7 @@ const Navbar = () => {
                       handleNav("/register");
                       setAccountOpen(false);
                     }}
-                    className="ml-4 px-4 py-2 mr-3 rounded-lg items-center bg-townwize-primary text-white text-sm font-medium hover:opacity-90 transition cursor-pointer"
+                    className="ms-4 px-4 py-2 me-3 rounded-lg items-center bg-townwize-primary text-white text-sm font-medium hover:opacity-90 transition cursor-pointer"
                   >
                     {t("register")}
                   </button>
@@ -353,7 +351,7 @@ const Navbar = () => {
                                 handleNav(item.path);
                                 setAccountOpen(false);
                               }}
-                              className={`w-full text-left px-4 py-2 text-sm transition cursor-pointer ${isActive(item.path)
+                              className={`w-full text-start px-4 py-2 text-sm transition cursor-pointer ${isActive(item.path)
                                 ? "bg-gray-100 dark:bg-gray-700 font-semibold"
                                 : "text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
                                 }`}
@@ -378,7 +376,7 @@ const Navbar = () => {
                                 handleNav(item.path);
                                 setAccountOpen(false);
                               }}
-                              className={`w-full text-left px-4 py-2 text-sm transition cursor-pointer ${isActive(item.path)
+                              className={`w-full text-start px-4 py-2 text-sm transition cursor-pointer ${isActive(item.path)
                                 ? "bg-gray-100 dark:bg-gray-700 font-semibold"
                                 : "text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
                                 }`}
@@ -392,7 +390,7 @@ const Navbar = () => {
                       <hr className="my-1 border-gray-200 dark:border-gray-700" />
                       <button
                         onClick={handleLogout}
-                        className="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-50 dark:hover:bg-gray-700 transition cursor-pointer"
+                        className="w-full text-start px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-50 dark:hover:bg-gray-700 transition cursor-pointer"
                       >
                         {t("logout")}
                       </button>
@@ -457,7 +455,7 @@ const Navbar = () => {
                         handleNav("/passenger/home");
                         closeMobileMenu();
                       }}
-                      className={`w-full text-left px-3 py-3 rounded-lg transition cursor-pointer ${isActive("/passenger/home")
+                      className={`w-full text-start px-3 py-3 rounded-lg transition cursor-pointer ${isActive("/passenger/home")
                         ? "bg-gray-100 dark:bg-gray-700 font-semibold text-townwize-primary dark:text-townwize-accent"
                         : "hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
                         }`}
@@ -470,7 +468,7 @@ const Navbar = () => {
                         handleNav("/passenger/scheduled-rides");
                         closeMobileMenu();
                       }}
-                      className={`w-full text-left px-3 py-3 rounded-lg transition cursor-pointer ${isActive("/passenger/scheduled-rides")
+                      className={`w-full text-start px-3 py-3 rounded-lg transition cursor-pointer ${isActive("/passenger/scheduled-rides")
                         ? "bg-gray-100 dark:bg-gray-700 font-semibold text-townwize-primary dark:text-townwize-accent"
                         : "hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
                         }`}
@@ -488,7 +486,7 @@ const Navbar = () => {
                         handleNav("/driver/home");
                         closeMobileMenu();
                       }}
-                      className={`w-full text-left px-3 py-3 rounded-lg transition ${isActive("/driver/home")
+                      className={`w-full text-start px-3 py-3 rounded-lg transition ${isActive("/driver/home")
                         ? "bg-gray-100 dark:bg-gray-700 font-semibold text-townwize-primary dark:text-townwize-accent"
                         : "hover:bg-gray-100 dark:hover:bg-gray-700"
                         }`}
@@ -501,7 +499,7 @@ const Navbar = () => {
                         handleNav("/driver/trips");
                         closeMobileMenu();
                       }}
-                      className={`w-full text-left px-3 py-3 rounded-lg transition ${isActive("/driver/trips")
+                      className={`w-full text-start px-3 py-3 rounded-lg transition ${isActive("/driver/trips")
                         ? "bg-gray-100 dark:bg-gray-700 font-semibold text-townwize-primary dark:text-townwize-accent"
                         : "hover:bg-gray-100 dark:hover:bg-gray-700"
                         }`}
@@ -514,7 +512,7 @@ const Navbar = () => {
                         handleNav("/driver/earnings");
                         closeMobileMenu();
                       }}
-                      className={`w-full text-left px-3 py-3 rounded-lg transition ${isActive("/driver/earnings")
+                      className={`w-full text-start px-3 py-3 rounded-lg transition ${isActive("/driver/earnings")
                         ? "bg-gray-100 dark:bg-gray-700 font-semibold text-townwize-primary dark:text-townwize-accent"
                         : "hover:bg-gray-100 dark:hover:bg-gray-700"
                         }`}
@@ -527,13 +525,13 @@ const Navbar = () => {
                 {/* About */}
                 <button
                   onClick={() => setAboutOpen(!aboutOpen)}
-                  className="w-full text-left px-3 py-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
+                  className="w-full text-start px-3 py-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
                 >
                   {t("about")}
                 </button>
 
                 {aboutOpen && (
-                  <div className="ml-3 space-y-1">
+                  <div className="ms-3 space-y-1">
                     {[
                       { label: t("aboutTownwize"), path: "/about" },
                       { label: t("offerings"), path: "/offerings" },
@@ -547,7 +545,7 @@ const Navbar = () => {
                           handleNav(item.path);
                           closeMobileMenu();
                         }}
-                        className="w-full text-left px-3 py-2 text-sm rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
+                        className="w-full text-start px-3 py-2 text-sm rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
                       >
                         {item.label}
                       </button>
@@ -561,7 +559,7 @@ const Navbar = () => {
                     handleNav("/help");
                     closeMobileMenu();
                   }}
-                  className="w-full text-left px-3 py-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
+                  className="w-full text-start px-3 py-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
                 >
                   {t("help")}
                 </button>
@@ -576,7 +574,7 @@ const Navbar = () => {
                         handleNav("/login");
                         closeMobileMenu();
                       }}
-                      className="w-full text-left px-3 py-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
+                      className="w-full text-start px-3 py-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
                     >
                       {t("login")}
                     </button>
@@ -585,7 +583,7 @@ const Navbar = () => {
                         handleNav("/register");
                         closeMobileMenu();
                       }}
-                      className="w-full text-left px-3 py-3 rounded-lg bg-townwize-primary text-white"
+                      className="w-full text-start px-3 py-3 rounded-lg bg-townwize-primary text-white"
                     >
                       {t("register")}
                     </button>
@@ -610,7 +608,7 @@ const Navbar = () => {
                               handleNav(item.path);
                               closeMobileMenu();
                             }}
-                            className={`w-full text-left px-4 py-2 text-sm transition cursor-pointer ${isActive(item.path)
+                            className={`w-full text-start px-4 py-2 text-sm transition cursor-pointer ${isActive(item.path)
                               ? "bg-gray-100 dark:bg-gray-700 font-semibold"
                               : "text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
                               }`}
@@ -637,7 +635,7 @@ const Navbar = () => {
                               handleNav(item.path);
                               closeMobileMenu();
                             }}
-                            className="w-full text-left px-3 py-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
+                            className="w-full text-start px-3 py-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
                           >
                             {item.label}
                           </button>
@@ -647,7 +645,7 @@ const Navbar = () => {
 
                     <button
                       onClick={handleLogout}
-                      className="w-full text-left px-3 py-3 rounded-lg text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700"
+                      className="w-full text-start px-3 py-3 rounded-lg text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700"
                     >
                       {t("logout")}
                     </button>

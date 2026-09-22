@@ -57,7 +57,7 @@ function NumberInput({ value, onChange, min = 0, suffix, disabled }) {
         value={value}
         onChange={(e) => onChange(e.target.value === "" ? "" : Number(e.target.value))}
         disabled={disabled}
-        className="w-24 rounded-lg border border-gray-200 dark:border-gray-700 dark:border-gray-600 bg-white dark:bg-gray-900 dark:bg-gray-700 px-3 py-1.5 text-sm text-right focus:outline-none focus:ring-2 focus:ring-townwize-primary disabled:opacity-50"
+        className="w-24 rounded-lg border border-gray-200 dark:border-gray-700 dark:border-gray-600 bg-white dark:bg-gray-900 dark:bg-gray-700 px-3 py-1.5 text-sm text-end focus:outline-none focus:ring-2 focus:ring-townwize-primary disabled:opacity-50"
       />
       {suffix && <span className="text-xs text-gray-500 dark:text-gray-400 w-8">{suffix}</span>}
     </div>
@@ -252,7 +252,7 @@ export default function CancellationPolicy() {
 
       {/* Meta */}
       {meta.updatedAt && (
-        <p className="text-xs text-gray-400 text-right">
+        <p className="text-xs text-gray-400 text-end">
           Last saved {fmtDate(meta.updatedAt)} by {meta.updatedByEmail}
         </p>
       )}

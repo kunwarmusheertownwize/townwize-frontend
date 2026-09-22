@@ -32,7 +32,7 @@ export default function RouteLoaderOverlay({ isVisible }) {
                 >
                     <div
                         className="
-              absolute inset-y-0 left-0 w-1/3
+              absolute inset-y-0 start-0 w-1/3
               bg-gradient-to-r
               from-gray-300 to-gray-400
               dark:from-gray-600 dark:to-gray-500

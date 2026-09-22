@@ -221,7 +221,7 @@ export default function TicketsList() {
             <button
               key={t._id}
               type="button"
-              className="w-full rounded-xl border border-gray-200 bg-white p-4 text-left"
+              className="w-full rounded-xl border border-gray-200 bg-white p-4 text-start"
               onClick={() => setSelectedId(t._id)}
             >
               <div className="flex items-start justify-between gap-3">
@@ -250,12 +250,12 @@ export default function TicketsList() {
         <table className="w-full table-fixed text-sm min-w-[900px]">
           <thead className="bg-gray-50 sticky top-0 z-10">
             <tr>
-              <th className="px-4 py-3 text-left w-[20%]">Ticket</th>
-              <th className="px-4 py-3 text-left w-[12%]">Status</th>
-              <th className="px-4 py-3 text-left w-[12%]">Priority</th>
-              <th className="px-4 py-3 text-left w-[16%]">Category</th>
-              <th className="px-4 py-3 text-left w-[20%]">Requester</th>
-              <th className="px-4 py-3 text-left w-[20%]">Updated</th>
+              <th className="px-4 py-3 text-start w-[20%]">Ticket</th>
+              <th className="px-4 py-3 text-start w-[12%]">Status</th>
+              <th className="px-4 py-3 text-start w-[12%]">Priority</th>
+              <th className="px-4 py-3 text-start w-[16%]">Category</th>
+              <th className="px-4 py-3 text-start w-[20%]">Requester</th>
+              <th className="px-4 py-3 text-start w-[20%]">Updated</th>
             </tr>
           </thead>
           <tbody>

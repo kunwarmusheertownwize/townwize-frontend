@@ -641,9 +641,9 @@ const Earnings = () => {
                 <div className="grid grid-cols-5 gap-2 px-4 py-2 bg-gray-50 dark:bg-gray-800 text-[10px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
                   <span className="col-span-1">Date</span>
                   <span className="text-center">Trips</span>
-                  <span className="text-right">Gross</span>
-                  <span className="text-right">Commission</span>
-                  <span className="text-right">Net</span>
+                  <span className="text-end">Gross</span>
+                  <span className="text-end">Commission</span>
+                  <span className="text-end">Net</span>
                 </div>
 
                 {/* Rows — use weekly aggregated for monthly view */}
@@ -665,9 +665,9 @@ const Earnings = () => {
                           <p className="text-[10px] text-gray-400">{Number(row.trips || 0)} trip{row.trips !== 1 ? "s" : ""}</p>
                         </div>
                         <p className="text-center text-gray-700 dark:text-gray-300 font-medium">{Number(row.trips || 0)}</p>
-                        <p className="text-right text-gray-700 dark:text-gray-300">{toMoney(gross)}</p>
-                        <p className="text-right text-red-500 font-medium">-{toMoney(commission)}</p>
-                        <p className="text-right font-semibold text-gray-900 dark:text-white">{toMoney(net)}</p>
+                        <p className="text-end text-gray-700 dark:text-gray-300">{toMoney(gross)}</p>
+                        <p className="text-end text-red-500 font-medium">-{toMoney(commission)}</p>
+                        <p className="text-end font-semibold text-gray-900 dark:text-white">{toMoney(net)}</p>
                       </div>
                     );
                   })}

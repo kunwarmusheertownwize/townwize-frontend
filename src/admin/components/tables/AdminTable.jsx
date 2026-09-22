@@ -12,7 +12,7 @@ export default function AdminTable({
                         {columns.map((col) => (
                             <th
                                 key={col.key}
-                                className="px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-300 whitespace-nowrap"
+                                className="px-4 py-3 text-start font-semibold text-gray-600 dark:text-gray-300 whitespace-nowrap"
                             >
                                 {col.label}
                             </th>

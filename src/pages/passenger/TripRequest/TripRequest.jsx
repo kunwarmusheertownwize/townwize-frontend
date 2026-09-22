@@ -173,11 +173,11 @@ const TripRequest = () => {
           <div className="bg-white/10 rounded-2xl p-4 w-full space-y-3">
             <div className="flex justify-between text-sm gap-3">
               <span className="text-white/60 shrink-0">Pickup</span>
-              <span className="text-white font-medium text-right truncate">{state?.pickup}</span>
+              <span className="text-white font-medium text-end truncate">{state?.pickup}</span>
             </div>
             <div className="flex justify-between text-sm gap-3">
               <span className="text-white/60 shrink-0">Dropoff</span>
-              <span className="text-white font-medium text-right truncate">{state?.dropoff}</span>
+              <span className="text-white font-medium text-end truncate">{state?.dropoff}</span>
             </div>
             <div className="flex justify-between text-sm gap-3">
               <span className="text-white/60 shrink-0">Type</span>
@@ -252,7 +252,7 @@ const TripRequest = () => {
         <div className="w-24 h-24 border-2 border-townwize-primary border-t-transparent rounded-full animate-spin" />
       </div>
 
-      <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4 text-left space-y-1 border border-gray-200 dark:border-gray-700">
+      <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4 text-start space-y-1 border border-gray-200 dark:border-gray-700">
         <p><strong>Pickup:</strong> {state?.pickup}</p>
         <p><strong>Dropoff:</strong> {state?.dropoff}</p>
         <p><strong>Ride Type:</strong> {state?.rideType}</p>

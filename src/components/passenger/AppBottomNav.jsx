@@ -10,7 +10,7 @@ const inactive =
 
 export default function AppBottomNav() {
     return (
-        <nav className="fixed bottom-0 left-0 right-0 w-screen z-50 bg-white dark:bg-townwize-bgDark border-t border-gray-200 dark:border-gray-700">
+        <nav className="fixed bottom-0 start-0 end-0 w-screen z-50 bg-white dark:bg-townwize-bgDark border-t border-gray-200 dark:border-gray-700">
 
             <div className="max-w-6xl mx-auto grid grid-cols-4 h-16">
                 <NavLink

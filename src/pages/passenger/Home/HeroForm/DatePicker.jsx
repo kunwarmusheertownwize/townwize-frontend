@@ -10,7 +10,7 @@ const DatePicker = ({ pickupDate, setPickupDate, month, setMonth, generateCalend
   return (
     <Popover className="relative w-full">
       <Popover.Button className="flex items-center px-4 py-3 rounded-md bg-gray-100 dark:bg-gray-900 w-full text-sm text-townwize-textPrimary dark:text-white cursor-pointer">
-        <FaCalendarAlt className="text-townwize-primary dark:text-townwize-bgLight text-base mr-3 ml-2" />
+        <FaCalendarAlt className="text-townwize-primary dark:text-townwize-bgLight text-base me-3 ms-2" />
         {format(pickupDate, "MMM d, yyyy")}
       </Popover.Button>
 

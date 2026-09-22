@@ -86,13 +86,13 @@ function Toggle({ on, onChange, disabled = false }) {
 
 function Card({ title, desc, accent = "gray", tag, children }) {
   const borders = {
-    gray: "border-l-gray-300 dark:border-l-gray-600",
-    green: "border-l-green-400", orange: "border-l-orange-400", amber: "border-l-amber-400",
-    blue: "border-l-blue-400", purple: "border-l-purple-400", teal: "border-l-teal-400",
-    indigo: "border-l-indigo-400", pink: "border-l-pink-400", red: "border-l-red-400",
+    gray: "border-s-gray-300 dark:border-s-gray-600",
+    green: "border-s-green-400", orange: "border-s-orange-400", amber: "border-s-amber-400",
+    blue: "border-s-blue-400", purple: "border-s-purple-400", teal: "border-s-teal-400",
+    indigo: "border-s-indigo-400", pink: "border-s-pink-400", red: "border-s-red-400",
   };
   return (
-    <div className={`bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 border-l-4 ${borders[accent]} overflow-hidden`}>
+    <div className={`bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 border-s-4 ${borders[accent]} overflow-hidden`}>
       <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-700 dark:border-gray-800 flex items-center justify-between gap-3">
         <div>
           <h3 className="text-sm font-bold text-gray-900 dark:text-white">{title}</h3>
@@ -163,11 +163,11 @@ function FarePreviewPanel({ profile, open, onToggle }) {
   const tog = rideType === "RIDETOGETHER";
 
   return (
-    <div className="fixed bottom-16 right-4 z-40 w-[320px]">
+    <div className="fixed bottom-16 end-4 z-40 w-[320px]">
       {/* Toggle button */}
       <button
         onClick={onToggle}
-        className="ml-auto mb-1 flex items-center gap-2 px-3.5 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold shadow-lg transition"
+        className="ms-auto mb-1 flex items-center gap-2 px-3.5 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold shadow-lg transition"
       >
         <span>{open ? "▾ Fare Preview" : "▸ Fare Preview"}</span>
         {!open && <span className="px-1.5 py-0.5 rounded-full bg-white dark:bg-gray-900/20 text-[10px]">live</span>}
@@ -249,7 +249,7 @@ function FarePreviewPanel({ profile, open, onToggle }) {
 function PvRow({ label, value, sub, note }) {
   const positive = value >= 0;
   return (
-    <div className={`flex justify-between ${sub ? "pl-3 text-gray-400" : "text-gray-600 dark:text-gray-300"}`}>
+    <div className={`flex justify-between ${sub ? "ps-3 text-gray-400" : "text-gray-600 dark:text-gray-300"}`}>
       <span>{label}</span>
       <span className={positive ? "" : "text-red-500"}>
         {note && `${note} `}{!positive && "−"}PKR {Math.abs(value).toFixed(2)}
@@ -518,9 +518,9 @@ function TabDispatch({ profile, onChange }) {
               <table className="w-full text-sm">
                 <thead className="bg-gray-50 dark:bg-gray-800 text-[10px] uppercase tracking-wide text-gray-500 dark:text-gray-400">
                   <tr>
-                    <th className="px-4 py-2 text-left font-semibold">Driver</th>
-                    <th className="px-4 py-2 text-left font-semibold">Car Type</th>
-                    <th className="px-4 py-2 text-left font-semibold">Distance</th>
+                    <th className="px-4 py-2 text-start font-semibold">Driver</th>
+                    <th className="px-4 py-2 text-start font-semibold">Car Type</th>
+                    <th className="px-4 py-2 text-start font-semibold">Distance</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
@@ -780,7 +780,7 @@ function TollPlazaModal({ plaza, onSave, onClose }) {
           <div>
             <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">
               Detection Radius (meters)
-              <span className="ml-1 font-normal text-gray-400">— how close a route must pass to trigger this toll</span>
+              <span className="ms-1 font-normal text-gray-400">— how close a route must pass to trigger this toll</span>
             </label>
             <input
               type="number" min="50" max="1000"
@@ -950,7 +950,7 @@ function TabTolls() {
       ) : (
         <div className="overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-700">
           <table className="w-full text-sm min-w-[700px]">
-            <thead className="bg-gray-50 dark:bg-gray-800 text-left">
+            <thead className="bg-gray-50 dark:bg-gray-800 text-start">
               <tr>
                 <th className="px-4 py-3 font-semibold text-gray-600 dark:text-gray-400">Name</th>
                 <th className="px-4 py-3 font-semibold text-gray-600 dark:text-gray-400">Coordinates</th>
@@ -1112,7 +1112,7 @@ export default function PricingSettings() {
     <div className="pb-24">
       {/* Toast */}
       {toast.msg && (
-        <div className={`fixed top-4 right-4 z-50 px-4 py-2.5 rounded-xl shadow-lg text-sm font-semibold ${toast.type === "err" ? "bg-red-600 text-white" : "bg-green-600 text-white"}`}>
+        <div className={`fixed top-4 end-4 z-50 px-4 py-2.5 rounded-xl shadow-lg text-sm font-semibold ${toast.type === "err" ? "bg-red-600 text-white" : "bg-green-600 text-white"}`}>
           {toast.msg}
         </div>
       )}
@@ -1151,7 +1151,7 @@ export default function PricingSettings() {
               <span className="text-base leading-none">{tab.icon}</span>
               {tab.label}
               {n > 0 && (
-                <span className="ml-0.5 inline-flex items-center justify-center h-4 min-w-4 rounded-full bg-amber-400 text-[9px] font-bold text-white px-1">
+                <span className="ms-0.5 inline-flex items-center justify-center h-4 min-w-4 rounded-full bg-amber-400 text-[9px] font-bold text-white px-1">
                   {n}
                 </span>
               )}
@@ -1187,7 +1187,7 @@ export default function PricingSettings() {
 
       {/* Sticky save footer */}
       {!loading && (
-        <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-gray-200 dark:border-gray-700 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm px-6 py-3 flex items-center gap-3">
+        <div className="fixed bottom-0 start-0 end-0 z-40 border-t border-gray-200 dark:border-gray-700 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm px-6 py-3 flex items-center gap-3">
           <input
             value={note}
             onChange={(e) => setNote(e.target.value)}

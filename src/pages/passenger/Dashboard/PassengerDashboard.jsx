@@ -12,7 +12,7 @@ const PassengerDashboard = () => {
   return (
     <div className="space-y-6 px-4 md:px-8 py-6">
       {/* Header */}
-      <div className="text-left mb-4">
+      <div className="text-start mb-4">
         <h1 className="text-2xl font-bold text-townwize-primary dark:text-townwize-accent">
           Welcome back{user?.name ? `, ${user.name}` : ""}!
         </h1>

@@ -17,7 +17,7 @@ export default function ProfileTabs({ tabs, activeTab, onChange }) {
           {t.icon}
           {t.label}
           {activeTab === t.key && (
-            <span className="absolute bottom-0 left-2 right-0 h-[2px] bg-townwize-primary rounded-full"></span>
+            <span className="absolute bottom-0 start-2 end-0 h-[2px] bg-townwize-primary rounded-full"></span>
           )}
         </button>
       ))}

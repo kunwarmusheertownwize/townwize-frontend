@@ -524,7 +524,7 @@ export default function Profile() {
                           }`}
                         >
                           <span
-                            className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-all ${
+                            className={`absolute top-0.5 start-0.5 w-5 h-5 bg-white rounded-full shadow transition-all ${
                               darkMode ? "translate-x-6" : ""
                             }`}
                           />
@@ -568,7 +568,7 @@ export default function Profile() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between gap-6 mb-8 bg-white dark:bg-townwize-primaryDark border border-gray-200 dark:border-gray-700 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all duration-300">
         {/* Avatar + Info */}
-        <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 items-center sm:items-center text-center sm:text-left w-full sm:w-auto">
+        <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 items-center sm:items-center text-center sm:text-start w-full sm:w-auto">
           <img
             src={
               user?.profilePicture ||
@@ -601,7 +601,7 @@ export default function Profile() {
         </div>
 
         {/* Wallet Summary (hide on mobile) */}
-        <div className="hidden sm:flex flex-col items-end text-right">
+        <div className="hidden sm:flex flex-col items-end text-end">
           <p className="text-sm text-gray-500 dark:text-gray-300">
             Wallet Balance
           </p>
@@ -626,7 +626,7 @@ export default function Profile() {
             {t.icon}
             {t.label}
             {activeTab === t.key && (
-              <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-townwize-primary dark:bg-townwize-accent rounded-full"></span>
+              <span className="absolute bottom-0 start-0 end-0 h-[2px] bg-townwize-primary dark:bg-townwize-accent rounded-full"></span>
             )}
           </button>
         ))}
@@ -986,7 +986,7 @@ export default function Profile() {
                   }`}
               >
                 <span
-                  className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-all ${darkMode ? "translate-x-6" : ""
+                  className={`absolute top-0.5 start-0.5 w-5 h-5 bg-white rounded-full shadow transition-all ${darkMode ? "translate-x-6" : ""
                     }`}
                 />
               </button>

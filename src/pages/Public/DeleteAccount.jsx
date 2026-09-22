@@ -37,7 +37,7 @@ export default function DeleteAccount() {
           <h2 className="text-sm font-bold text-gray-900 dark:text-gray-100">
             What is deleted
           </h2>
-          <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-gray-600 dark:text-gray-300">
+          <ul className="mt-2 list-disc space-y-1 ps-5 text-sm text-gray-600 dark:text-gray-300">
             <li>Your name, email address and phone number</li>
             <li>Your Bahria Town address and registration number</li>
             <li>Your CNIC number and every identity document you uploaded</li>
@@ -69,7 +69,7 @@ export default function DeleteAccount() {
             trip you took — for example after a road accident or a safety
             complaint. Nobody at Townwize uses them for anything else.
           </p>
-          <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-gray-600 dark:text-gray-300">
+          <ul className="mt-2 list-disc space-y-1 ps-5 text-sm text-gray-600 dark:text-gray-300">
             <li>
               <strong>Towners:</strong> one year.
             </li>

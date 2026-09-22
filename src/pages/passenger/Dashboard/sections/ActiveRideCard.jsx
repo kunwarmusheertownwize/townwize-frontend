@@ -53,7 +53,7 @@ const ActiveRideCard = () => {
       ) : (
         <button
           onClick={handleClick}
-          className="w-full text-left rounded-xl border border-townwize-primary/20 bg-townwize-primary/5 dark:bg-townwize-primary/10 p-3 hover:bg-townwize-primary/10 dark:hover:bg-townwize-primary/20 transition"
+          className="w-full text-start rounded-xl border border-townwize-primary/20 bg-townwize-primary/5 dark:bg-townwize-primary/10 p-3 hover:bg-townwize-primary/10 dark:hover:bg-townwize-primary/20 transition"
         >
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-3 min-w-0">

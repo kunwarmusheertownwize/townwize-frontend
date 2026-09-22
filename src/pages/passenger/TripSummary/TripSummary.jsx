@@ -451,7 +451,7 @@ const TripSummary = () => {
             <p className="text-xs uppercase tracking-wide text-white/80">Estimated Fare</p>
             <p className="text-3xl font-extrabold mt-2">
               {quote.loading ? "..." : Number(quote.finalFare || 0).toLocaleString()}
-              <span className="text-base font-semibold ml-1">PKR</span>
+              <span className="text-base font-semibold ms-1">PKR</span>
             </p>
           </div>
           {quote.loading ? (
@@ -461,7 +461,7 @@ const TripSummary = () => {
               <button
                 type="button"
                 onClick={() => setShowFareDetails((prev) => !prev)}
-                className="mt-3 text-xs text-left text-white/90 underline underline-offset-2 hover:text-white"
+                className="mt-3 text-xs text-start text-white/90 underline underline-offset-2 hover:text-white"
               >
                 {showFareDetails ? "Hide fare details" : "View fare details"}
               </button>
@@ -563,7 +563,7 @@ const TripSummary = () => {
     {/* Fixed bottom CTA on native so it's always visible without scrolling */}
     {isNative() && (
       <div
-        className="fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-townwize-primaryDark px-5 pt-3 border-t border-gray-100 dark:border-gray-700 shadow-2xl"
+        className="fixed bottom-0 start-0 end-0 z-50 bg-white dark:bg-townwize-primaryDark px-5 pt-3 border-t border-gray-100 dark:border-gray-700 shadow-2xl"
         style={{ paddingBottom: "max(16px, env(safe-area-inset-bottom, 16px))" }}
       >
         {confirmCta}
