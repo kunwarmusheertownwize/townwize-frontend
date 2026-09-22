@@ -5,9 +5,10 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "dev:tailwind": "tailwindcss/cli -i ./src/index.css -o ./out.css --watch --minify",
-    "build": "vite build",
-    "preview": "vite preview"
+    "dev:tailwind": "tailwindcss -i ./src/index.css -o ./out.css --watch --minify",
+    "build": "npm run build:css && vite build",
+    "preview": "vite preview",
+    "build:css": "tailwindcss -i ./src/index.css -o ./out.css --minify"
   },
   "dependencies": {
     "@capacitor-community/background-geolocation": "^1.2.26",
