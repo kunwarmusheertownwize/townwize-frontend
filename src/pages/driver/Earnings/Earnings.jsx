@@ -8,7 +8,7 @@ import {
   savePayoutDetails,
   startCommissionPayment,
 } from "../../../api/driverApi";
-import RemittanceDetails from "../../../components/driver/RemittanceDetails";
+import RemittanceDetails, { useInAppCommissionEnabled } from "../../../components/driver/RemittanceDetails";
 
 const toMoney = (n) => `PKR ${Number(n || 0).toLocaleString()}`;
 const fmtDate = (iso) =>
@@ -128,6 +128,7 @@ function PaymentModal({ balanceOwed, onClose, onSubmit }) {
   const [submitting, setSubmitting] = useState(false);
   const [payingNow, setPayingNow] = useState(false);
   const [showManual, setShowManual] = useState(false);
+  const inAppEnabled = useInAppCommissionEnabled();
 
   /* Hands off to Safepay's checkout. The amount is NOT sent: the server reads
      what is owed from the driver's own ledger, so a stale screen cannot ask
@@ -169,7 +170,9 @@ function PaymentModal({ balanceOwed, onClose, onSubmit }) {
               driver nothing about WHERE to send it, and is no longer the
               recommended way to do it. */}
           <p className="text-xs text-white/70 mt-0.5">
-            Pay in the app and your balance clears straight away
+            {inAppEnabled
+              ? "Pay in the app and your balance clears straight away"
+              : "Transfer it to the account below, then tell us here"}
           </p>
         </div>
         <div className="px-6 py-5 space-y-4">
@@ -179,6 +182,12 @@ function PaymentModal({ balanceOwed, onClose, onSubmit }) {
               an admin to confirm it by hand before your balance moved. This
               settles the ledger the moment the payment captures, with nobody in
               the path. */}
+          {/* Hidden unless the flag is on. Paying commission through Safepay
+              costs ~3.3% on cards to collect money that is already ours, and a
+              transfer straight into the SCB account is free — so with this off
+              the transfer IS the route, not a fallback, and it opens expanded
+              below rather than hiding behind a disclosure. */}
+          {inAppEnabled && (
           <div className="rounded-xl border border-townwize-primary/30 bg-townwize-primary/5 dark:bg-townwize-primary/10 p-4">
             {/* The badge earns its place by naming the DIFFERENCE between the
                 two routes — this one clears immediately, the other is confirmed
@@ -205,6 +214,7 @@ function PaymentModal({ balanceOwed, onClose, onSubmit }) {
               {payingNow ? "Opening payment…" : `Pay ${toMoney(balanceOwed)} now`}
             </button>
           </div>
+          )}
 
           {/* THE MANUAL ROUTE, COLLAPSED.
               Kept as a fallback for a driver who would rather transfer the
@@ -214,11 +224,15 @@ function PaymentModal({ balanceOwed, onClose, onSubmit }) {
               account details, an amount field and a reference box permanently
               open gave the slow path more of the dialog than the fast one, on
               a screen a blocked driver reads in a hurry. */}
-          <div className="flex items-center gap-3">
-            <span className="h-px flex-1 bg-gray-200 dark:bg-gray-700" />
-            <span className="text-[11px] uppercase tracking-wide text-gray-400">or pay another way</span>
-            <span className="h-px flex-1 bg-gray-200 dark:bg-gray-700" />
-          </div>
+          {/* "or pay another WAY" only means something when there are two.
+              With the in-app route off, this is simply how you pay. */}
+          {inAppEnabled && (
+            <div className="flex items-center gap-3">
+              <span className="h-px flex-1 bg-gray-200 dark:bg-gray-700" />
+              <span className="text-[11px] uppercase tracking-wide text-gray-400">or pay another way</span>
+              <span className="h-px flex-1 bg-gray-200 dark:bg-gray-700" />
+            </div>
+          )}
 
           {/* Presented as a SECOND PAYMENT METHOD, not as a link — the pattern
               Stripe, PayPal and Careem all use: two option cards, one
@@ -229,6 +243,7 @@ function PaymentModal({ balanceOwed, onClose, onSubmit }) {
               would get by tapping it. It also hid the real trade-off: this route
               is slower and needs a receipt, and that belongs on the card rather
               than being discovered two steps in. */}
+          {inAppEnabled && (
           <button
             type="button"
             onClick={() => setShowManual((v) => !v)}
@@ -250,8 +265,11 @@ function PaymentModal({ balanceOwed, onClose, onSubmit }) {
               ▾
             </span>
           </button>
+          )}
 
-          {showManual && (
+          {/* Open by default when it is the ONLY route — a driver should not
+              have to expand a disclosure to find the one way to pay. */}
+          {(showManual || !inAppEnabled) && (
           <>
           <RemittanceDetails compact />
 

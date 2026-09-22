@@ -62,6 +62,27 @@ const Row = ({ label, value, copyable }) => {
     );
 };
 
+/**
+ * Whether the in-app route is offered, from the same call that fetches the
+ * account details — so the button and the server cannot disagree about it.
+ * The service REFUSES a session when this is off, and a visible button that
+ * always errors is worse than no button.
+ */
+export function useInAppCommissionEnabled() {
+    const [enabled, setEnabled] = useState(false);
+    useEffect(() => {
+        let mounted = true;
+        api
+            .get("/driver/remittance")
+            .then((res) => mounted && setEnabled(Boolean(res?.data?.data?.inAppPaymentEnabled)))
+            // Default OFF on failure: showing a pay button we cannot honour
+            // strands a driver mid-payment, while the transfer route always works.
+            .catch(() => mounted && setEnabled(false));
+        return () => { mounted = false; };
+    }, []);
+    return enabled;
+}
+
 export default function RemittanceDetails({ compact = false, collapsible = false }) {
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
