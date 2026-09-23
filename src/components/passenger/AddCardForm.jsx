@@ -129,19 +129,25 @@ export default function AddCardForm({ onSaved, onCancel }) {
             return;
         }
 
-        /* The first production card saved with NO last four and NO scheme —
-         * the row read "Card ···· ····". The SDK types say onValidated hands
-         * back { bin, lastFour, cardType }, which is exactly what we read, so
-         * either it never fired or it fired empty.
+        /* ⚠️ ATOMS NEVER TELLS US WHAT THE CARD IS. Confirmed on a real
+         * production card, 23 Sep 2026 — `onValidated` fires, and fires EMPTY:
          *
-         * A card nobody can identify is not a cosmetic problem: a passenger
-         * with two saved cards cannot tell which is which, and a receipt or a
-         * chargeback cannot name the one that was charged.
+         *   onValidated:   { bin: "", lastFour: "", cardType: undefined }
+         *   auth payload:  { tracker, payment_method: "pm_…", request_id }
          *
-         * So: prefer onValidated, fall back to whatever the authentication
-         * payload carries — it is known to include a `paymentMethod` object —
-         * and if BOTH come up empty, say so loudly rather than saving a blank
-         * card in silence. */
+         * Its own types promise { bin, lastFour, cardType }. They arrive blank,
+         * and the authentication payload carries no card block at all, so every
+         * saved card read "Card ···· ····".
+         *
+         * A card nobody can identify is not cosmetic: a passenger with two
+         * cannot tell them apart, and a receipt or chargeback cannot name the
+         * one that was charged.
+         *
+         * So THE SERVER ASKS SAFEPAY instead, using the tracker sent below.
+         * That is the better source regardless — these values come from the
+         * browser, and nothing the browser says about a card is authoritative.
+         * What remains here is a preference for anything Atoms does supply, in
+         * case a future version starts populating it. */
         const fromAuth = data?.paymentMethod || data?.payment_method_details || {};
         const details = {
             lastFour: card?.lastFour || fromAuth?.lastFour || fromAuth?.last_four || "",
@@ -160,6 +166,9 @@ export default function AddCardForm({ onSaved, onCancel }) {
         try {
             const res = await api.post("/payments/cards", {
                 token,
+                // Sent so the server can ask Safepay what the card is when
+                // Atoms hands back nothing, which is what it does.
+                tracker: setup?.tracker,
                 lastFour: details.lastFour,
                 cardType: details.cardType,
                 bin: details.bin,
