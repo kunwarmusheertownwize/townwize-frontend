@@ -36,34 +36,43 @@ export default function AddCardForm({ onSaved, onCancel }) {
     /* Device-data-collection details for 3DS, which arrive from Safepay rather
      * than from us.
      *
-     * ⚠️ THE ONE UNKNOWN IN THIS FLOW. Their docs say the payer-authentication
-     * setup response carries `access_token` and `CardinalJwt`, and the React
-     * Native SDK wants `deviceDataCollectionJWT` and `deviceDataCollectionURL`
-     * — but `onProceedToAuthentication(data)` is typed `any`, so the exact
-     * shape is unconfirmed.
-     *
-     * Rather than guess one spelling and fail silently, several plausible ones
-     * are read and the whole payload is logged the first time it arrives. The
-     * first sandbox run settles it; then delete the alternatives and this note.
+     * ✅ SETTLED 22 Sep 2026 against a real production card. It was the one
+     * unknown in this flow — `onProceedToAuthentication(data)` is typed `any`,
+     * their docs mention `access_token` and `CardinalJwt`, and their React
+     * Native SDK wants `deviceDataCollectionJWT`. None of those is what comes
+     * out. See takeDeviceData for the shape that actually arrives.
      */
     const [deviceData, setDeviceData] = useState(null);
 
     const takeDeviceData = (data) => {
-        console.log("[atoms] onProceedToAuthentication payload", data);
-        const setupBlock = data?.payer_authentication_setup || data?.payerAuthenticationSetup || data;
-        const jwt =
-            setupBlock?.deviceDataCollectionJWT ||
-            setupBlock?.device_data_collection_jwt ||
-            setupBlock?.CardinalJwt ||
-            setupBlock?.access_token ||
-            null;
+        /* CONFIRMED against a real production card, 22 Sep 2026. The payload is
+         * flat, and the JWT arrives as `accessToken` — camelCase, and NOT any
+         * of the four spellings this used to try:
+         *
+         *   deviceDataCollectionJWT   device_data_collection_jwt
+         *   CardinalJwt               access_token   ← snake_case, so close
+         *
+         * All four missed, `jwt` came back null, and every card add died on
+         * "We couldn't start card verification" with the capture and 3DS
+         * handshake having worked perfectly. The backend logged a clean 200.
+         *
+         * `deviceDataCollectionURL` was right first time and is unchanged —
+         * it arrives pointing at Cardinal Commerce.
+         *
+         * The fallbacks stay for the URL only, where nothing is confirmed
+         * beyond the one spelling seen. For the JWT they are gone: keeping
+         * guesses next to a known answer invites someone to believe the
+         * guesses were verified too. */
+        const jwt = data?.accessToken || null;
         const url =
-            setupBlock?.deviceDataCollectionURL ||
-            setupBlock?.device_data_collection_url ||
-            setupBlock?.DeviceDataCollectionURL ||
+            data?.deviceDataCollectionURL ||
+            data?.device_data_collection_url ||
             null;
 
         if (!jwt) {
+            // Logged only on failure now. It fired on every add before, which
+            // put a raw 3DS token in the console of every passenger's browser.
+            console.error("[atoms] no accessToken in onProceedToAuthentication", data);
             fail(
                 "We couldn't start card verification. Please try again, or use cash for this trip."
             );
