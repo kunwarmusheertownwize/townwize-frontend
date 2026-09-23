@@ -393,6 +393,34 @@ export default function PassengerTripReceipt() {
       : `Actual trip fare was ${toMoney(Math.abs(fare.adjustment))} lower than the booking estimate.`
     : "Final fare matched the estimate shown at booking.";
 
+  /* WHAT THE TOTAL ROW IS ALLOWED TO CLAIM.
+   *
+   * "Total paid" was hardcoded on both fare summaries while the banner above
+   * them worked this out properly — so an unpaid card ride printed
+   *
+   *     Total paid            257 PKR
+   *     Payment due — Your trip is complete. Pay the fare below to settle it.
+   *
+   * on the same receipt, inches apart. Seen on a real ride, 23 Sep. That is
+   * the kind of thing a passenger screenshots and quotes back during a
+   * dispute, and they would be right to.
+   *
+   * ONE definition, used everywhere a total is labelled. Three copies of a
+   * rule is three chances for one of them to drift, which is exactly what had
+   * already happened here.
+   *
+   * REFUNDS ARE CHECKED FIRST and must be: a refunded fare is not "captured"
+   * either, so without this it would read "Total due" — telling someone they
+   * owe money on a trip that was just refunded to them. */
+  const totalLabel =
+    ride?.paymentStatus === "refunded"
+      ? "Refunded"
+      : ride?.paymentStatus === "partially_refunded"
+        ? "Partially Refunded"
+        : ride?.paymentMethod && ride.paymentMethod !== "cash" && ride?.paymentStatus !== "captured"
+          ? "Total Due"
+          : "Total Paid";
+
   // ─── Mobile (Capacitor) — simplified stacked receipt ─────────────────────
   if (isNative()) {
     return (
@@ -417,15 +445,7 @@ export default function PassengerTripReceipt() {
                   reaching us at all on 20 Sep; the webhook had been dropping
                   every one of them. */}
               <p className="text-xs text-white/70 uppercase tracking-wider">
-                {isPooled
-                  ? "Your Share (Split Fare)"
-                  : ride?.paymentStatus === "refunded"
-                    ? "Refunded"
-                    : ride?.paymentStatus === "partially_refunded"
-                      ? "Partially Refunded"
-                      : ride?.paymentMethod && ride.paymentMethod !== "cash" && ride?.paymentStatus !== "captured"
-                        ? "Total Due"
-                        : "Total Paid"}
+                {isPooled ? "Your Share (Split Fare)" : totalLabel}
               </p>
               <p className="text-5xl font-extrabold mt-1">{toMoney(isPooled && farePerSeat ? farePerSeat : fare.final)}</p>
               {isPooled && coRiderCount > 0 && (
@@ -540,7 +560,7 @@ export default function PassengerTripReceipt() {
                       )}
                     </div>
                     <div className="flex justify-between font-bold text-base border-t border-gray-200 dark:border-gray-700 pt-2">
-                      <span>Total paid</span>
+                      <span>{totalLabel}</span>
                       <span className="text-townwize-primary dark:text-townwize-accent">
                         {toMoney(fare.final)}
                       </span>
@@ -783,7 +803,7 @@ export default function PassengerTripReceipt() {
                       <span>{toMoney(fare.adjustment)}</span>
                     </div>
                   ) : null}
-                  <div className="flex justify-between font-bold text-xl"><span>Total paid</span><span>{toMoney(fare.final)}</span></div>
+                  <div className="flex justify-between font-bold text-xl"><span>{totalLabel}</span><span>{toMoney(fare.final)}</span></div>
                 </>
               )}
             </div>
