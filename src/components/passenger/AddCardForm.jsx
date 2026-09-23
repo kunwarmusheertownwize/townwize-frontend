@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { CardCapture, PayerAuthentication, toEnvironment } from "@sfpy/atoms";
 // `@sfpy/atoms/styles`, NOT the dist path — the package's exports map only
 // publishes that one subpath, and the deep path fails the build outright.
@@ -85,25 +85,39 @@ export default function AddCardForm({ onSaved, onCancel }) {
     const cardRef = useRef(null);
     const authRef = useRef(null);
 
-    useEffect(() => {
-        let mounted = true;
+    /* A FRESH tracker every attempt. A setup tracker is spent once its 3DS
+       handshake has been used, so retrying against the old one fails in a way
+       that looks like a card problem and is not.
+
+       This used to retry with window.location.reload() — reloading the entire
+       profile page, losing every other tab's state, to have another go at
+       typing a card number. */
+    const begin = useCallback(() => {
+        let alive = true;
+        setPhase("loading");
+        setError("");
+        setCard(null);
+        setReady(false);
+        setDeviceData(null);
         api
             .post("/payments/cards/setup")
             .then((res) => {
-                if (!mounted) return;
+                if (!alive) return;
                 setSetup(res?.data?.data || null);
                 setPhase("collect");
             })
             .catch((err) => {
-                if (!mounted) return;
+                if (!alive) return;
                 setError(
                     err?.response?.data?.error?.message ||
                         "We couldn't open the card form. Please try again."
                 );
                 setPhase("error");
             });
-        return () => { mounted = false; };
+        return () => { alive = false; };
     }, []);
+
+    useEffect(() => begin(), [begin]);
 
     /* Safepay has tokenised the card. `payment_method` is the only thing that
      * can ever charge it, and only through our merchant account. */
@@ -155,7 +169,7 @@ export default function AddCardForm({ onSaved, onCancel }) {
                 <p className="text-sm text-gray-600 dark:text-gray-400">{error}</p>
                 <div className="flex gap-2">
                     <button
-                        onClick={() => window.location.reload()}
+                        onClick={begin}
                         className="rounded-xl bg-townwize-primary px-4 py-2 text-sm font-semibold text-white"
                     >
                         Try again
@@ -172,13 +186,30 @@ export default function AddCardForm({ onSaved, onCancel }) {
 
     return (
         <div className="rounded-2xl border border-gray-200 dark:border-gray-700 p-5 space-y-4">
-            <div>
-                <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100">Add a card</h3>
-                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                    Your card details go straight to our payment provider. Townwize
-                    never sees or stores your card number.
-                </p>
+            <div className="flex items-start justify-between gap-3">
+                <div>
+                    <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100">Add a card</h3>
+                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                        Saved for next time, so you can leave as soon as you arrive.
+                    </p>
+                </div>
+                {/* The reassurance belongs NEXT TO the fields, not buried in a
+                    paragraph. Someone about to type a card number wants to see
+                    it at the moment they hesitate. */}
+                <span className="shrink-0 inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-1 text-[10px] font-semibold text-gray-600 dark:bg-gray-800 dark:text-gray-300">
+                    <svg viewBox="0 0 20 20" fill="currentColor" className="h-3 w-3" aria-hidden="true">
+                        <path fillRule="evenodd" d="M10 1a4 4 0 00-4 4v2H5a2 2 0 00-2 2v7a2 2 0 002 2h10a2 2 0 002-2V9a2 2 0 00-2-2h-1V5a4 4 0 00-4-4zm2 6V5a2 2 0 10-4 0v2h4z" clipRule="evenodd" />
+                    </svg>
+                    Encrypted
+                </span>
             </div>
+
+            {/* Stated plainly because it is the unusual and reassuring part:
+                the fields below are not ours. */}
+            <p className="rounded-lg bg-gray-50 px-3 py-2 text-[11px] leading-snug text-gray-500 dark:bg-gray-800/60 dark:text-gray-400">
+                Your card number goes straight to our payment provider. Townwize never
+                sees or stores it — we only keep the last four digits.
+            </p>
 
             {/* Kept mounted through every phase. Unmounting it to show a spinner
                 would destroy Safepay's iframe mid-authentication and strand the
@@ -224,8 +255,35 @@ export default function AddCardForm({ onSaved, onCancel }) {
                 />
             )}
 
-            {phase === "saving" && (
-                <p className="text-sm text-gray-500 dark:text-gray-400">Saving your card…</p>
+            {/* 3DS can take fifteen seconds or more, and the bank's own screen
+                may not appear at all on a frictionless approval. Without this
+                the card block simply dimmed and nothing else happened, which
+                reads as a hung form — and a passenger who gives up mid-3DS
+                leaves a half-finished authentication behind. */}
+            {(phase === "authenticating" || phase === "saving") && (
+                <div className="flex items-center gap-3 rounded-xl border border-townwize-primary/25 bg-townwize-primary/5 px-3 py-2.5 dark:border-townwize-accent/25 dark:bg-townwize-accent/10">
+                    <span className="h-4 w-4 shrink-0 animate-spin rounded-full border-2 border-townwize-primary border-t-transparent dark:border-townwize-accent dark:border-t-transparent" />
+                    <div className="min-w-0">
+                        <p className="text-xs font-semibold text-gray-800 dark:text-gray-100">
+                            {phase === "saving" ? "Saving your card…" : "Checking with your bank"}
+                        </p>
+                        {phase === "authenticating" && (
+                            <p className="text-[11px] text-gray-500 dark:text-gray-400">
+                                This can take a few seconds. Your bank may ask you to confirm.
+                            </p>
+                        )}
+                    </div>
+                </div>
+            )}
+
+            {/* The only part of the card we are ever given, shown back so the
+                passenger can see we recognised it before the bank step — and
+                so they can tell at a glance that they typed the right one. */}
+            {card?.lastFour && (
+                <p className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+                    <span className="font-mono tracking-widest">•••• {card.lastFour}</span>
+                    {card.cardType && <span className="uppercase">{card.cardType}</span>}
+                </p>
             )}
 
             <div className="flex gap-2">
