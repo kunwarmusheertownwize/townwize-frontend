@@ -128,13 +128,41 @@ export default function AddCardForm({ onSaved, onCancel }) {
             setPhase("error");
             return;
         }
+
+        /* The first production card saved with NO last four and NO scheme —
+         * the row read "Card ···· ····". The SDK types say onValidated hands
+         * back { bin, lastFour, cardType }, which is exactly what we read, so
+         * either it never fired or it fired empty.
+         *
+         * A card nobody can identify is not a cosmetic problem: a passenger
+         * with two saved cards cannot tell which is which, and a receipt or a
+         * chargeback cannot name the one that was charged.
+         *
+         * So: prefer onValidated, fall back to whatever the authentication
+         * payload carries — it is known to include a `paymentMethod` object —
+         * and if BOTH come up empty, say so loudly rather than saving a blank
+         * card in silence. */
+        const fromAuth = data?.paymentMethod || data?.payment_method_details || {};
+        const details = {
+            lastFour: card?.lastFour || fromAuth?.lastFour || fromAuth?.last_four || "",
+            cardType: card?.cardType || fromAuth?.cardType || fromAuth?.card_type || fromAuth?.scheme || "",
+            bin: card?.bin || fromAuth?.bin || "",
+        };
+
+        if (!details.lastFour) {
+            console.warn(
+                "[atoms] no lastFour — onValidated payload:", card,
+                "· auth payload:", data
+            );
+        }
+
         setPhase("saving");
         try {
             const res = await api.post("/payments/cards", {
                 token,
-                lastFour: card?.lastFour,
-                cardType: card?.cardType,
-                bin: card?.bin,
+                lastFour: details.lastFour,
+                cardType: details.cardType,
+                bin: details.bin,
             });
             onSaved?.(res?.data?.data);
         } catch (err) {
@@ -222,7 +250,14 @@ export default function AddCardForm({ onSaved, onCancel }) {
                     validationEvent="submit"
                     imperativeRef={cardRef}
                     onReady={() => setReady(true)}
-                    onValidated={(d) => setCard({ bin: d?.bin, lastFour: d?.lastFour, cardType: d?.cardType })}
+                    /* Logged because the first production card saved with no
+                       last four and no scheme. The SDK types promise
+                       { bin, lastFour, cardType } here, so this says whether
+                       it fires at all — and with what. */
+                    onValidated={(d) => {
+                        if (!d?.lastFour) console.warn("[atoms] onValidated:", d);
+                        setCard({ bin: d?.bin, lastFour: d?.lastFour, cardType: d?.cardType });
+                    }}
                     onProceedToAuthentication={takeDeviceData}
                     onError={(e) => fail(typeof e === "string" ? e : "")}
                     inputStyle={{
