@@ -18,6 +18,7 @@ import LanguageModal from "../common/LanguageModal";
 import { useTranslation } from "react-i18next";
 import api from "../../services/api";
 import { getSocket } from "../../hooks/useRideSocket";
+import useFocusTrap from "../../hooks/useFocusTrap";
 
 
 const Navbar = () => {
@@ -94,6 +95,12 @@ const Navbar = () => {
     setAboutOpen(false);
     setAccountOpen(false);
   };
+
+  /* Escape closes the drawer the SAME way the backdrop does. Calling
+     setMobileMenuOpen(false) directly would hide the drawer while leaving the
+     About and Account submenus expanded underneath it, so reopening would show
+     them already unfolded. */
+  const mobileMenuRef = useFocusTrap(mobileMenuOpen, closeMobileMenu);
 
   // Language Context
   const { language } = useLanguage();
@@ -431,8 +438,18 @@ const Navbar = () => {
               aria-hidden
             />
 
-            {/* Panel */}
-            <div className="relative bg-white dark:bg-townwize-primaryDark shadow-xl">
+            {/* Panel. Focus is trapped here for the same reason it is in
+                Modal: without it Tab leaves the open drawer and walks the page
+                behind, where a keyboard user can reach controls the drawer is
+                covering. Escape closes, because a nav menu is always optional. */}
+            <div
+              ref={mobileMenuRef}
+              role="dialog"
+              aria-modal="true"
+              aria-label="Menu"
+              tabIndex={-1}
+              className="relative bg-white dark:bg-townwize-primaryDark shadow-xl outline-none"
+            >
               <div className="px-4 py-4 flex items-center justify-between border-b border-gray-200 dark:border-gray-700">
                 <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">
                   Menu

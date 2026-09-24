@@ -3,6 +3,7 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import api from "../../../services/api";
 import { useRideSocket } from "../../../hooks/useRideSocket";
+import Button from "../../../components/common/Button";
 
 const DRIVER_SEARCH_TIMEOUT_SEC = 30;
 const DEFAULT_POOL_WINDOW_SEC = 180; // 3 min — overridden by backend response
@@ -217,12 +218,9 @@ const Booking = () => {
         <p className="text-sm text-gray-500 dark:text-gray-400 max-w-xs">
           No other Towners were heading your way right now. You can proceed with a private Wizer at the RideTogether fare.
         </p>
-        <button
-          onClick={handleDispatchSolo}
-          className="w-full max-w-xs rounded-2xl bg-townwize-primary py-3 font-semibold text-white"
-        >
+        <Button onClick={handleDispatchSolo} fullWidth className="max-w-xs">
           Proceed Solo (same fare)
-        </button>
+        </Button>
         <button onClick={handleCancel} className="text-sm text-gray-400 hover:text-townwize-danger hover:underline">
           Cancel ride
         </button>
@@ -241,12 +239,9 @@ const Booking = () => {
         <p className="text-sm text-gray-500 dark:text-gray-400 max-w-xs">
           We could not find a Wizer nearby. Please try again in a few minutes.
         </p>
-        <button
-          onClick={handleCancel}
-          className="mt-4 w-full max-w-xs rounded-2xl bg-townwize-primary py-3 font-semibold text-white"
-        >
+        <Button onClick={handleCancel} fullWidth className="mt-4 max-w-xs">
           Back to Home
-        </button>
+        </Button>
       </div>
     );
   }
@@ -303,12 +298,9 @@ const Booking = () => {
           </h2>
           <p className="text-sm text-gray-500 dark:text-gray-400 max-w-sm">{createError}</p>
         </div>
-        <button
-          onClick={() => navigate("/passenger/home", { replace: true })}
-          className="rounded-xl bg-townwize-primary px-6 py-3 text-sm font-semibold text-white"
-        >
+        <Button onClick={() => navigate("/passenger/home", { replace: true })}>
           Try again
-        </button>
+        </Button>
       </div>
     );
   }

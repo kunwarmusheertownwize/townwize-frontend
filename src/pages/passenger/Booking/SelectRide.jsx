@@ -30,6 +30,8 @@ import {
 // 🧩 Auth Context
 import { useContext } from "react";
 import AuthContext from "../../../contexts/AuthContext";
+import Button from "../../../components/common/Button";
+import Modal from "../../../components/common/Modal";
 
 // Bahria Town Karachi. Used to bias address lookups: BTK repeats road names
 // across precincts ("Rd 14" exists in most of them), so an unbiased geocode
@@ -1586,10 +1588,15 @@ navigate("/passenger/trip-summary", {
         </button>
       </div>
       {/* --- AUTH GATE MODAL --- */}
-      {showAuthModal && (
-        <div className="fixed inset-0  flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-xl text-center w-[90%] max-w-sm">
-            <h2 className="text-lg font-semibold mb-2 text-gray-900 dark:text-white">
+      {/* NOT dismissable: there is nothing behind this to use. The passenger
+          has chosen a route and must sign in to see fares, so Escape and
+          backdrop clicks would only drop them on a screen they cannot act on.
+          The focus trap still applies — blocking someone is no reason to let
+          their keyboard wander onto the blurred page behind, which is what it
+          did before. */}
+      <Modal open={showAuthModal} dismissable={false} labelledBy="auth-gate-title" className="text-center">
+        <>
+            <h2 id="auth-gate-title" className="text-lg font-semibold mb-2 text-gray-900 dark:text-white">
               Log in to view and choose the desired ride options
             </h2>
             <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
@@ -1616,17 +1623,16 @@ navigate("/passenger/trip-summary", {
                 Login
               </button>
 
-
-              <button
-                onClick={() => (window.location.href = "/register")}
-                className="px-4 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-white hover:opacity-90"
-              >
+              {/* Outlined, not filled grey. Grey-on-grey next to a coloured
+                  primary reads as DISABLED, and Register is not a lesser
+                  action here — a first-time passenger who has got as far as
+                  choosing a ride is exactly who we want signing up. */}
+              <Button variant="secondary" onClick={() => (window.location.href = "/register")}>
                 Register
-              </button>
+              </Button>
             </div>
-          </div>
-        </div>
-      )}
+        </>
+      </Modal>
     </>
   );
 
