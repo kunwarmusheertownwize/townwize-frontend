@@ -420,6 +420,13 @@ export default function MobileHome() {
           }`}
           style={{ transform: searchMode ? "translateY(0)" : "translateY(100%)" }}
           aria-hidden={!searchMode}
+          /* `aria-hidden` hides this from screen readers but does NOT stop it
+             being tabbed into, and the panel stays mounted when closed so the
+             slide transition can run. Without `inert`, a keyboard user on the
+             home screen tabs straight into search controls sitting off-screen
+             — invisible, and with no way to tell where focus has gone.
+             React 19 takes inert as a real boolean prop. */
+          inert={!searchMode}
           onTouchMove={(e) => e.stopPropagation()}
         >
           {/* Header — padded below status bar */}

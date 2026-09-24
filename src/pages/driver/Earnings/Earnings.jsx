@@ -9,6 +9,7 @@ import {
   startCommissionPayment,
 } from "../../../api/driverApi";
 import RemittanceDetails, { useInAppCommissionEnabled } from "../../../components/driver/RemittanceDetails";
+import Modal from "../../../components/common/Modal";
 
 const toMoney = (n) => `PKR ${Number(n || 0).toLocaleString()}`;
 const fmtDate = (iso) =>
@@ -161,10 +162,13 @@ function PaymentModal({ balanceOwed, onClose, onSubmit }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 px-4 pb-6 sm:pb-0">
-      <div className="w-full max-w-sm bg-white dark:bg-gray-900 rounded-2xl shadow-2xl overflow-hidden">
+    /* Escape and the backdrop close it. Nothing is lost — the amount is
+       re-derived from the balance each time it opens — and a driver who
+       opened this by mistake should not have to hunt for a way out. */
+    <Modal open onClose={onClose} align="sheet" padded={false} labelledBy="pay-commission-title">
+      <div>
         <div className="bg-gradient-to-br from-townwize-primary to-townwize-primaryDark px-6 py-5 text-white">
-          <h3 className="text-lg font-bold">Pay your commission</h3>
+          <h3 id="pay-commission-title" className="text-lg font-bold">Pay your commission</h3>
           {/* Was "Send payment via EasyPaisa / JazzCash, then submit proof
               here" — which described the only route that existed, told the
               driver nothing about WHERE to send it, and is no longer the
@@ -314,7 +318,7 @@ function PaymentModal({ balanceOwed, onClose, onSubmit }) {
           </button>
         </div>
       </div>
-    </div>
+    </Modal>
   );
 }
 
@@ -342,12 +346,11 @@ function BankDetailsModal({ existing, onClose, onSaved }) {
       setSubmitting(false);
     }
   };
-
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 px-4 pb-6 sm:pb-0 overflow-y-auto">
-      <div className="w-full max-w-sm bg-white dark:bg-gray-900 rounded-2xl shadow-2xl overflow-hidden my-6">
+    <Modal open onClose={onClose} align="sheet" padded={false} labelledBy="bank-details-title" className="my-6">
+      <div>
         <div className="bg-gradient-to-br from-townwize-primary to-townwize-primaryDark px-6 py-5 text-white">
-          <h3 className="text-lg font-bold">Where should we send your earnings?</h3>
+          <h3 id="bank-details-title" className="text-lg font-bold">Where should we send your earnings?</h3>
           <p className="text-xs text-white/70 mt-0.5">
             Card trips are paid into your bank account. Cash trips you keep at the kerb.
           </p>
@@ -423,7 +426,7 @@ function BankDetailsModal({ existing, onClose, onSaved }) {
           </button>
         </div>
       </div>
-    </div>
+    </Modal>
   );
 }
 

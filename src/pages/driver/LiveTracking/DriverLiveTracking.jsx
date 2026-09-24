@@ -9,6 +9,7 @@ import api from "../../../services/api";
 import { getSocket } from "../../../hooks/useRideSocket";
 import { isNative } from "../../../utils/platform";
 import { registerPlugin } from "@capacitor/core";
+import Modal from "../../../components/common/Modal";
 const BackgroundGeolocation = registerPlugin("BackgroundGeolocation");
 
 // Three-layer accidental-tap protection: pointer-capture drag → 8-second undo window.
@@ -1166,9 +1167,19 @@ const DriverLiveTracking = () => {
             </p>
           )}
           {earlyEndConfirm && (
-            <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 pb-8 px-4">
-              <div className="w-full max-w-md rounded-2xl bg-white dark:bg-gray-900 p-5 shadow-xl">
-                <h3 className="text-base font-bold text-gray-900 dark:text-white mb-2">End trip here?</h3>
+            /* Escape and the backdrop both CANCEL, which is the safe
+               direction: ending a trip early settles a fare and cannot be
+               undone from here. `sheet` keeps it at the bottom of a phone held
+               one-handed, which is where a driver is when this fires. */
+            <Modal
+              open
+              onClose={() => setEarlyEndConfirm(false)}
+              align="sheet"
+              labelledBy="end-trip-title"
+              className="max-w-md p-5"
+            >
+              <div>
+                <h3 id="end-trip-title" className="text-base font-bold text-gray-900 dark:text-white mb-2">End trip here?</h3>
                 <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
                   You are{" "}
                   {distToDropoffKm !== null ? `${distToDropoffKm.toFixed(1)} km` : "some distance"}{" "}
@@ -1189,7 +1200,7 @@ const DriverLiveTracking = () => {
                   </button>
                 </div>
               </div>
-            </div>
+            </Modal>
           )}
         </>
       )}

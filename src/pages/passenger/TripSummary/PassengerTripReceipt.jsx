@@ -10,6 +10,7 @@ import {
   paymentStatusNote,
 } from "../../../utils/paymentMethod";
 import PayForRideButton from "../../../components/passenger/PayForRideButton";
+import Modal from "../../../components/common/Modal";
 
 const buildShareText = (ride, fare) => {
   const toMoney = (n) => `${Number(n || 0).toLocaleString()} PKR`;
@@ -200,21 +201,27 @@ function RatingModal({ rideId, onDone }) {
 
   if (submitted) {
     return (
-      <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 px-4 pb-6 sm:pb-0">
-        <div className="w-full max-w-sm bg-white dark:bg-gray-900 rounded-2xl p-8 text-center space-y-3 shadow-2xl">
+      /* NOT dismissable, and there is nothing to dismiss: this state closes
+         itself on a timer. Escape here would only race that. */
+      <Modal open dismissable={false} align="sheet" className="p-8 text-center">
+        <div className="space-y-3">
           <div className="text-5xl">⭐</div>
           <p className="text-lg font-bold text-gray-900 dark:text-white">Thanks for your feedback!</p>
         </div>
-      </div>
+      </Modal>
     );
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 px-4 pb-6 sm:pb-0">
-      <div className="w-full max-w-sm bg-white dark:bg-gray-900 rounded-2xl shadow-2xl overflow-hidden">
+    /* Rating is optional, so Escape and the backdrop close it — unlike the
+       sign-in gate, which blocks on purpose. `sheet` because it carries a
+       comment box: a centred dialog gets thrown upward by the on-screen
+       keyboard, while a bottom sheet stays where the thumb already is. */
+    <Modal open onClose={onDone} align="sheet" padded={false} labelledBy="rate-wizer-title">
+      <div>
         <div className="bg-townwize-primary px-6 pt-6 pb-8 text-white text-center">
           <p className="text-xs uppercase tracking-widest text-white/60 mb-1">How was your ride?</p>
-          <h3 className="text-xl font-bold">Rate your Wizer</h3>
+          <h3 id="rate-wizer-title" className="text-xl font-bold">Rate your Wizer</h3>
         </div>
 
         <div className="px-6 py-6 space-y-5">
@@ -274,7 +281,7 @@ function RatingModal({ rideId, onDone }) {
           </button>
         </div>
       </div>
-    </div>
+    </Modal>
   );
 }
 

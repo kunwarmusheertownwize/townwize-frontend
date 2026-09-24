@@ -9,6 +9,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { isNative } from "../../../utils/platform";
 import { App } from "@capacitor/app";
+import useFocusTrap from "../../../hooks/useFocusTrap";
 
 const StarRating = ({ average, size = "text-sm" }) => {
   const filled = Math.round(average || 0);
@@ -140,6 +141,12 @@ const CancelReasonPanel = ({ ride, cancelReason, setCancelReason, cancelling, ca
 };
 
 const SOSPanel = ({ contacts, rideId, posRef, onClose }) => {
+  /* Trap only — NOT converted to <Modal>. This is a true bottom sheet, flush
+     to the screen edge with rounded-t-3xl and env(safe-area-inset-bottom);
+     Modal insets its panel, which would lift it off the edge and undo that.
+     It is also the SOS panel, so the bar for changing its layout is high.
+     What it lacked was the trap, and that is what it gets. */
+  const sheetRef = useFocusTrap(true, onClose);
   const pos = posRef.current;
   const mapsLink = pos
     ? `https://maps.google.com/?q=${pos.lat},${pos.lng}`
@@ -155,7 +162,12 @@ const SOSPanel = ({ contacts, rideId, posRef, onClose }) => {
       onClick={onClose}
     >
       <div
-        className="w-full max-w-md bg-white dark:bg-gray-900 rounded-t-3xl p-6 space-y-4 shadow-2xl"
+        ref={sheetRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Emergency SOS"
+        tabIndex={-1}
+        className="w-full max-w-md bg-white dark:bg-gray-900 rounded-t-3xl p-6 space-y-4 shadow-2xl outline-none"
         style={{ paddingBottom: "env(safe-area-inset-bottom, 24px)" }}
         onClick={(e) => e.stopPropagation()}
       >

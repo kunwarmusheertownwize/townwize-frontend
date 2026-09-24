@@ -21,11 +21,26 @@ import useFocusTrap from "../../hooks/useFocusTrap";
  * gate, a payment in flight. Escape and backdrop clicks are then ignored, but
  * the focus trap still applies: blocking someone is no reason to strand them.
  */
+/* `sheet` rises from the bottom on a phone and centres on a larger screen —
+ * the pattern two of the app's dialogs already used, and the right one for
+ * anything with a form in it: a centred dialog is thrown upward by the
+ * on-screen keyboard, while a bottom sheet sits where the thumb already is.
+ * `center` stays for short confirmations where there is nothing to type. */
+const ALIGN = {
+    center: "items-center",
+    sheet: "items-end sm:items-center",
+};
+
 export default function Modal({
     open,
     onClose,
     labelledBy,
     dismissable = true,
+    align = "center",
+    /* Some panels bleed a coloured header to their own edges. Passing p-0 in
+     * className cannot be relied on to beat p-6 — Tailwind resolves by
+     * stylesheet order, not attribute order — so the padding is a prop. */
+    padded = true,
     className = "",
     children,
 }) {
@@ -35,7 +50,7 @@ export default function Modal({
 
     return (
         <div
-            className="fixed inset-0 z-50 flex items-center justify-center px-4"
+            className={`fixed inset-0 z-50 flex justify-center px-4 pb-6 sm:pb-0 ${ALIGN[align] || ALIGN.center}`}
             onMouseDown={(e) => {
                 if (dismissable && e.target === e.currentTarget) onClose?.();
             }}
@@ -50,7 +65,7 @@ export default function Modal({
                 aria-modal="true"
                 aria-labelledby={labelledBy}
                 tabIndex={-1}
-                className={`relative w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl outline-none dark:bg-gray-800 ${className}`}
+                className={`relative w-full max-w-sm overflow-hidden rounded-2xl bg-white shadow-xl outline-none dark:bg-gray-800 ${padded ? "p-6" : ""} ${className}`}
             >
                 {children}
             </div>
