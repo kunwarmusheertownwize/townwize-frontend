@@ -10,6 +10,7 @@ import { toast } from "react-toastify";
 import { isNative } from "../../../utils/platform";
 import { App } from "@capacitor/app";
 import useFocusTrap from "../../../hooks/useFocusTrap";
+import Button from "../../../components/common/Button";
 
 const StarRating = ({ average, size = "text-sm" }) => {
   const filled = Math.round(average || 0);
@@ -121,20 +122,18 @@ const CancelReasonPanel = ({ ride, cancelReason, setCancelReason, cancelling, ca
       )}
 
       <div className="flex gap-2">
-        <button
-          onClick={onKeep}
-          disabled={cancelling}
-          className="flex-1 py-2.5 rounded-xl text-sm font-semibold bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 disabled:opacity-60"
-        >
+        <Button variant="secondary" onClick={onKeep} disabled={cancelling} className="flex-1">
           Keep Ride
-        </button>
-        <button
+        </Button>
+        <Button
+          variant="danger"
           onClick={onConfirm}
-          disabled={cancelling || !cancelReason}
-          className="flex-1 py-2.5 rounded-xl text-sm font-semibold bg-red-600 text-white disabled:opacity-50"
+          disabled={!cancelReason}
+          loading={cancelling}
+          className="flex-1"
         >
           {cancelling ? "Cancelling…" : "Confirm Cancel"}
-        </button>
+        </Button>
       </div>
     </div>
   );
@@ -219,12 +218,9 @@ const SOSPanel = ({ contacts, rideId, posRef, onClose }) => {
           </div>
         )}
 
-        <button
-          onClick={onClose}
-          className="w-full py-3 rounded-xl border border-gray-200 dark:border-gray-700 text-sm font-semibold text-gray-600 dark:text-gray-300"
-        >
+        <Button variant="secondary" fullWidth onClick={onClose}>
           Close
-        </button>
+        </Button>
       </div>
     </div>
   );
@@ -379,13 +375,13 @@ const ChangeDestination = ({ rideId, driverCoords, onSuccess, onCancel }) => {
           placeholder="Search new destination…"
           className="flex-1 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-townwize-accent"
         />
-        <button onClick={onCancel} disabled={loading} className="text-xs text-gray-400 px-2 py-2 hover:text-gray-600 disabled:opacity-40">Cancel</button>
+        <Button variant="ghost" size="sm" onClick={onCancel} disabled={loading}>Cancel</Button>
       </div>
       {suggestions.length > 0 && (
         <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 overflow-hidden divide-y divide-gray-100 dark:divide-gray-700 shadow-lg">
           {suggestions.map((s, i) => (
             <button key={i} onClick={() => handleSelect(s)} disabled={loading}
-              className="w-full text-start px-3 py-2.5 text-sm text-gray-800 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50">
+              className="w-full text-start px-3 py-2.5 text-sm text-gray-800 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 focus:outline-none focus-visible:bg-gray-100 dark:focus-visible:bg-gray-700">
               {s.description}
             </button>
           ))}
@@ -1320,7 +1316,7 @@ const LiveTracking = () => {
                   {ride.status === "ON_TRIP" && ride.rideType !== "RIDETOGETHER" && (
                     <button
                       onClick={() => setChangingDestination(true)}
-                      className="shrink-0 text-xs text-townwize-accent hover:underline"
+                      className="shrink-0 text-xs text-townwize-accent hover:underline focus:outline-none focus-visible:underline focus-visible:ring-2 focus-visible:ring-townwize-primary rounded"
                     >
                       Change
                     </button>
@@ -1408,30 +1404,29 @@ const LiveTracking = () => {
                   <p className="text-xs font-semibold text-red-800 dark:text-red-300">Leave the shared ride?</p>
                   <p className="text-xs text-red-700 dark:text-red-400">You will be navigated back to the home screen.</p>
                   <div className="flex gap-2">
-                    <button onClick={() => setConfirmExitPool(false)} className="flex-1 py-2 rounded-xl text-xs font-semibold bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200">Keep Ride</button>
-                    <button onClick={handleExitPool} disabled={exitingPool} className="flex-1 py-2 rounded-xl text-xs font-semibold bg-red-600 text-white disabled:opacity-60">
+                    <Button variant="secondary" size="sm" onClick={() => setConfirmExitPool(false)} className="flex-1">Keep Ride</Button>
+                    <Button variant="danger" size="sm" onClick={handleExitPool} loading={exitingPool} className="flex-1">
                       {exitingPool ? "Leaving…" : "Leave Ride"}
-                    </button>
+                    </Button>
                   </div>
                 </div>
               ) : (
-                <button
-                  onClick={() => setConfirmExitPool(true)}
-                  className="w-full py-2 rounded-xl text-xs font-medium text-red-500 dark:text-red-400 border border-red-200 dark:border-red-800"
-                >
+                <Button variant="dangerSoft" size="sm" fullWidth onClick={() => setConfirmExitPool(true)}>
                   Leave Shared Ride
-                </button>
+                </Button>
               )
             )}
 
             {/* SOS button */}
-            <button
+            <Button
+              variant="dangerSoft"
+              fullWidth
               onClick={() => setSosOpen(true)}
-              className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 text-sm font-bold"
+              className="bg-red-50 dark:bg-red-950"
             >
               <span className="h-2 w-2 rounded-full bg-red-500 animate-pulse" />
               Emergency SOS
-            </button>
+            </Button>
 
             {/* Trip-in-progress block (ARRIVED / ON_TRIP back-button guard) */}
             {tripBlocked && (
@@ -1439,18 +1434,16 @@ const LiveTracking = () => {
                 <p className="text-sm text-center text-gray-600 dark:text-gray-400">
                   Trip in progress — you cannot go back.
                 </p>
-                <button
-                  onClick={handleKeepRide}
-                  className="w-full py-3 rounded-xl text-sm font-semibold bg-townwize-primary text-white"
-                >
+                <Button fullWidth onClick={handleKeepRide}>
                   Got it
-                </button>
-                <button
+                </Button>
+                <Button
+                  variant="secondary"
+                  fullWidth
                   onClick={() => navigate("/passenger/support", { state: { linkedRideId: rideId } })}
-                  className="w-full py-3 rounded-xl text-sm font-semibold border border-townwize-primary text-townwize-primary dark:border-townwize-accent dark:text-townwize-accent"
                 >
                   Get Help
-                </button>
+                </Button>
               </div>
             )}
 
@@ -1469,12 +1462,9 @@ const LiveTracking = () => {
                   compact
                 />
               ) : (
-                <button
-                  onClick={() => setConfirmCancel(true)}
-                  className="w-full py-3 rounded-xl text-sm font-semibold border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400"
-                >
+                <Button variant="dangerSoft" fullWidth onClick={() => setConfirmCancel(true)}>
                   Cancel Ride
-                </button>
+                </Button>
               )
             )}
           </div>
@@ -1663,7 +1653,7 @@ const LiveTracking = () => {
             <div className="flex items-center justify-between gap-2">
               <p className="text-[10px] uppercase tracking-wider text-gray-400">Dropoff</p>
               {ride.status === "ON_TRIP" && ride.rideType !== "RIDETOGETHER" && !changingDestination && (
-                <button onClick={() => setChangingDestination(true)} className="text-xs text-townwize-accent hover:underline shrink-0">
+                <button onClick={() => setChangingDestination(true)} className="text-xs text-townwize-accent hover:underline shrink-0 focus:outline-none focus-visible:underline focus-visible:ring-2 focus-visible:ring-townwize-primary rounded">
                   Change
                 </button>
               )}
@@ -1708,19 +1698,16 @@ const LiveTracking = () => {
             <p className="font-semibold text-red-800 dark:text-red-300">Leave the shared ride?</p>
             <p className="text-sm text-red-700 dark:text-red-400">The other passenger will continue. You will be taken back to home.</p>
             <div className="flex gap-3">
-              <button onClick={() => setConfirmExitPool(false)} className="flex-1 py-2.5 rounded-xl text-sm font-semibold bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200">Keep Ride</button>
-              <button onClick={handleExitPool} disabled={exitingPool} className="flex-1 py-2.5 rounded-xl text-sm font-semibold bg-red-600 text-white disabled:opacity-60">
+              <Button variant="secondary" onClick={() => setConfirmExitPool(false)} className="flex-1">Keep Ride</Button>
+              <Button variant="danger" onClick={handleExitPool} loading={exitingPool} className="flex-1">
                 {exitingPool ? "Leaving…" : "Leave Ride"}
-              </button>
+              </Button>
             </div>
           </div>
         ) : (
-          <button
-            onClick={() => setConfirmExitPool(true)}
-            className="w-full py-3 rounded-2xl font-semibold border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950 transition-colors"
-          >
+          <Button variant="dangerSoft" fullWidth onClick={() => setConfirmExitPool(true)}>
             Leave Shared Ride
-          </button>
+          </Button>
         )
       )}
 
@@ -1733,12 +1720,9 @@ const LiveTracking = () => {
               You cannot go back while the ride is active.
             </span>
           </p>
-          <button
-            onClick={handleKeepRide}
-            className="w-full py-3 rounded-xl font-semibold bg-townwize-primary text-white"
-          >
+          <Button fullWidth onClick={handleKeepRide}>
             Got it
-          </button>
+          </Button>
         </div>
       )}
 
@@ -1755,23 +1739,22 @@ const LiveTracking = () => {
             policy={cancelPolicy}
           />
         ) : (
-          <button
-            onClick={() => setConfirmCancel(true)}
-            className="w-full py-3 rounded-xl font-semibold border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950 transition-colors"
-          >
+          <Button variant="dangerSoft" fullWidth onClick={() => setConfirmCancel(true)}>
             Cancel Ride
-          </button>
+          </Button>
         )
       )}
 
       {/* SOS button — desktop */}
-      <button
+      <Button
+        variant="dangerSoft"
+        fullWidth
         onClick={() => setSosOpen(true)}
-        className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 font-bold hover:bg-red-100 dark:hover:bg-red-900/50 transition-colors"
+        className="bg-red-50 dark:bg-red-950"
       >
         <span className="h-2 w-2 rounded-full bg-red-500 animate-pulse" />
         Emergency SOS
-      </button>
+      </Button>
 
       {sosPanel}
     </div>

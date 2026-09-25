@@ -8,6 +8,7 @@ import { isNative } from "../../../utils/platform";
 import { App } from "@capacitor/app";
 import { getSocket } from "../../../hooks/useRideSocket";
 import { useRideSocket } from "../../../hooks/useRideSocket";
+import Button from "../../../components/common/Button";
 
 const TripRequest = () => {
   useRideSocket();
@@ -206,29 +207,28 @@ const TripRequest = () => {
                 </p>
               )}
               <div className="flex gap-2">
-                <button
+                <Button
+                  variant="onDark"
                   onClick={handleKeepWaiting}
                   disabled={cancelling}
-                  className="flex-1 py-3 rounded-xl font-semibold bg-white/20 text-white disabled:opacity-60"
+                  className="flex-1"
                 >
                   Keep Waiting
-                </button>
-                <button
+                </Button>
+                <Button
+                  variant="danger"
                   onClick={handleCancelRide}
-                  disabled={cancelling}
-                  className="flex-1 py-3 rounded-xl font-semibold bg-red-600 text-white disabled:opacity-60"
+                  loading={cancelling}
+                  className="flex-1"
                 >
                   {cancelling ? "Cancelling…" : "Yes, Cancel"}
-                </button>
+                </Button>
               </div>
             </div>
           ) : (
-            <button
-              onClick={() => setConfirmCancel(true)}
-              className="w-full py-3 rounded-xl font-semibold bg-white/15 text-white/80"
-            >
+            <Button variant="onDark" fullWidth onClick={() => setConfirmCancel(true)}>
               Cancel Request
-            </button>
+            </Button>
           )}
         </div>
       </div>,
@@ -271,29 +271,28 @@ const TripRequest = () => {
             </p>
           )}
           <div className="flex gap-3">
-            <button
+            <Button
+              variant="secondary"
               onClick={handleKeepWaiting}
               disabled={cancelling}
-              className="flex-1 py-3 rounded-xl font-semibold bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 disabled:opacity-60"
+              className="flex-1"
             >
               Keep Waiting
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="danger"
               onClick={handleCancelRide}
-              disabled={cancelling}
-              className="flex-1 py-3 rounded-xl font-semibold bg-red-600 text-white disabled:opacity-60"
+              loading={cancelling}
+              className="flex-1"
             >
               {cancelling ? "Cancelling…" : "Yes, Cancel"}
-            </button>
+            </Button>
           </div>
         </div>
       ) : (
-        <button
-          onClick={() => setConfirmCancel(true)}
-          className="w-full py-3 rounded-xl font-semibold bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950 dark:hover:text-red-400 transition-colors"
-        >
+        <Button variant="dangerSoft" fullWidth onClick={() => setConfirmCancel(true)}>
           Cancel Ride
-        </button>
+        </Button>
       )}
     </div>
   );

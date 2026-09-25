@@ -23,7 +23,21 @@ const BASE =
     // hand-written buttons had none, which makes the app unusable by keyboard
     // and fails an accessibility review.
     "transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 " +
-    "focus-visible:ring-townwize-primary disabled:cursor-not-allowed";
+    "disabled:cursor-not-allowed";
+
+/* The ring follows the button, not the brand. A red destructive button with a
+ * brand-coloured halo reads as a rendering fault rather than as focus. */
+const RINGS = {
+    primary: "focus-visible:ring-townwize-primary",
+    secondary: "focus-visible:ring-townwize-primary",
+    ghost: "focus-visible:ring-townwize-primary",
+    danger: "focus-visible:ring-red-500",
+    dangerSoft: "focus-visible:ring-red-500",
+    /* White, and no offset: an offset ring on a photographic background
+     * exposes a slice of whatever sits behind the button, which reads as a
+     * rendering fault rather than as focus. */
+    onDark: "focus-visible:ring-white focus-visible:ring-offset-0",
+};
 
 const SIZES = {
     sm: "px-3 py-2 text-xs",
@@ -45,6 +59,21 @@ const VARIANTS = {
     /* Destructive. Used for cancelling a ride and ending a trip — actions
      * where the colour is the warning. */
     danger: "bg-red-600 text-white hover:bg-red-700 disabled:opacity-50",
+    /* Cancelling a ride is destructive but it is also the ordinary way out of
+     * a booking, and a solid red block makes it read as the thing to avoid.
+     * The ride journey already used this outlined treatment in five slightly
+     * different spellings; this is the one of them. */
+    dangerSoft:
+        "border border-red-200 text-red-600 hover:bg-red-50 " +
+        "dark:border-red-800 dark:text-red-400 dark:hover:bg-red-950 disabled:opacity-50",
+    /* For controls sitting ON a coloured or photographic surface — the
+     * searching-for-a-Wizer panel, controls over the map. `secondary` cannot
+     * serve here: its grey-on-white is invisible against that background, and
+     * overriding it through `className` is unreliable, because Tailwind
+     * resolves conflicting utilities by stylesheet order — not by the order
+     * the classes happen to be written in. */
+    onDark:
+        "bg-white/20 text-white hover:bg-white/30 backdrop-blur-sm disabled:opacity-60",
 };
 
 const Spinner = () => (
@@ -77,6 +106,7 @@ export default function Button({
                 BASE,
                 SIZES[size] || SIZES.md,
                 VARIANTS[variant] || VARIANTS.primary,
+                RINGS[variant] || RINGS.primary,
                 fullWidth ? "w-full" : "",
                 className,
             ]
