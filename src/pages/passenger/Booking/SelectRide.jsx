@@ -1218,7 +1218,7 @@ navigate("/passenger/trip-summary", {
               <button
                 type="button"
                 onClick={() => { setHasStop(false); setStop(""); clearMarker("stop"); }}
-                className="text-red-500 text-xs flex items-center gap-1 hover:underline"
+                className="text-red-500 text-xs flex items-center gap-1 hover:underline rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
               >
                 <FaTimes /> Remove stop
               </button>
@@ -1323,7 +1323,7 @@ navigate("/passenger/trip-summary", {
                       key={c.key}
                       type="button"
                       onClick={() => setSelectedCarType(c.key)}
-                      className={`py-2 rounded-xl text-xs font-semibold transition-all border ${
+                      className={`py-2 rounded-xl text-xs font-semibold transition-all border focus:outline-none focus-visible:ring-2 focus-visible:ring-townwize-primary ${
                         selectedCarType === c.key
                           ? "bg-townwize-primary dark:bg-townwize-accent text-white dark:text-townwize-primary border-townwize-primary dark:border-townwize-accent shadow-sm"
                           : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-600 hover:border-townwize-primary/40"
@@ -1521,7 +1521,7 @@ navigate("/passenger/trip-summary", {
                 !serviceAreaReady ||
                 (selectedType === "Private Ride" && !selectedCarType)
               }
-              className={`w-full py-3.5 rounded-xl font-bold text-sm overflow-hidden shadow-md relative transition-all ${
+              className={`w-full py-3.5 rounded-xl font-bold text-sm overflow-hidden shadow-md relative transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-townwize-primary ${
                 pickup && dropoff && selectedType && serviceAreaReady
                   ? "text-white"
                   : "bg-gray-100 dark:bg-gray-800 text-gray-400 cursor-not-allowed"
@@ -1582,7 +1582,7 @@ navigate("/passenger/trip-summary", {
           type="button"
           onTouchStart={(e) => { e.stopPropagation(); navigate(routeStateRaw?.from || "/passenger/home"); }}
           onClick={() => navigate(routeStateRaw?.from || "/passenger/home")}
-          className="absolute top-4 start-4 z-20 md:hidden bg-white dark:bg-gray-800 rounded-full p-2.5 shadow-lg text-gray-700 dark:text-white active:scale-95 transition-transform"
+          className="absolute top-4 start-4 z-20 md:hidden bg-white dark:bg-gray-800 rounded-full p-2.5 shadow-lg text-gray-700 dark:text-white active:scale-95 transition-transform focus:outline-none focus-visible:ring-2 focus-visible:ring-townwize-primary"
         >
           <FaArrowLeft className="text-sm" />
         </button>
@@ -1605,7 +1605,7 @@ navigate("/passenger/trip-summary", {
 
             <div className="flex justify-center gap-4">
 
-              <button
+              <Button
                 onClick={() =>
                   navigate("/login", {
                     state: {
@@ -1618,10 +1618,9 @@ navigate("/passenger/trip-summary", {
                     },
                   })
                 }
-                className="px-4 py-2 rounded-lg bg-townwize-primary text-white hover:opacity-90"
               >
                 Login
-              </button>
+              </Button>
 
               {/* Outlined, not filled grey. Grey-on-grey next to a coloured
                   primary reads as DISABLED, and Register is not a lesser

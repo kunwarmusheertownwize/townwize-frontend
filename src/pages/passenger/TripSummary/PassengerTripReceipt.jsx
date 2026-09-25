@@ -11,6 +11,7 @@ import {
 } from "../../../utils/paymentMethod";
 import PayForRideButton from "../../../components/passenger/PayForRideButton";
 import Modal from "../../../components/common/Modal";
+import Button from "../../../components/common/Button";
 
 const buildShareText = (ride, fare) => {
   const toMoney = (n) => `${Number(n || 0).toLocaleString()} PKR`;
@@ -136,7 +137,7 @@ const ShareButton = ({ ride, fare, className = "" }) => {
       type="button"
       onClick={handleShare}
       disabled={sharing}
-      className={`rounded-lg border border-townwize-primary px-3 py-1.5 text-xs font-semibold text-townwize-primary disabled:opacity-60 ${className}`}
+      className={`rounded-lg border border-townwize-primary px-3 py-1.5 text-xs font-semibold text-townwize-primary disabled:opacity-60 focus:outline-none focus-visible:ring-2 focus-visible:ring-townwize-primary ${className}`}
     >
       {sharing ? "Preparing…" : done || "Share Receipt"}
     </button>
@@ -233,7 +234,7 @@ function RatingModal({ rideId, onDone }) {
                 type="button"
                 onMouseEnter={() => setHovered(n)}
                 onClick={() => setSelected(n)}
-                className="focus:outline-none transition-transform active:scale-90"
+                className="rounded-full transition-transform active:scale-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-townwize-primary"
               >
                 <FaStar
                   className={`text-4xl ${
@@ -259,26 +260,18 @@ function RatingModal({ rideId, onDone }) {
             className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2.5 text-sm text-gray-800 dark:text-white placeholder-gray-400 resize-none outline-none focus:border-townwize-primary"
           />
 
-          <button
-            type="button"
+          <Button
+            fullWidth
             onClick={handleSubmit}
-            disabled={!selected || submitting}
-            className={`w-full py-3.5 rounded-xl font-semibold text-white transition-colors ${
-              selected && !submitting
-                ? "bg-townwize-primary active:bg-townwize-primaryDark"
-                : "bg-gray-300 dark:bg-gray-700 cursor-not-allowed"
-            }`}
+            disabled={!selected}
+            loading={submitting}
           >
             {submitting ? "Submitting…" : "Submit Rating"}
-          </button>
+          </Button>
 
-          <button
-            type="button"
-            onClick={onDone}
-            className="w-full py-2 text-sm text-gray-400 dark:text-gray-500 hover:text-gray-600"
-          >
+          <Button variant="ghost" fullWidth onClick={onDone}>
             Skip for now
-          </button>
+          </Button>
         </div>
       </div>
     </Modal>
@@ -633,18 +626,16 @@ export default function PassengerTripReceipt() {
             {!loading && !error && (
               <ShareButton ride={ride} fare={fare} className="w-full text-center" />
             )}
-            <button
+            <Button
+              variant="secondary"
+              fullWidth
               onClick={() => navigate("/passenger/support", { state: { linkedRideId: rideId } })}
-              className="w-full py-3 rounded-xl text-sm font-medium border border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400"
             >
               Problem with this trip?
-            </button>
-            <button
-              className="w-full rounded-xl bg-townwize-primary py-4 text-white font-semibold"
-              onClick={() => navigate("/passenger/home", { replace: true })}
-            >
+            </Button>
+            <Button fullWidth onClick={() => navigate("/passenger/home", { replace: true })}>
               Back to Home
-            </button>
+            </Button>
           </div>
         )}
       </div>
@@ -684,7 +675,7 @@ export default function PassengerTripReceipt() {
           </span>
           <button
             type="button"
-            className="rounded-lg border border-townwize-primary dark:border-white px-3 py-1.5 text-xs font-semibold text-townwize-primary dark:text-white"
+            className="rounded-lg border border-townwize-primary dark:border-white px-3 py-1.5 text-xs font-semibold text-townwize-primary dark:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-townwize-primary"
             onClick={() => window.print()}
           >
             Print
@@ -871,18 +862,15 @@ export default function PassengerTripReceipt() {
       ) : null}
 
       <div className="flex items-center justify-between print:hidden">
-        <button
+        <Button
+          variant="secondary"
           onClick={() => navigate("/passenger/support", { state: { linkedRideId: rideId } })}
-          className="text-sm text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 underline underline-offset-2"
         >
           Problem with this trip?
-        </button>
-        <button
-          className="rounded-lg bg-townwize-primary px-5 py-2.5 text-white font-semibold"
-          onClick={() => navigate("/passenger/home", { replace: true })}
-        >
+        </Button>
+        <Button onClick={() => navigate("/passenger/home", { replace: true })}>
           Back to Home
-        </button>
+        </Button>
       </div>
     </div>
     </>
