@@ -1418,12 +1418,7 @@ const LiveTracking = () => {
             )}
 
             {/* SOS button */}
-            <Button
-              variant="dangerSoft"
-              fullWidth
-              onClick={() => setSosOpen(true)}
-              className="bg-red-50 dark:bg-red-950"
-            >
+            <Button variant="emergency" fullWidth onClick={() => setSosOpen(true)}>
               <span className="h-2 w-2 rounded-full bg-red-500 animate-pulse" />
               Emergency SOS
             </Button>
@@ -1746,12 +1741,7 @@ const LiveTracking = () => {
       )}
 
       {/* SOS button — desktop */}
-      <Button
-        variant="dangerSoft"
-        fullWidth
-        onClick={() => setSosOpen(true)}
-        className="bg-red-50 dark:bg-red-950"
-      >
+      <Button variant="emergency" fullWidth onClick={() => setSosOpen(true)}>
         <span className="h-2 w-2 rounded-full bg-red-500 animate-pulse" />
         Emergency SOS
       </Button>

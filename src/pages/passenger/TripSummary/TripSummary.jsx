@@ -8,6 +8,7 @@ import { authFetch } from "../../../utils/authFetch";
 import { toast } from "react-toastify";
 import PaymentMethodSelector from "../../../components/passenger/PaymentMethodSelector";
 import { Browser } from "@capacitor/browser";
+import Button from "../../../components/common/Button";
 
 const getRideCreateErrorMessage = (payload, status) => {
   const code = payload?.error?.code || payload?.code || "";
@@ -378,13 +379,12 @@ const TripSummary = () => {
       disabled={confirming}
     />
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
-      <button
-        disabled={confirming || zoneCheck.loading || zoneCheck.eligible === false || quote.loading}
+      <Button
+        fullWidth
+        className="shadow-md"
+        disabled={zoneCheck.loading || zoneCheck.eligible === false || quote.loading}
+        loading={confirming}
         onClick={handleConfirmTrip}
-        className={`w-full py-3 rounded-xl font-semibold transition-all duration-300 shadow-md ${confirming
-          ? "cursor-wait text-white bg-townwize-primaryDark"
-          : "text-white bg-townwize-primary hover:bg-townwize-primaryDark"
-        }`}
       >
         {confirming
           ? scheduledAt ? "Scheduling..." : "Creating ride..."
@@ -393,13 +393,10 @@ const TripSummary = () => {
             : quote.loading
               ? "Calculating fare..."
             : scheduledAt ? "Schedule Shared Ride" : "Confirm Trip"}
-      </button>
-      <button
-        onClick={handleCancelTrip}
-        className="w-full py-3 rounded-xl font-semibold bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition"
-      >
+      </Button>
+      <Button variant="secondary" fullWidth onClick={handleCancelTrip}>
         Cancel
-      </button>
+      </Button>
     </div>
     </>
   );
@@ -461,7 +458,7 @@ const TripSummary = () => {
               <button
                 type="button"
                 onClick={() => setShowFareDetails((prev) => !prev)}
-                className="mt-3 text-xs text-start text-white/90 underline underline-offset-2 hover:text-white"
+                className="mt-3 text-xs text-start text-white/90 underline underline-offset-2 hover:text-white rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
               >
                 {showFareDetails ? "Hide fare details" : "View fare details"}
               </button>
@@ -538,7 +535,7 @@ const TripSummary = () => {
                   key={n}
                   type="button"
                   onClick={() => setMaxSeats(n)}
-                  className={`w-10 h-10 rounded-xl text-sm font-bold border transition ${
+                  className={`w-10 h-10 rounded-xl text-sm font-bold border transition focus:outline-none focus-visible:ring-2 focus-visible:ring-townwize-primary ${
                     maxSeats === n
                       ? "bg-townwize-primary text-white border-townwize-primary"
                       : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-600"

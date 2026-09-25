@@ -37,6 +37,7 @@ const RINGS = {
      * exposes a slice of whatever sits behind the button, which reads as a
      * rendering fault rather than as focus. */
     onDark: "focus-visible:ring-white focus-visible:ring-offset-0",
+    emergency: "focus-visible:ring-red-500",
 };
 
 const SIZES = {
@@ -74,6 +75,22 @@ const VARIANTS = {
      * the classes happen to be written in. */
     onDark:
         "bg-white/20 text-white hover:bg-white/30 backdrop-blur-sm disabled:opacity-60",
+    /* Emergency SOS, and nothing else.
+     *
+     * It sits directly beneath "Cancel Ride" during a trip, and once both were
+     * outlined red they read as siblings — one a routine way out of a booking,
+     * the other a call for help. They must not be told apart by reading them.
+     *
+     * The difference is in KIND, not weight: a 2px saturated border against
+     * dangerSoft's 1px pale one, a filled tint at rest, and darker text. Weight
+     * was the obvious lever and is deliberately not used — BASE already sets
+     * font-semibold, and Tailwind resolves two font-weight utilities by
+     * stylesheet order rather than by which was written last, so font-bold here
+     * would win or lose unpredictably. */
+    emergency:
+        "border-2 border-red-500 bg-red-50 text-red-700 hover:bg-red-100 " +
+        "dark:border-red-500 dark:bg-red-950 dark:text-red-300 dark:hover:bg-red-900/60 " +
+        "disabled:opacity-50",
 };
 
 const Spinner = () => (
