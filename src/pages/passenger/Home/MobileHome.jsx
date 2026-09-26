@@ -359,7 +359,7 @@ export default function MobileHome() {
       {/* Locate-me button */}
       <button
         onClick={locate}
-        className="absolute top-4 end-4 z-10 w-11 h-11 bg-white dark:bg-townwize-primaryDark rounded-full shadow-lg flex items-center justify-center active:scale-95 touch-manipulation"
+        className="absolute top-4 end-4 z-10 w-11 h-11 bg-white dark:bg-townwize-primaryDark rounded-full shadow-lg flex items-center justify-center active:scale-95 touch-manipulation focus:outline-none focus-visible:ring-2 focus-visible:ring-townwize-primary"
       >
         <FaCrosshairs
           className={`text-townwize-primary dark:text-townwize-accent text-base ${locating ? "animate-spin" : ""}`}
@@ -391,7 +391,7 @@ export default function MobileHome() {
             setSearchMode(true);
             setActiveField("dropoff");
           }}
-          className="w-full flex items-center gap-3 bg-gray-100 dark:bg-gray-800 px-4 py-3.5 rounded-2xl active:scale-[0.98] touch-manipulation transition-transform"
+          className="w-full flex items-center gap-3 bg-gray-100 dark:bg-gray-800 px-4 py-3.5 rounded-2xl active:scale-[0.98] touch-manipulation transition-transform focus:outline-none focus-visible:ring-2 focus-visible:ring-townwize-primary"
         >
           <div className="w-8 h-8 bg-townwize-primary rounded-full flex items-center justify-center flex-shrink-0">
             <FaSearch className="text-white text-[11px]" />
@@ -405,7 +405,7 @@ export default function MobileHome() {
         {dropoff && (
           <button
             onClick={handleFindRide}
-            className="mt-3 w-full py-4 bg-townwize-primary text-white rounded-2xl font-bold text-[15px] active:scale-95 touch-manipulation transition-transform"
+            className="mt-3 w-full py-4 bg-townwize-primary text-white rounded-2xl font-bold text-[15px] active:scale-95 touch-manipulation transition-transform focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-townwize-primary"
           >
             Find a Ride →
           </button>
@@ -437,7 +437,7 @@ export default function MobileHome() {
             <button
               onTouchStart={(e) => { e.stopPropagation(); closeSearch(); }}
               onClick={closeSearch}
-              className="p-3 rounded-full active:bg-gray-100 dark:active:bg-gray-800 touch-manipulation"
+              className="p-3 rounded-full active:bg-gray-100 dark:active:bg-gray-800 touch-manipulation focus:outline-none focus-visible:ring-2 focus-visible:ring-townwize-primary"
               style={{ minWidth: 48, minHeight: 48 }}
             >
               <FaArrowLeft className="text-townwize-primary text-base" />
@@ -473,7 +473,7 @@ export default function MobileHome() {
                 />
                 <button
                   onClick={locate}
-                  className="absolute end-3 top-1/2 -translate-y-1/2 p-1 touch-manipulation"
+                  className="absolute end-1 top-1/2 -translate-y-1/2 w-11 h-11 flex items-center justify-center rounded-full touch-manipulation focus:outline-none focus-visible:ring-2 focus-visible:ring-townwize-primary"
                 >
                   <FaCrosshairs
                     className={`text-townwize-primary ${locating ? "animate-spin" : ""}`}
@@ -485,7 +485,7 @@ export default function MobileHome() {
               <div className="flex justify-center z-20 relative my-0.5">
                 <button
                   onClick={handleSwap}
-                  className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-full p-1.5 shadow-sm active:scale-95 touch-manipulation"
+                  className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-full w-11 h-11 flex items-center justify-center shadow-sm active:scale-95 touch-manipulation focus:outline-none focus-visible:ring-2 focus-visible:ring-townwize-primary"
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -582,7 +582,7 @@ export default function MobileHome() {
               <button
                 onTouchStart={(e) => { e.stopPropagation(); handleFindRide(); }}
                 onClick={handleFindRide}
-                className="w-full py-4 bg-townwize-primary text-white rounded-2xl font-bold text-[15px] active:scale-95 touch-manipulation transition-transform"
+                className="w-full py-4 bg-townwize-primary text-white rounded-2xl font-bold text-[15px] active:scale-95 touch-manipulation transition-transform focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-townwize-primary"
               >
                 Find a Ride →
               </button>
