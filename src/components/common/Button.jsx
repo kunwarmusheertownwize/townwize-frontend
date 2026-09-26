@@ -38,6 +38,9 @@ const RINGS = {
      * rendering fault rather than as focus. */
     onDark: "focus-visible:ring-white focus-visible:ring-offset-0",
     emergency: "focus-visible:ring-red-500",
+    progress: "focus-visible:ring-green-500",
+    warning: "focus-visible:ring-orange-500",
+    warningSoft: "focus-visible:ring-orange-500",
 };
 
 const SIZES = {
@@ -91,6 +94,33 @@ const VARIANTS = {
         "border-2 border-red-500 bg-red-50 text-red-700 hover:bg-red-100 " +
         "dark:border-red-500 dark:bg-red-950 dark:text-red-300 dark:hover:bg-red-900/60 " +
         "disabled:opacity-50",
+
+    /* Reporting a Towner — a no-show, an unbooked extra passenger.
+     *
+     * Not `danger`, and the distinction is worth keeping. Red is for what the
+     * Wizer does to their OWN ride: cancel it, end it. Orange is for an
+     * accusation about somebody else, which carries a fee and cancels the trip
+     * but is not the Wizer destroying their own work. A Wizer glancing down
+     * mid-trip should not find the report button wearing the same colour as
+     * cancel.
+     *
+     * Both spellings already existed on the driver screen — filled orange for
+     * the confirmation, outlined for the control that opens it — so this names
+     * what was there rather than inventing a colour. */
+    /* Moving the trip forward: Arrived, Confirm Boarded.
+     *
+     * Green rather than brand, and the split is the useful part. On the Wizer's
+     * screen the brand colour means "go somewhere" — Navigate to Pickup,
+     * Navigate to Stop 2 — while green means "the thing I was going to do is
+     * done". A Wizer glancing down at a phone in a cradle is reading colour
+     * before words, and these two sat next to each other in the same colour in
+     * several places. */
+    progress: "bg-green-600 text-white hover:bg-green-700 disabled:opacity-50",
+
+    warning: "bg-orange-600 text-white hover:bg-orange-700 disabled:opacity-50",
+    warningSoft:
+        "border border-orange-300 text-orange-600 hover:bg-orange-50 " +
+        "dark:border-orange-700 dark:text-orange-400 dark:hover:bg-orange-950 disabled:opacity-50",
 };
 
 const Spinner = () => (

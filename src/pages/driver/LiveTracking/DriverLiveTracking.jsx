@@ -10,6 +10,7 @@ import { getSocket } from "../../../hooks/useRideSocket";
 import { isNative } from "../../../utils/platform";
 import { registerPlugin } from "@capacitor/core";
 import Modal from "../../../components/common/Modal";
+import Button from "../../../components/common/Button";
 const BackgroundGeolocation = registerPlugin("BackgroundGeolocation");
 
 // Three-layer accidental-tap protection: pointer-capture drag → 8-second undo window.
@@ -94,12 +95,9 @@ const SlideToEndTrip = ({ onConfirm, disabled }) => {
         <span className="flex-1 text-sm font-semibold text-red-700 dark:text-red-400">
           Ending trip in {countdown}s…
         </span>
-        <button
-          onClick={handleUndo}
-          className="rounded-lg border border-red-300 bg-white px-4 py-1.5 text-sm font-semibold text-red-600 dark:border-red-700 dark:bg-gray-800 dark:text-red-400"
-        >
+        <Button variant="dangerSoft" size="sm" className="bg-white dark:bg-gray-800" onClick={handleUndo}>
           Undo
-        </button>
+        </Button>
       </div>
     );
   }
@@ -929,12 +927,9 @@ const DriverLiveTracking = () => {
                 Seat 2 · {sp.boarded ? "Boarded ✓" : "Not yet boarded"}
               </p>
             </div>
-            <button
-              onClick={() => setShowCoRiderReportConfirm(true)}
-              className="shrink-0 px-2.5 py-1 rounded-lg text-[10px] font-semibold text-red-500 border border-red-200 dark:border-red-800 hover:bg-red-50 dark:hover:bg-red-900/20 transition"
-            >
+            <Button variant="dangerSoft" size="sm" className="shrink-0" onClick={() => setShowCoRiderReportConfirm(true)}>
               Report
-            </button>
+            </Button>
           </div>
 
           {/* Co-rider report confirmation */}
@@ -945,19 +940,12 @@ const DriverLiveTracking = () => {
                 Use this only for genuine misconduct or safety concerns. Repeated false reports may affect your account.
               </p>
               <div className="flex gap-2">
-                <button
-                  onClick={() => setShowCoRiderReportConfirm(false)}
-                  className="flex-1 py-2 rounded-xl text-xs font-semibold bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200"
-                >
+                <Button variant="secondary" className="flex-1" onClick={() => setShowCoRiderReportConfirm(false)}>
                   Cancel
-                </button>
-                <button
-                  onClick={handleReportCoRider}
-                  disabled={coRiderReportSubmitting}
-                  className="flex-1 py-2 rounded-xl text-xs font-semibold bg-red-600 text-white disabled:opacity-60"
-                >
+                </Button>
+                <Button variant="danger" loading={coRiderReportSubmitting} className="flex-1" onClick={handleReportCoRider}>
                   {coRiderReportSubmitting ? "Reporting…" : "Confirm Report"}
-                </button>
+                </Button>
               </div>
             </div>
           )}
@@ -975,21 +963,18 @@ const DriverLiveTracking = () => {
           Only report if you see a passenger not in the manifest. 3 cumulative reports auto-flag the account.
         </p>
         <div className="flex gap-2">
-          <button onClick={() => setShowReportConfirm(false)} className="flex-1 py-2 rounded-xl text-xs font-semibold bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200">
+          <Button variant="secondary" className="flex-1" onClick={() => setShowReportConfirm(false)}>
             Back
-          </button>
-          <button onClick={handleReportExtra} disabled={reportSubmitting} className="flex-1 py-2 rounded-xl text-xs font-semibold bg-orange-600 text-white disabled:opacity-60">
+          </Button>
+          <Button variant="warning" loading={reportSubmitting} className="flex-1" onClick={handleReportExtra}>
             {reportSubmitting ? "Reporting…" : "Confirm Report"}
-          </button>
+          </Button>
         </div>
       </div>
     ) : (
-      <button
-        onClick={() => setShowReportConfirm(true)}
-        className="w-full py-2 rounded-xl text-xs font-medium text-orange-500 dark:text-orange-400 border border-orange-200 dark:border-orange-800"
-      >
+      <Button variant="warningSoft" fullWidth onClick={() => setShowReportConfirm(true)}>
         Report Extra Passenger
-      </button>
+      </Button>
     )
   ) : null;
 
@@ -1001,13 +986,9 @@ const DriverLiveTracking = () => {
           <div className="rounded-lg bg-townwize-primary/10 dark:bg-townwize-primary/20 px-3 py-2 text-xs text-townwize-primary dark:text-townwize-accent">
             At primary pickup — confirm when passenger 1 boards.
           </div>
-          <button
-            onClick={() => handlePoolStage("board_primary")}
-            disabled={poolStageLoading}
-            className={`w-full rounded-xl py-3 font-semibold ${poolStageLoading ? "bg-gray-400 cursor-not-allowed" : "bg-green-600 text-white"}`}
-          >
+          <Button variant="progress" fullWidth loading={poolStageLoading} onClick={() => handlePoolStage("board_primary")}>
             {poolStageLoading ? "Processing…" : "Confirm Passenger 1 Boarded"}
-          </button>
+          </Button>
         </>
       )}
       {poolPickupStage === 2 && sp && (
@@ -1015,19 +996,12 @@ const DriverLiveTracking = () => {
           <div className="rounded-lg bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 px-3 py-2 text-xs text-blue-700 dark:text-blue-300">
             Navigate to {sp.name}&apos;s pickup: {sp.pickupAddress || "co-passenger pickup"}
           </div>
-          <button
-            onClick={() => openNavigation(sp.pickupAddress)}
-            className="w-full rounded-xl py-3 font-semibold bg-townwize-primary text-white"
-          >
+          <Button fullWidth onClick={() => openNavigation(sp.pickupAddress)}>
             Navigate to {sp.name}
-          </button>
-          <button
-            onClick={() => handlePoolStage("arrived_secondary")}
-            disabled={poolStageLoading}
-            className={`w-full rounded-xl py-3 font-semibold ${poolStageLoading ? "bg-gray-400 cursor-not-allowed" : "bg-green-600 text-white"}`}
-          >
+          </Button>
+          <Button variant="progress" fullWidth loading={poolStageLoading} onClick={() => handlePoolStage("arrived_secondary")}>
             {poolStageLoading ? "Processing…" : `Arrived at ${sp.name}'s Pickup`}
-          </button>
+          </Button>
         </>
       )}
       {poolPickupStage === 3 && sp && (
@@ -1035,13 +1009,9 @@ const DriverLiveTracking = () => {
           <div className="rounded-lg bg-townwize-primary/10 dark:bg-townwize-primary/20 px-3 py-2 text-xs text-townwize-primary dark:text-townwize-accent">
             At {sp.name}&apos;s pickup — confirm when {sp.name} boards.
           </div>
-          <button
-            onClick={() => handlePoolStage("board_secondary")}
-            disabled={poolStageLoading}
-            className={`w-full rounded-xl py-3 font-semibold ${poolStageLoading ? "bg-gray-400 cursor-not-allowed" : "bg-green-600 text-white"}`}
-          >
+          <Button variant="progress" fullWidth loading={poolStageLoading} onClick={() => handlePoolStage("board_secondary")}>
             {poolStageLoading ? "Processing…" : `Confirm ${sp.name} Boarded`}
-          </button>
+          </Button>
         </>
       )}
       {poolPickupStage === null && allAboard && (
@@ -1077,28 +1047,19 @@ const DriverLiveTracking = () => {
 
       {dropoffStage === 1 && (
         <div className="flex gap-2">
-          <button
-            onClick={() => openNavigation(dropoffAddress)}
-            className="flex-1 py-2 rounded-xl text-xs font-semibold bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200"
-          >
+          <Button variant="secondary" className="flex-1" onClick={() => openNavigation(dropoffAddress)}>
             Navigate Stop 1
-          </button>
-          <button
-            onClick={() => { setDropoffStage(2); openNavigation(sp.dropoffAddress || dropoffAddress); }}
-            className="flex-1 py-2 rounded-xl text-xs font-semibold bg-townwize-primary text-white"
-          >
+          </Button>
+          <Button className="flex-1" onClick={() => { setDropoffStage(2); openNavigation(sp.dropoffAddress || dropoffAddress); }}>
             Stop 1 Done →
-          </button>
+          </Button>
         </div>
       )}
 
       {dropoffStage === 2 && (
-        <button
-          onClick={() => openNavigation(sp.dropoffAddress || dropoffAddress)}
-          className="w-full py-2 rounded-xl text-xs font-semibold bg-townwize-primary text-white"
-        >
+        <Button fullWidth onClick={() => openNavigation(sp.dropoffAddress || dropoffAddress)}>
           Navigate to Stop 2
-        </button>
+        </Button>
       )}
     </div>
   ) : null;
@@ -1120,32 +1081,21 @@ const DriverLiveTracking = () => {
     <div className="flex flex-wrap gap-3">
       {rideStatus === "DRIVER_ASSIGNED" && (
         <>
-          <button
-            onClick={() => openNavigation(pickupAddress)}
-            className="min-w-[180px] flex-1 rounded-xl bg-townwize-primary py-3 font-semibold text-white"
-          >
+          <Button className="min-w-[180px] flex-1" onClick={() => openNavigation(pickupAddress)}>
             Navigate to Pickup
-          </button>
-          <button
-            onClick={handleArrivedAtPickup}
-            disabled={arriving || !nearPickup}
-            className={`flex-1 rounded-xl py-3 font-semibold ${(arriving || !nearPickup) ? "cursor-not-allowed bg-gray-400 text-gray-200" : "bg-green-600 text-white"}`}
-          >
+          </Button>
+          <Button variant="progress" className="flex-1" disabled={!nearPickup} loading={arriving} onClick={handleArrivedAtPickup}>
             {arriving ? "Arriving…" : nearPickup ? "Arrived" : "Get closer to pickup"}
-          </button>
+          </Button>
         </>
       )}
       {rideStatus === "ARRIVED" && (
         <>
           {poolPickupButtons}
           {(!isPooled || allAboard) && (
-            <button
-              onClick={handleStartTrip}
-              disabled={startingTrip}
-              className={`w-full rounded-xl py-3 font-semibold ${startingTrip ? "cursor-not-allowed bg-gray-400" : "bg-townwize-primary text-white"}`}
-            >
+            <Button fullWidth loading={startingTrip} onClick={handleStartTrip}>
               Start Trip
-            </button>
+            </Button>
           )}
         </>
       )}
@@ -1186,18 +1136,12 @@ const DriverLiveTracking = () => {
                   from the booked destination. The passenger will only be charged for the actual distance traveled.
                 </p>
                 <div className="flex gap-3">
-                  <button
-                    className="flex-1 rounded-xl border border-gray-300 dark:border-gray-600 py-3 font-semibold text-gray-700 dark:text-gray-300"
-                    onClick={() => setEarlyEndConfirm(false)}
-                  >
+                  <Button variant="secondary" className="flex-1" onClick={() => setEarlyEndConfirm(false)}>
                     Cancel
-                  </button>
-                  <button
-                    className="flex-1 rounded-xl bg-townwize-primary py-3 font-semibold text-white"
-                    onClick={() => { setEarlyEndConfirm(false); handleCompleteTrip(); }}
-                  >
+                  </Button>
+                  <Button className="flex-1" onClick={() => { setEarlyEndConfirm(false); handleCompleteTrip(); }}>
                     End Trip Here
-                  </button>
+                  </Button>
                 </div>
               </div>
             </Modal>
@@ -1230,14 +1174,14 @@ const DriverLiveTracking = () => {
               <p className="text-xs font-semibold text-orange-800 dark:text-orange-300">Report passenger no-show?</p>
               <p className="text-xs text-orange-700 dark:text-orange-400">A 120 PKR no-show fee will be recorded. The ride will be cancelled.</p>
               <div className="flex gap-2">
-                <button onClick={() => setShowNoShowConfirm(false)} className="flex-1 py-2 rounded-xl text-xs font-semibold bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200">Back</button>
-                <button onClick={handleNoShow} className="flex-1 py-2 rounded-xl text-xs font-semibold bg-orange-600 text-white">Confirm No-Show</button>
+                <Button variant="secondary" className="flex-1" onClick={() => setShowNoShowConfirm(false)}>Back</Button>
+                <Button variant="warning" className="flex-1" onClick={handleNoShow}>Confirm No-Show</Button>
               </div>
             </div>
           ) : (
-            <button onClick={() => setShowNoShowConfirm(true)} className="w-full py-2.5 rounded-xl text-sm font-semibold border border-orange-300 dark:border-orange-700 text-orange-600 dark:text-orange-400">
+            <Button variant="warningSoft" fullWidth onClick={() => setShowNoShowConfirm(true)}>
               Passenger No-Show
-            </button>
+            </Button>
           )
         ) : (
           <p className="text-center text-xs text-gray-400 dark:text-gray-500">
@@ -1248,12 +1192,9 @@ const DriverLiveTracking = () => {
 
       {!showNoShowConfirm && (
         rideStatus === "ON_TRIP" ? (
-          <button
-            onClick={() => navigate("/driver/support", { state: { linkedRideId: rideId } })}
-            className="w-full py-2 rounded-xl text-xs font-medium text-amber-600 dark:text-amber-400 hover:underline"
-          >
+          <Button variant="ghost" fullWidth onClick={() => navigate("/driver/support", { state: { linkedRideId: rideId } })}>
             Report Issue
-          </button>
+          </Button>
         ) : showCancelModal ? (
           <div className="rounded-xl border border-red-200 dark:border-red-800 bg-white dark:bg-gray-800 p-3 space-y-2">
             <p className="text-sm font-semibold text-gray-800 dark:text-gray-100">Why are you cancelling?</p>
@@ -1272,16 +1213,16 @@ const DriverLiveTracking = () => {
               <option>Other</option>
             </select>
             <div className="flex gap-2">
-              <button onClick={() => { setShowCancelModal(false); setDriverCancelReason(""); }} disabled={cancelling} className="flex-1 py-2 rounded-xl text-xs font-semibold bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 disabled:opacity-60">Back</button>
-              <button onClick={handleCancelRide} disabled={cancelling || !driverCancelReason} className="flex-1 py-2 rounded-xl text-xs font-semibold bg-red-600 text-white disabled:opacity-50">
+              <Button variant="secondary" disabled={cancelling} className="flex-1" onClick={() => { setShowCancelModal(false); setDriverCancelReason(""); }}>Back</Button>
+              <Button variant="danger" disabled={!driverCancelReason} loading={cancelling} className="flex-1" onClick={handleCancelRide}>
                 {cancelling ? "Cancelling…" : "Cancel Ride"}
-              </button>
+              </Button>
             </div>
           </div>
         ) : (
-          <button onClick={() => setShowCancelModal(true)} className="w-full py-2 rounded-xl text-xs font-medium text-red-500 dark:text-red-400 hover:underline">
+          <Button variant="dangerSoft" fullWidth onClick={() => setShowCancelModal(true)}>
             Cancel ride
-          </button>
+          </Button>
         )
       )}
     </div>
