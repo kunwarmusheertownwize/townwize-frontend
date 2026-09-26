@@ -334,12 +334,18 @@ const SelectRide = () => {
    */
   const [pricing, setPricing] = useState({
     private: { baseFare: 120, perKm: 45, perMinute: 6 },
-    rideTogether: { baseFare: 90, perKm: 24, perMinute: 4 },
+    rideTogether: { baseFare: 90, perKm: 24, perMinute: 4, enabled: false },
     carTypeMultipliers: { economy: 1, comfort: 1.18, xl: 1.35 },
     minimumFare: 245,
     platformFee: 20,
     taxPercent: 5,
   });
+
+  /* Whether to offer RideTogether at all. Comes from the same admin setting
+   * the pricing page already honours, and which this screen used to ignore
+   * entirely — an admin could switch the feature off and Towners kept booking
+   * pool rides. The server refuses it too; this only spares them the journey. */
+  const rideTogetherAvailable = pricing.rideTogether?.enabled === true;
 
   useEffect(() => {
     let mounted = true;
@@ -1383,6 +1389,7 @@ navigate("/passenger/trip-summary", {
           )}
 
           {/* ── RideTogether card ── */}
+          {rideTogetherAvailable && (
           <div
             onClick={() => {
               if (!routeReady) return;
@@ -1437,6 +1444,7 @@ navigate("/passenger/trip-summary", {
               )}
             </div>
           </div>
+          )}
 
           {/* ── Availability — single compact line ── */}
           {selectedType && routeReady && (
