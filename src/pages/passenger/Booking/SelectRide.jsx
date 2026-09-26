@@ -1246,7 +1246,7 @@ navigate("/passenger/trip-summary", {
                   }
                 }
               }}
-              className="text-townwize-primary dark:text-townwize-textContent text-sm flex items-center gap-1"
+              className="text-townwize-primary dark:text-townwize-textContent text-sm flex items-center gap-1 rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-townwize-primary"
             >
               <FaPlus /> Add stop
             </button>
