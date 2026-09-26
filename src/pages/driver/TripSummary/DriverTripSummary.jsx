@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { FaCheckCircle, FaStar } from "react-icons/fa";
 import api from "../../../services/api";
 import RouteThumb from "../../../components/common/RouteThumb";
+import Button from "../../../components/common/Button";
 
 const DriverTripSummary = () => {
     const navigate = useNavigate();
@@ -40,12 +41,9 @@ const DriverTripSummary = () => {
         return (
             <div className="p-8 text-center">
                 <p className="text-gray-500 dark:text-gray-400 mb-4">Trip data unavailable.</p>
-                <button
-                    onClick={() => navigate("/driver/trip-requests", { replace: true })}
-                    className="px-5 py-2.5 rounded-xl bg-townwize-primary text-white font-semibold"
-                >
+                <Button onClick={() => navigate("/driver/trip-requests", { replace: true })}>
                     Go Online
-                </button>
+                </Button>
             </div>
         );
     }
@@ -134,7 +132,7 @@ const DriverTripSummary = () => {
                                 key={star}
                                 onClick={() => handleRate(star)}
                                 disabled={submitting}
-                                className="transition-transform hover:scale-110 active:scale-95 disabled:opacity-60"
+                                className="rounded-full transition-transform hover:scale-110 active:scale-95 disabled:opacity-60 focus:outline-none focus-visible:ring-2 focus-visible:ring-townwize-primary"
                             >
                                 <FaStar
                                     className={`text-3xl transition-colors ${
@@ -149,12 +147,9 @@ const DriverTripSummary = () => {
                 )}
             </div>
 
-            <button
-                onClick={() => navigate("/driver/trip-requests", { replace: true })}
-                className="w-full py-3.5 rounded-xl font-bold bg-townwize-primary text-white hover:bg-townwize-primaryDark transition"
-            >
+            <Button fullWidth onClick={() => navigate("/driver/trip-requests", { replace: true })}>
                 Go Online Again
-            </button>
+            </Button>
 
         </div>
     );

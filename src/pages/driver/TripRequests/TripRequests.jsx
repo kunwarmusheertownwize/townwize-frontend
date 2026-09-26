@@ -148,7 +148,7 @@ const TripRequests = () => {
         <div className="text-sm">
           <p className="mb-3">Go offline? You will not receive new ride requests.</p>
           <div className="flex justify-end gap-3">
-            <button onClick={closeToast} className="px-3 py-1 text-gray-500 hover:underline">
+            <button onClick={closeToast} className="px-3 py-1 text-gray-500 hover:underline rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-townwize-primary">
               Cancel
             </button>
             <button
@@ -169,7 +169,7 @@ const TripRequests = () => {
                 setDriverMode(DRIVER_MODES.OFFLINE);
                 navigate("/driver/home", { replace: true });
               }}
-              className="rounded bg-townwize-primary px-3 py-1 font-semibold text-white"
+              className="rounded bg-townwize-primary px-3 py-1 font-semibold text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-townwize-primary"
             >
               Go Offline
             </button>
@@ -238,7 +238,7 @@ const TripRequests = () => {
 
           <button
             onClick={handleGoOffline}
-            className="mt-8 rounded-xl border border-gray-300 px-6 py-2.5 text-sm font-semibold text-gray-600 transition hover:bg-gray-100 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
+            className="mt-8 rounded-xl border border-gray-300 px-6 py-2.5 text-sm font-semibold text-gray-600 transition hover:bg-gray-100 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-townwize-primary"
           >
             Go Offline
           </button>
@@ -320,13 +320,13 @@ const TripRequests = () => {
           <div className="grid grid-cols-2 gap-3 p-6 pt-3">
             <button
               onClick={handleReject}
-              className="rounded-xl border border-gray-300 py-3.5 font-semibold text-gray-700 transition hover:bg-gray-100 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700"
+              className="rounded-xl border border-gray-300 py-3.5 font-semibold text-gray-700 transition hover:bg-gray-100 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-townwize-primary"
             >
               Decline
             </button>
             <button
               onClick={handleAccept}
-              className="rounded-xl bg-townwize-accent py-3.5 font-semibold text-townwize-primary shadow-md shadow-townwize-accent/30 transition hover:brightness-110 active:scale-[0.98]"
+              className="rounded-xl bg-townwize-accent py-3.5 font-semibold text-townwize-primary shadow-md shadow-townwize-accent/30 transition hover:brightness-110 active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-townwize-primary"
             >
               Accept
             </button>
@@ -336,7 +336,7 @@ const TripRequests = () => {
           <div className="border-t border-gray-100 px-6 py-3 text-center dark:border-gray-700">
             <button
               onClick={handleGoOffline}
-              className="text-xs text-gray-400 hover:text-townwize-danger hover:underline"
+              className="text-xs text-gray-400 hover:text-townwize-danger hover:underline rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-townwize-primary"
             >
               Go offline instead
             </button>

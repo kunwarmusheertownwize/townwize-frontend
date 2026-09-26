@@ -10,6 +10,7 @@ import {
 } from "../../../api/driverApi";
 import RemittanceDetails, { useInAppCommissionEnabled } from "../../../components/driver/RemittanceDetails";
 import Modal from "../../../components/common/Modal";
+import Button from "../../../components/common/Button";
 
 const toMoney = (n) => `PKR ${Number(n || 0).toLocaleString()}`;
 const fmtDate = (iso) =>
@@ -209,14 +210,15 @@ function PaymentModal({ balanceOwed, onClose, onSubmit }) {
               Card, EasyPaisa, JazzCash or bank transfer. Your balance clears
               straight away — no reference to type and nothing to wait for.
             </p>
-            <button
-              type="button"
+            <Button
+              fullWidth
+              className="mt-3"
+              disabled={balanceOwed <= 0}
+              loading={payingNow}
               onClick={payNow}
-              disabled={payingNow || balanceOwed <= 0}
-              className="mt-3 w-full py-3 rounded-xl bg-townwize-primary text-white font-semibold disabled:opacity-60"
             >
               {payingNow ? "Opening payment…" : `Pay ${toMoney(balanceOwed)} now`}
-            </button>
+            </Button>
           </div>
           )}
 
@@ -252,7 +254,7 @@ function PaymentModal({ balanceOwed, onClose, onSubmit }) {
             type="button"
             onClick={() => setShowManual((v) => !v)}
             aria-expanded={showManual}
-            className="w-full flex items-center gap-3 rounded-xl border border-gray-200 dark:border-gray-700 px-4 py-3 text-start hover:border-gray-300 dark:hover:border-gray-600 transition-colors"
+            className="w-full flex items-center gap-3 rounded-xl border border-gray-200 dark:border-gray-700 px-4 py-3 text-start hover:border-gray-300 dark:hover:border-gray-600 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-townwize-primary"
           >
             <span className="flex-1 min-w-0">
               <span className="block text-sm font-semibold text-gray-800 dark:text-gray-100">
@@ -302,20 +304,15 @@ function PaymentModal({ balanceOwed, onClose, onSubmit }) {
               className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2.5 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-townwize-primary"
             />
           </div>
-          <button
-            type="button"
-            onClick={handleSubmit}
-            disabled={submitting}
-            className="w-full py-3 rounded-xl bg-townwize-primary text-white font-semibold disabled:opacity-60"
-          >
+          <Button fullWidth loading={submitting} onClick={handleSubmit}>
             {submitting ? "Submitting…" : "Submit Payment"}
-          </button>
+          </Button>
           </>
           )}
 
-          <button type="button" onClick={onClose} className="w-full py-2 text-sm text-gray-400 hover:text-gray-600">
+          <Button variant="ghost" fullWidth onClick={onClose}>
             Cancel
-          </button>
+          </Button>
         </div>
       </div>
     </Modal>
@@ -413,17 +410,12 @@ function BankDetailsModal({ existing, onClose, onSaved }) {
               As printed on your CNIC. Your bank checks this before releasing a transfer.
             </p>
           </div>
-          <button
-            type="button"
-            onClick={handleSubmit}
-            disabled={submitting}
-            className="w-full py-3 rounded-xl bg-townwize-primary text-white font-semibold disabled:opacity-60"
-          >
+          <Button fullWidth loading={submitting} onClick={handleSubmit}>
             {submitting ? "Saving…" : "Save bank details"}
-          </button>
-          <button type="button" onClick={onClose} className="w-full py-2 text-sm text-gray-400 hover:text-gray-600">
+          </Button>
+          <Button variant="ghost" fullWidth onClick={onClose}>
             Cancel
-          </button>
+          </Button>
         </div>
       </div>
     </Modal>
@@ -535,12 +527,9 @@ const Earnings = () => {
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Earnings</h1>
           <p className="text-sm text-gray-500 dark:text-gray-400">Your income &amp; commission overview</p>
         </div>
-        <button
-          onClick={() => load(chartPeriod)}
-          className="px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 text-sm hover:bg-gray-50 dark:hover:bg-gray-800 transition"
-        >
+        <Button variant="secondary" onClick={() => load(chartPeriod)}>
           Refresh
-        </button>
+        </Button>
       </div>
 
       {loading ? (
@@ -579,7 +568,7 @@ const Earnings = () => {
                 <button
                   onClick={() => setShowModal(true)}
                   disabled={hasPending}
-                  className="shrink-0 px-4 py-2 rounded-xl bg-white text-red-600 text-sm font-bold hover:bg-red-50 disabled:opacity-60 transition shadow-sm"
+                  className="shrink-0 px-4 py-2 rounded-xl bg-white text-red-600 text-sm font-bold hover:bg-red-50 disabled:opacity-60 transition shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-0"
                   title={hasPending ? "Payment already submitted, awaiting confirmation" : ""}
                 >
                   {hasPending ? "Pending…" : "Submit Commission"}
@@ -621,7 +610,7 @@ const Earnings = () => {
               <button
                 type="button"
                 onClick={() => setShowBankModal(true)}
-                className="mt-3 rounded-xl bg-amber-600 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-700 transition"
+                className="mt-3 rounded-xl bg-amber-600 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-700 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-amber-600"
               >
                 Add bank details
               </button>
@@ -693,7 +682,7 @@ const Earnings = () => {
                 <button
                   type="button"
                   onClick={() => setShowBankModal(true)}
-                  className="mt-3 text-xs text-townwize-primary hover:underline"
+                  className="mt-3 text-xs text-townwize-primary hover:underline rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-townwize-primary"
                 >
                   Paying into {bankDetails.bankName} {bankDetails.ibanMasked} — change
                 </button>
@@ -765,7 +754,7 @@ const Earnings = () => {
               <div className="flex rounded-xl overflow-hidden border border-gray-200 dark:border-gray-600 text-xs font-semibold">
                 <button
                   onClick={() => setChartPeriod("weekly")}
-                  className={`px-3 py-1.5 transition ${
+                  className={`px-3 py-1.5 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-townwize-primary ${
                     chartPeriod === "weekly"
                       ? "bg-townwize-primary text-white"
                       : "bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700"
@@ -775,7 +764,7 @@ const Earnings = () => {
                 </button>
                 <button
                   onClick={() => setChartPeriod("monthly")}
-                  className={`px-3 py-1.5 transition ${
+                  className={`px-3 py-1.5 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-townwize-primary ${
                     chartPeriod === "monthly"
                       ? "bg-townwize-primary text-white"
                       : "bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700"
@@ -864,7 +853,7 @@ const Earnings = () => {
               {balanceOwed > 0 && !hasPending && (
                 <button
                   onClick={() => setShowModal(true)}
-                  className="text-xs font-bold text-townwize-primary hover:underline"
+                  className="text-xs font-bold text-townwize-primary hover:underline rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-townwize-primary"
                 >
                   + Submit Commission
                 </button>
@@ -919,7 +908,7 @@ const Earnings = () => {
                     {r.status === "INCOMPLETE" && balanceOwed > 0 && !hasPending ? (
                       <button
                         onClick={() => setShowModal(true)}
-                        className="shrink-0 rounded-lg bg-townwize-primary px-3 py-1.5 text-xs font-semibold text-white"
+                        className="shrink-0 rounded-lg bg-townwize-primary px-3 py-1.5 text-xs font-semibold text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-townwize-primary"
                       >
                         Finish payment
                       </button>
