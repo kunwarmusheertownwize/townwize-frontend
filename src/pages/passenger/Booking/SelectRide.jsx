@@ -1452,13 +1452,13 @@ navigate("/passenger/trip-summary", {
               {availability.loading ? (
                 <>
                   <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-amber-400 animate-pulse" />
-                  <span className="text-xs text-gray-500">Finding Wizars nearby…</span>
+                  <span className="text-xs text-gray-500">Finding Wizers nearby…</span>
                 </>
               ) : Number(availability.matchingDrivers || 0) > 0 ? (
                 <>
                   <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-green-500" />
                   <span className="text-xs text-gray-600 dark:text-gray-300">
-                    {availability.matchingDrivers} Wizar{availability.matchingDrivers !== 1 ? "s" : ""} nearby
+                    {availability.matchingDrivers} Wizer{availability.matchingDrivers !== 1 ? "s" : ""} nearby
                     {availability.estimatedPickupMinutes != null
                       ? ` · ETA ~${availability.estimatedPickupMinutes} min`
                       : ""}
@@ -1468,7 +1468,7 @@ navigate("/passenger/trip-summary", {
                 <>
                   <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-amber-400" />
                   <span className="text-xs text-amber-700 dark:text-amber-400">
-                    No Wizars online right now — we'll match you as soon as one goes live
+                    No Wizers online right now — we'll match you as soon as one goes live
                   </span>
                 </>
               )}
