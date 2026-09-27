@@ -122,12 +122,44 @@ const waLink = (entry) => {
     `?invited=1&role=${role}&email=${encodeURIComponent(entry.email)}`;
 
   const label = entry.type === "driver" ? "Wizer" : "Towner";
-  const text =
-    `Assalam-o-Alaikum${entry.name ? " " + entry.name : ""},\n\n` +
-    `Your place on the Townwize waitlist is confirmed and ${label} registration is now open for you.\n\n` +
-    `${url}\n\n` +
-    "This invitation is for your registered email address only." +
-    `\n\n— Townwize`;
+
+  /* Two messages, chosen by what the row actually says.
+   *
+   * Somebody who began registering and stopped needs to hear that we know,
+   * and where to pick it up. Somebody who has not started needs an
+   * invitation. Sending the first to the second reads as a mistake and
+   * sending the second to the first ignores the work they already did.
+   *
+   * ⚠️ Neither says WHY it stopped. The recipient has not used Townwize yet;
+   * an account of our checks failing would be their first impression of it.
+   * State what to do next, not what went wrong. */
+  /* `lastRegistrationError` and NOT `approvedAt`. approvedAt is written the
+   * moment somebody BEGINS registering, whether or not they finish — so using
+   * it would tell a Wizer who completed successfully that their registration
+   * did not complete, which is worse than the opposite mistake.
+   *
+   * The error is cleared on a later success, so it means "the last attempt
+   * failed" rather than "once failed".
+   *
+   * The few who stalled before this recording was deployed have no error on
+   * file and will get the invitation wording. The send is manual and the admin
+   * can see the red badge on the row, so they can adjust it in WhatsApp. */
+  const stalled = Boolean(entry.lastRegistrationError);
+
+  const greeting = entry.name ? `Greetings from Townwize, ${entry.name}.` : "Greetings from Townwize.";
+
+  const text = stalled
+    ? `${greeting}\n\n` +
+      `Our system recorded that your ${label} registration did not complete.\n\n` +
+      `Your place is still held and you can carry on from where you left off:\n\n` +
+      `${url}\n\n` +
+      "This link is tied to your registered email address." +
+      `\n\n— Townwize`
+    : `${greeting}\n\n` +
+      `Your place on the Townwize waitlist is confirmed and ${label} registration is now open for you.\n\n` +
+      `${url}\n\n` +
+      "This link is tied to your registered email address." +
+      `\n\n— Townwize`;
 
   return `https://wa.me/${intl}?text=${encodeURIComponent(text)}`;
 };
