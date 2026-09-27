@@ -36,7 +36,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 
     <!-- App Title & Description -->
-    <title>Townwize – Safe Rides in Bahria Town Karachi</title>
+    <title>Townwize — On the move</title>
     <meta
       name="description"
       content="Book safe, reliable private and RideTogether rides in Bahria Town Karachi with Townwize."
@@ -51,18 +51,38 @@
     <meta name="robots" content="index, follow">
 
     <!-- ✅ Social Sharing (OpenGraph) -->
-    <meta property="og:title" content="Townwize – Safe Rides in Bahria Town Karachi" />
-    <meta property="og:description" content="Book safe, reliable private and RideTogether rides in Bahria Town Karachi with Townwize." />
-    <meta property="og:image" content="/og-image.png" />
+    <!-- These must match what townwize.com publishes. They did not: the app
+         carried an older title and, worse, a RELATIVE og:image.
+
+         A relative og:image resolves against the page being shared, so this
+         pointed at app.townwize.com/og-image.png — a different, older file that
+         still carries the previous logo — while townwize.com served the current
+         one. Sharing an app link therefore showed the old brand and sharing the
+         landing page showed the new one.
+
+         Absolute, and pointing at townwize.com rather than www.townwize.com:
+         the www host 301s to the apex, and a scraper that does not follow
+         redirects gets no image at all. One canonical file, not a copy per
+         host, because a copy per host is exactly how these drifted apart.
+
+         ⚠️ app.townwize.com/og-image.png STILL EXISTS on the deployed branch
+         and is still the old logo. Nothing references it now; delete it when
+         that branch is next touched. -->
+    <meta property="og:title" content="TOWNWIZE — On the move – Verified Ride Hailing Platform for Bahria Town Karachi" />
+    <meta property="og:description" content="Townwize is Bahria Town Karachi's community-first ride platform. Every driver is a verified BTK resident. No strangers. Join the waitlist for early access." />
+    <meta property="og:image" content="https://townwize.com/og-image.png" />
     <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://townwize.com" />
+    <!-- The app, not the marketing site. This said townwize.com, so a shared
+         registration link advertised a different address than the one it
+         opened. -->
+    <meta property="og:url" content="https://app.townwize.com/" />
     <meta property="og:site_name" content="Townwize" />
 
     <!-- ✅ Twitter Card -->
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="Townwize – Safe Rides in Bahria Town Karachi">
-    <meta name="twitter:description" content="Book safe, reliable private and RideTogether rides in Bahria Town Karachi with Townwize.">
-    <meta name="twitter:image" content="/og-image.png">
+    <meta name="twitter:title" content="TOWNWIZE — On the move – Verified Ride Hailing Platform for Bahria Town Karachi">
+    <meta name="twitter:description" content="Townwize is Bahria Town Karachi's community-first ride platform. Every driver is a verified BTK resident. No strangers. Join the waitlist for early access.">
+    <meta name="twitter:image" content="https://townwize.com/og-image.png">
 
     <!-- ✅ Compiled Tailwind CSS -->
     <link rel="stylesheet" href="/out.css" />
