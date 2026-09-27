@@ -367,6 +367,12 @@ function DetailPanel({ entry: initial, onClose, onSaved }) {
                     label={entry.inviteClickCount > 1 ? `Clicked ×${entry.inviteClickCount}` : "Clicked"}
                   />
                 )}
+                {entry.lastRegistrationError && (
+                  <Badge
+                    cls="bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300"
+                    label="Registration failed"
+                  />
+                )}
               </div>
               <p className="text-xs text-gray-400 mt-1">Signed up: {toPKT(entry.createdAt)}</p>
               {entry.invitedAt  && <p className="text-xs text-gray-400">Invited: {toPKT(entry.invitedAt)}</p>}
@@ -384,7 +390,18 @@ function DetailPanel({ entry: initial, onClose, onSaved }) {
               {entry.invitedAt && !entry.inviteClickedAt && (
                 <p className="text-xs text-gray-400">Link not opened yet</p>
               )}
-              {entry.approvedAt && <p className="text-xs text-gray-400">Approved: {toPKT(entry.approvedAt)}</p>}
+              {/* "Approved" is set the moment someone BEGINS registering, not
+                  when an admin approves them — so on its own it says nothing
+                  about whether they got through. The failure below is what
+                  tells them apart. */}
+              {entry.approvedAt && <p className="text-xs text-gray-400">Started registering: {toPKT(entry.approvedAt)}</p>}
+              {entry.lastRegistrationError && (
+                <p className="text-xs text-red-600 dark:text-red-400">
+                  Stopped at: <code>{entry.lastRegistrationError}</code>
+                  {entry.lastRegistrationErrorAt ? ` · ${toPKT(entry.lastRegistrationErrorAt)}` : ""}
+                  {entry.registrationAttempts > 1 ? ` · ${entry.registrationAttempts} attempts` : ""}
+                </p>
+              )}
               <p className="text-xs text-gray-400">Source: {entry.source || "landing"} · Lang: {entry.lang || "en"}</p>
             </div>
           )}
