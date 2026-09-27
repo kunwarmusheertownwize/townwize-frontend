@@ -91,6 +91,47 @@ function CapacityCard({ label, used, limit, color = "teal", icon }) {
   );
 }
 
+/**
+ * A wa.me link that opens WhatsApp with the invitation already written.
+ *
+ * Manual on purpose. The API route — Twilio or Meta — needs a registered
+ * WhatsApp sender and a Meta-approved marketing template, which is days of
+ * waiting, and the number that gets registered can never be used in the
+ * normal WhatsApp app again. For a first wave of a few dozen this is one tap
+ * each and nothing to configure.
+ *
+ * ⚠️ The link carries the RECIPIENT. Whoever it comes FROM is whichever
+ * account is signed in to WhatsApp Web on this machine — intended to be the
+ * support number, +92 339 4009776, on WhatsApp Business.
+ *
+ * ⚠️ Sending the same message to many people who do not have the number
+ * saved is what WhatsApp's spam detection reacts to. Space them out.
+ */
+const waLink = (entry) => {
+  // Stored as 03XX-XXXXXXX. WhatsApp wants bare international digits.
+  const digits = String(entry.phone || "").replace(/\D/g, "");
+  if (!digits) return "";
+  const intl = digits.startsWith("92") ? digits : digits.replace(/^0/, "92");
+  if (intl.length < 11) return ""; // not a usable Pakistani mobile
+
+  // The SAME link shape the invitation email uses, so a tap is counted by
+  // the click tracking rather than vanishing.
+  const role = entry.type === "driver" ? "driver" : "passenger";
+  const url =
+    `https://app.townwize.com/register` +
+    `?invited=1&role=${role}&email=${encodeURIComponent(entry.email)}`;
+
+  const label = entry.type === "driver" ? "Wizer" : "Towner";
+  const text =
+    `Assalam-o-Alaikum${entry.name ? " " + entry.name : ""},\n\n` +
+    `Your place on the Townwize waitlist is confirmed and ${label} registration is now open for you.\n\n` +
+    `${url}\n\n` +
+    "This invitation is for your registered email address only." +
+    `\n\n— Townwize`;
+
+  return `https://wa.me/${intl}?text=${encodeURIComponent(text)}`;
+};
+
 // Stacked horizontal bar for status distribution
 function StatusBar({ totals }) {
   const all = totals?.all || 1;
@@ -353,7 +394,22 @@ function DetailPanel({ entry: initial, onClose, onSaved }) {
             <div className="space-y-1 text-sm">
               <p className="font-semibold dark:text-white">{entry.email}</p>
               {entry.name     && <p className="text-gray-500 dark:text-gray-400">{entry.name}</p>}
-              {entry.phone    && <p className="text-gray-500 dark:text-gray-400">{entry.phone}</p>}
+              {entry.phone && (
+                <p className="flex items-center justify-center gap-2 text-gray-500 dark:text-gray-400">
+                  <span>{entry.phone}</span>
+                  {waLink(entry) ? (
+                    <a
+                      href={waLink(entry)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      title="Open WhatsApp with the invitation written — you still press send"
+                      className="rounded px-1.5 py-0.5 text-[11px] font-semibold text-green-700 ring-1 ring-green-600/30 hover:bg-green-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-600 dark:text-green-400 dark:hover:bg-green-900/20"
+                    >
+                      WhatsApp
+                    </a>
+                  ) : null}
+                </p>
+              )}
               {entry.precinct && <p className="text-gray-500 dark:text-gray-400">📍 {entry.precinct}</p>}
               <div className="flex flex-wrap gap-2 mt-2">
                 <Badge cls={TYPE_COLORS[entry.type]}               label={TYPE_LABELS[entry.type] || entry.type} />
