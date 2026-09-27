@@ -179,7 +179,20 @@ const waLink = (entry, kind) => {
     msg.body(greeting, roleLabel, url) +
     `\n\nThis link is tied to your registered email address.\n\n— Townwize`;
 
-  return `https://wa.me/${intl}?text=${encodeURIComponent(text)}`;
+  /* web.whatsapp.com, NOT wa.me.
+   *
+   * A wa.me link is handed to the installed WhatsApp DESKTOP APP when there is
+   * one, and that app is signed in to whoever owns the machine — in practice a
+   * personal account. The Townwize business number is signed in to WhatsApp
+   * WEB, in the browser, which is also where this admin page is open.
+   *
+   * So wa.me sent invitations from the wrong identity. This URL stays in the
+   * browser and therefore uses the account WhatsApp Web is signed in as.
+   *
+   * The trade-off is that this is a desktop link: on a phone web.whatsapp.com
+   * will ask you to use the app instead. The waitlist admin is a desktop tool,
+   * so that is the right way round. */
+  return `https://web.whatsapp.com/send?phone=${intl}&text=${encodeURIComponent(text)}`;
 };
 
 /**
