@@ -119,10 +119,43 @@ export default function GuidedDocumentCapture({
     setBusy(true);
     setProblem("");
 
+    /* Save the rectangle the applicant actually SAW.
+     *
+     * The preview is a container at the guide aspect with the video set to
+     * object-cover, so the browser crops the sensor frame to fit and the
+     * applicant lines the document up inside what is left. This then captured
+     * video.videoWidth × videoHeight — the WHOLE sensor frame, including
+     * everything object-cover had hidden from them.
+     *
+     * On 27 Sep that cost a Wizer his registration. He aligned his CNIC in the
+     * guide and we saved a portrait photograph of a sofa cushion with the card
+     * in the middle, his trousers along the bottom and a second ID document in
+     * the corner he could not see. The card was perhaps a quarter of the frame,
+     * so the text was a small fraction of the pixels and Textract read it at
+     * 78% — missing the CNIC printed on his BTK card entirely.
+     *
+     * Cropping to the CONTAINER, not to the dashed guide inside it: the guide
+     * is a target, not a boundary, and someone who aligned loosely would lose
+     * an edge. This keeps everything they could see and drops everything they
+     * could not. */
+    const vw = video.videoWidth;
+    const vh = video.videoHeight;
+    const wanted = Number(aspect) || vw / vh;
+
+    let sw = vw;
+    let sh = vh;
+    if (vw / vh > wanted) {
+      sw = Math.round(vh * wanted); // sensor is wider than the guide — trim the sides
+    } else {
+      sh = Math.round(vw / wanted); // taller — trim top and bottom
+    }
+    const sx = Math.round((vw - sw) / 2);
+    const sy = Math.round((vh - sh) / 2);
+
     const canvas = document.createElement("canvas");
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    canvas.getContext("2d").drawImage(video, 0, 0);
+    canvas.width = sw;
+    canvas.height = sh;
+    canvas.getContext("2d").drawImage(video, sx, sy, sw, sh, 0, 0, sw, sh);
 
     const { variance, glareRatio } = measureBlurAndGlare(canvas);
     if (variance < BLUR_MIN_VARIANCE) {
@@ -150,7 +183,7 @@ export default function GuidedDocumentCapture({
       "image/jpeg",
       0.92
     );
-  }, [busy, label, onCapture, stop]);
+  }, [aspect, busy, label, onCapture, stop]);
 
   if (status === "error") {
     return (
