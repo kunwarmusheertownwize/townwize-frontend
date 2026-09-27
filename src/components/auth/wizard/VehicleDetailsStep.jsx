@@ -124,6 +124,7 @@ export default function VehicleDetailsStep({ setVehicleProgress, setLicenseFront
           <UploadPreview
             id="veh-reg-upload"
             label="Vehicle Registration"
+            hint="Take the card out of your wallet. Fill the frame, avoid glare on the chip."
             file={vehicleReg}
             onFileChange={mkHandler("vehicleReg", setVehicleProgress)}
             minWidth={600} minHeight={400} maxSizeMB={8}

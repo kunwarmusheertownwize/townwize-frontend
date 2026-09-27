@@ -57,6 +57,7 @@ export default function WizerIdentityStep({ showIdentity, setShowIdentity }) {
           <UploadPreview
             id="lic-front-upload"
             label="Licence Front"
+            hint="Take it out of any cover or wallet. Fill the frame, avoid glare."
             file={licenseFront}
             onFileChange={mkHandler("licenseFront")}
             minWidth={600} minHeight={400} maxSizeMB={8}
@@ -66,6 +67,7 @@ export default function WizerIdentityStep({ showIdentity, setShowIdentity }) {
           <UploadPreview
             id="lic-back-upload"
             label="Licence Back"
+            hint="Take it out of any cover or wallet. Fill the frame, avoid glare."
             file={licenseBack}
             onFileChange={mkHandler("licenseBack")}
             minWidth={600} minHeight={400} maxSizeMB={8}

@@ -21,6 +21,18 @@ export default function UploadPreview({
   requireCamera = false,
   // Guide-frame ratio: 1.585 matches a CNIC or licence, 4/3 suits a vehicle.
   captureAspect = 1.585,
+  /* One line telling the applicant how to take a USABLE photograph.
+   *
+   * Added after an invited Wizer's registration was stopped by documents that
+   * were genuine but unreadable: a BTK ID card photographed through a plastic
+   * sleeve (Textract found 20 words and missed the CNIC printed on it) and a
+   * registration certificate still inside a leather wallet. Both were taken
+   * with the camera — the guide frame helps with framing, but nothing had ever
+   * told him to take the card out of its cover.
+   *
+   * The instruction is per-document because the advice differs: an ID card
+   * needs removing from its holder, a vehicle needs the whole car in shot. */
+  hint = "",
 }) {
   const [error, setError] = useState("");
   const [progress, setProgress] = useState(0);
@@ -96,7 +108,10 @@ export default function UploadPreview({
 
   return (
     <div className="rounded-lg border border-gray-200 bg-white p-3 text-center dark:border-gray-600 dark:bg-gray-800">
-      <p className="mb-2 text-xs font-medium text-gray-600 dark:text-gray-300">{label}</p>
+      <p className="mb-1 text-xs font-medium text-gray-600 dark:text-gray-300">{label}</p>
+      {hint ? (
+        <p className="mb-2 text-[11px] leading-snug text-gray-500 dark:text-gray-400">{hint}</p>
+      ) : null}
 
       {file ? (
         <>

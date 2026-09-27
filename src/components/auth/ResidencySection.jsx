@@ -165,6 +165,7 @@ export default function ResidencySection({
           <UploadPreview
             id="btk-proof-upload"
             label="Utility Bill (Proof)"
+            hint="A clear photo or the PDF from your email. All four corners must be visible."
             file={btkProofFile}
             onFileChange={handleProofChange}
             minWidth={400}
@@ -185,6 +186,7 @@ export default function ResidencySection({
             <UploadPreview
               id="btk-id-front-upload"
               label="BTK ID Front"
+              hint="Take the card out of its plastic sleeve. Fill the frame, avoid reflections."
               file={btkIdFront}
               onFileChange={handleFrontChange}
               minWidth={400}
@@ -196,6 +198,7 @@ export default function ResidencySection({
             <UploadPreview
               id="btk-id-back-upload"
               label="BTK ID Back"
+              hint="Take the card out of its plastic sleeve. Fill the frame, avoid reflections."
               file={btkIdBack}
               onFileChange={handleBackChange}
               minWidth={400}

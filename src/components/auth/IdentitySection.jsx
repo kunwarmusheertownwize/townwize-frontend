@@ -79,6 +79,7 @@ export default function IdentitySection({
             <UploadPreview
               id="cnic-front-upload"
               label="CNIC Front"
+              hint="Take it out of any cover. Fill the frame, avoid glare."
               file={cnicFront}
               onFileChange={handleFrontChange}
               minWidth={600}
@@ -90,6 +91,7 @@ export default function IdentitySection({
             <UploadPreview
               id="cnic-back-upload"
               label="CNIC Back"
+              hint="Take it out of any cover. Fill the frame, avoid glare."
               file={cnicBack}
               onFileChange={handleBackChange}
               minWidth={600}
