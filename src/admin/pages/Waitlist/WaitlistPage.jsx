@@ -357,6 +357,14 @@ function DuplicatesCard({ groups, onSearch }) {
         ⚠ {groups.length} possible duplicate {groups.length === 1 ? "person" : "people"} — same phone or same
         name at another domain. Each one takes a second founding spot and would get a second invitation.
       </p>
+      {/* The second of a matching pair CANNOT register: phone is enforced at
+          registration and they are refused with PHONE_ALREADY_REGISTERED. So
+          inviting both is a guaranteed dead end for one of them, not merely a
+          duplicate. Worth saying here rather than leaving it to be discovered. */}
+      <p className="mb-2 text-xs text-amber-700 dark:text-amber-300">
+        Only one of each pair can register — the second is refused because the mobile number is
+        already taken. Invite one.
+      </p>
       <div className="space-y-1.5">
         {groups.slice(0, 6).map((g, i) => (
           <div key={i} className="flex flex-wrap items-center gap-2 text-xs">
@@ -364,10 +372,16 @@ function DuplicatesCard({ groups, onSearch }) {
               {g.reason === "phone" ? "same phone" : "same name"}
             </span>
             {g.entries.map((e) => (
-              <button key={e._id} type="button" onClick={() => onSearch(e.email)}
-                className="text-amber-900 dark:text-amber-200 underline decoration-dotted">
-                {e.email}
-              </button>
+              <span key={e._id} className="inline-flex items-center gap-1">
+                <button type="button" onClick={() => onSearch(e.email)}
+                  className="text-amber-900 dark:text-amber-200 underline decoration-dotted">
+                  {e.email}
+                </button>
+                {/* A Towner and a Wizer on one phone is a household sharing a
+                    number. Two of the same kind is more likely one person with
+                    two addresses. The banner could not tell them apart. */}
+                <Badge cls={TYPE_COLORS[e.type]} label={TYPE_LABELS[e.type] || e.type} />
+              </span>
             ))}
           </div>
         ))}
