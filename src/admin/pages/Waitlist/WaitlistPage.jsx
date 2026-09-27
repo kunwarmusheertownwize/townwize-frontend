@@ -141,7 +141,7 @@ const WA_MESSAGES = {
   },
   nudge: {
     label: "Nudge",
-    hint: "They opened the link but never started registering",
+    hint: "They opened the invitation link but never began registering",
     body: (g, role, url) =>
       `${g}\n\n` +
       `We noticed you opened your ${role} invitation but have not completed your registration yet.\n\n` +
@@ -149,7 +149,7 @@ const WA_MESSAGES = {
   },
   continue: {
     label: "Continue",
-    hint: "Their registration was started and did not finish",
+    hint: "They began registering and did not finish",
     body: (g, role, url) =>
       `${g}\n\n` +
       `Our system recorded that your ${role} registration did not complete.\n\n` +
@@ -209,9 +209,20 @@ const waOptions = (entry) => {
   if (!waNumber(entry.phone)) return [];
   if (entry.status === "rejected" || entry.status === "pending") return [];
 
+  // Finished. Nothing to chase — they are waiting on a review, not on us.
+  if (entry.hasAccount) return [];
+
   const out = [];
-  if (entry.lastRegistrationError) out.push("continue");
-  else if (entry.inviteClickedAt && !entry.approvedAt) out.push("nudge");
+
+  /* Started and did not finish.
+   *
+   * `approvedAt` alone is what makes this work for people who stalled BEFORE
+   * the error recording existed — it is set when somebody begins, and
+   * `hasAccount` above has already excluded everyone who completed. So
+   * "began, and has no account" is exactly the set worth chasing, whether or
+   * not we captured a reason at the time. */
+  if (entry.lastRegistrationError || entry.approvedAt) out.push("continue");
+  else if (entry.inviteClickedAt) out.push("nudge");
   else out.push("invite");
   return out;
 };
