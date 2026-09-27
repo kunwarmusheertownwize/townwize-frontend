@@ -107,63 +107,101 @@ function CapacityCard({ label, used, limit, color = "teal", icon }) {
  * ⚠️ Sending the same message to many people who do not have the number
  * saved is what WhatsApp's spam detection reacts to. Space them out.
  */
-const waLink = (entry) => {
-  // Stored as 03XX-XXXXXXX. WhatsApp wants bare international digits.
-  const digits = String(entry.phone || "").replace(/\D/g, "");
+/** Bare international digits, or "" if this is not a usable Pakistani mobile. */
+const waNumber = (phone) => {
+  // Stored as 03XX-XXXXXXX; WhatsApp wants 92XXXXXXXXXX.
+  const digits = String(phone || "").replace(/\D/g, "");
   if (!digits) return "";
   const intl = digits.startsWith("92") ? digits : digits.replace(/^0/, "92");
-  if (intl.length < 11) return ""; // not a usable Pakistani mobile
+  return intl.length < 11 ? "" : intl;
+};
 
-  // The SAME link shape the invitation email uses, so a tap is counted by
-  // the click tracking rather than vanishing.
+/**
+ * The messages, one per situation, chosen EXPLICITLY rather than inferred.
+ *
+ * An earlier version picked the wording from the row on its own and got it
+ * wrong: it keyed on `approvedAt`, which is written the moment somebody
+ * BEGINS registering, so a Wizer who had registered successfully would have
+ * been told their registration did not complete. The button now carries the
+ * name of the message it will send, so a wrong choice is visible before it
+ * is clicked rather than after it has been sent.
+ *
+ * ⚠️ None of them says WHY anything failed. The recipient has not used
+ * Townwize yet, and an account of our checks failing would be their first
+ * impression of it. Say what to do next, not what went wrong.
+ */
+const WA_MESSAGES = {
+  invite: {
+    label: "Invite",
+    hint: "Their place is confirmed and registration is open",
+    body: (g, role, url) =>
+      `${g}\n\n` +
+      `Your place on the Townwize waitlist is confirmed and ${role} registration is now open for you.\n\n` +
+      `${url}`,
+  },
+  nudge: {
+    label: "Nudge",
+    hint: "They opened the link but never started registering",
+    body: (g, role, url) =>
+      `${g}\n\n` +
+      `We noticed you opened your ${role} invitation but have not completed your registration yet.\n\n` +
+      `Your place is still held:\n\n${url}`,
+  },
+  continue: {
+    label: "Continue",
+    hint: "Their registration was started and did not finish",
+    body: (g, role, url) =>
+      `${g}\n\n` +
+      `Our system recorded that your ${role} registration did not complete.\n\n` +
+      `Your place is still held and you can carry on from where you left off:\n\n${url}`,
+  },
+};
+
+/** A wa.me link carrying one of the messages above. */
+const waLink = (entry, kind) => {
+  const intl = waNumber(entry.phone);
+  const msg = WA_MESSAGES[kind];
+  if (!intl || !msg) return "";
+
+  // The SAME link shape the invitation email uses, so a tap is counted by the
+  // click tracking rather than vanishing.
   const role = entry.type === "driver" ? "driver" : "passenger";
   const url =
     `https://app.townwize.com/register` +
     `?invited=1&role=${role}&email=${encodeURIComponent(entry.email)}`;
 
-  const label = entry.type === "driver" ? "Wizer" : "Towner";
+  const roleLabel = entry.type === "driver" ? "Wizer" : "Towner";
+  const greeting = entry.name
+    ? `Greetings from Townwize, ${entry.name}.`
+    : "Greetings from Townwize.";
 
-  /* Two messages, chosen by what the row actually says.
-   *
-   * Somebody who began registering and stopped needs to hear that we know,
-   * and where to pick it up. Somebody who has not started needs an
-   * invitation. Sending the first to the second reads as a mistake and
-   * sending the second to the first ignores the work they already did.
-   *
-   * ⚠️ Neither says WHY it stopped. The recipient has not used Townwize yet;
-   * an account of our checks failing would be their first impression of it.
-   * State what to do next, not what went wrong. */
-  /* `lastRegistrationError` and NOT `approvedAt`. approvedAt is written the
-   * moment somebody BEGINS registering, whether or not they finish — so using
-   * it would tell a Wizer who completed successfully that their registration
-   * did not complete, which is worse than the opposite mistake.
-   *
-   * The error is cleared on a later success, so it means "the last attempt
-   * failed" rather than "once failed".
-   *
-   * The few who stalled before this recording was deployed have no error on
-   * file and will get the invitation wording. The send is manual and the admin
-   * can see the red badge on the row, so they can adjust it in WhatsApp. */
-  const stalled = Boolean(entry.lastRegistrationError);
-
-  const greeting = entry.name ? `Greetings from Townwize, ${entry.name}.` : "Greetings from Townwize.";
-
-  const text = stalled
-    ? `${greeting}\n\n` +
-      `Our system recorded that your ${label} registration did not complete.\n\n` +
-      `Your place is still held and you can carry on from where you left off:\n\n` +
-      `${url}\n\n` +
-      "This link is tied to your registered email address." +
-      `\n\n— Townwize`
-    : `${greeting}\n\n` +
-      `Your place on the Townwize waitlist is confirmed and ${label} registration is now open for you.\n\n` +
-      `${url}\n\n` +
-      "This link is tied to your registered email address." +
-      `\n\n— Townwize`;
+  const text =
+    msg.body(greeting, roleLabel, url) +
+    `\n\nThis link is tied to your registered email address.\n\n— Townwize`;
 
   return `https://wa.me/${intl}?text=${encodeURIComponent(text)}`;
 };
 
+/**
+ * Which messages make sense for this row.
+ *
+ * Each condition is something the waitlist row can actually answer.
+ * Deliberately NOT offered: "under review" — the waitlist does not know
+ * whether somebody finished, because status "approved" means STARTED and
+ * there is no join to VerificationCase. And nothing for a rejection: a
+ * refusal over WhatsApp, from a number they have not saved, is the wrong
+ * channel for it.
+ */
+const waOptions = (entry) => {
+  if (!waNumber(entry.phone)) return [];
+  if (entry.status === "rejected" || entry.status === "pending") return [];
+
+  const out = [];
+  if (entry.lastRegistrationError) out.push("continue");
+  else if (entry.inviteClickedAt && !entry.approvedAt) out.push("nudge");
+  else out.push("invite");
+  return out;
+};
 // Stacked horizontal bar for status distribution
 function StatusBar({ totals }) {
   const all = totals?.all || 1;
@@ -429,17 +467,18 @@ function DetailPanel({ entry: initial, onClose, onSaved }) {
               {entry.phone && (
                 <p className="flex items-center justify-center gap-2 text-gray-500 dark:text-gray-400">
                   <span>{entry.phone}</span>
-                  {waLink(entry) ? (
+                  {waOptions(entry).map((kind) => (
                     <a
-                      href={waLink(entry)}
+                      key={kind}
+                      href={waLink(entry, kind)}
                       target="_blank"
                       rel="noopener noreferrer"
-                      title="Open WhatsApp with the invitation written — you still press send"
+                      title={`WhatsApp — ${WA_MESSAGES[kind].hint}. Opens with the message written; you still press send.`}
                       className="rounded px-1.5 py-0.5 text-[11px] font-semibold text-green-700 ring-1 ring-green-600/30 hover:bg-green-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-600 dark:text-green-400 dark:hover:bg-green-900/20"
                     >
-                      WhatsApp
+                      {WA_MESSAGES[kind].label}
                     </a>
-                  ) : null}
+                  ))}
                 </p>
               )}
               {entry.precinct && <p className="text-gray-500 dark:text-gray-400">📍 {entry.precinct}</p>}
