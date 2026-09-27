@@ -361,9 +361,29 @@ function DetailPanel({ entry: initial, onClose, onSaved }) {
                 {entry.suspicious && (
                   <Badge cls="bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300" label="⚠ Suspicious" />
                 )}
+                {entry.inviteClickedAt && (
+                  <Badge
+                    cls="bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300"
+                    label={entry.inviteClickCount > 1 ? `Clicked ×${entry.inviteClickCount}` : "Clicked"}
+                  />
+                )}
               </div>
               <p className="text-xs text-gray-400 mt-1">Signed up: {toPKT(entry.createdAt)}</p>
               {entry.invitedAt  && <p className="text-xs text-gray-400">Invited: {toPKT(entry.invitedAt)}</p>}
+              {entry.inviteClickedAt && (
+                <p className="text-xs text-green-600 dark:text-green-400">
+                  Opened the link: {toPKT(entry.inviteClickedAt)}
+                  {entry.inviteLastClickedAt && entry.inviteClickCount > 1
+                    ? ` · last ${toPKT(entry.inviteLastClickedAt)}`
+                    : ""}
+                </p>
+              )}
+              {/* Absence of a click is not absence of interest — the mail may
+                  be unread, in spam, or simply opened on a device where the
+                  link was not tapped. It is a floor, not a measurement. */}
+              {entry.invitedAt && !entry.inviteClickedAt && (
+                <p className="text-xs text-gray-400">Link not opened yet</p>
+              )}
               {entry.approvedAt && <p className="text-xs text-gray-400">Approved: {toPKT(entry.approvedAt)}</p>}
               <p className="text-xs text-gray-400">Source: {entry.source || "landing"} · Lang: {entry.lang || "en"}</p>
             </div>

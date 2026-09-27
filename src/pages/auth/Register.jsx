@@ -293,6 +293,27 @@ export default function Register() {
     };
   }, [location.search]);
 
+  /* Tell the server the invitation was acted on.
+   *
+   * "Invited" only ever meant "we sent an email" — whether it arrived, went to
+   * spam, or was ignored was invisible until somebody finished registering,
+   * which can be days later or never. This is the first honest signal, and it
+   * fires here rather than through a redirect because the invitations already
+   * in people's inboxes point straight at this page.
+   *
+   * Deliberately fire-and-forget and deliberately unguarded by any loading
+   * state: a tracking call must never delay, block or break a registration.
+   * The server counts repeats and only alerts on the first, so re-opening the
+   * link is harmless.
+   */
+  const beaconSent = useRef(false);
+  useEffect(() => {
+    if (!invite.isInvited || !invite.email) return;
+    if (beaconSent.current) return;
+    beaconSent.current = true;
+    api.post("/waitlist/invite-clicked", { email: invite.email }).catch(() => {});
+  }, [invite.isInvited, invite.email]);
+
   const forcedRole = getAppRole() || null;
   const [selectedRole, setSelectedRole] = useState(
     forcedRole || invite.role || (mode === "referral" ? "passenger" : null)
