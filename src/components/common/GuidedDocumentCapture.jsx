@@ -179,10 +179,24 @@ export default function GuidedDocumentCapture({
    * The face capture has had a red/green guide since it was written. The
    * document capture had a static white rectangle and no signal at all.
    *
-   * Distance and focus are not separated, because they cannot be from variance
-   * alone and because the remedy is the same for both: come closer and hold
-   * still. A card that is small in the frame leaves the crop full of flat
-   * background, which reads as low detail exactly as blur does. */
+   * ⚠️ IT ONLY EVER WARNS. It never says a photograph is good, and the shutter
+   * is not gated on it.
+   *
+   * The first version did both, and was wrong. Variance of the Laplacian
+   * measures whether there is DETAIL ANYWHERE in the image — not whether a
+   * document fills the frame. The user pointed a camera at a tea cup and got a
+   * green light, and a card two feet away on a textured desk passes just as
+   * easily, because the desk has edges. The assumption that a distant card
+   * leaves the crop full of FLAT background only holds on a plain surface.
+   *
+   * A green light that is wrong is worse than none: it tells somebody a bad
+   * photograph is fine. Telling them it is blurry, when it measurably is, does
+   * not make that mistake — low variance is genuine evidence of blur even
+   * though high variance is not evidence of good framing.
+   *
+   * Knowing a document fills the frame needs actual document detection — the
+   * card's quadrilateral — which is what the KYC vendors do and is not a
+   * variance threshold. Until that exists, the honest signal is one-sided. */
   const [quality, setQuality] = useState({ ok: false, message: "" });
 
   useEffect(() => {
@@ -197,9 +211,11 @@ export default function GuidedDocumentCapture({
       if (glareRatio > GLARE_MAX_RATIO) {
         setQuality({ ok: false, message: "Too much glare — tilt away from the light." });
       } else if (variance < BLUR_MIN_VARIANCE) {
-        setQuality({ ok: false, message: "Move closer — fill the frame, and hold steady." });
+        setQuality({ ok: false, message: "Hold steady — keep the document in focus." });
       } else {
-        setQuality({ ok: true, message: "Looks good — take the photo." });
+        // Nothing is wrong that we can actually measure. That is NOT the same
+        // as the photograph being good, so nothing is claimed.
+        setQuality({ ok: false, message: "" });
       }
     }, 400);
 
@@ -281,12 +297,14 @@ export default function GuidedDocumentCapture({
 
       <div className="relative mx-auto overflow-hidden rounded-lg" style={{ aspectRatio: String(aspect) }}>
         <video ref={videoRef} autoPlay playsInline muted className="h-full w-full object-cover" />
-        {/* Guide frame. Green only when the crop would actually be readable,
-            so filling it is a thing the applicant can SEE themselves doing. */}
+        {/* Amber while something measurable is wrong, neutral otherwise. It
+            never turns green: see the note on the live loop — nothing here can
+            tell that a document fills the frame, and pretending otherwise told
+            the user a photograph of a tea cup was good. */}
         <div
           className={[
-            "pointer-events-none absolute inset-[6%] rounded-md border-2 transition-colors",
-            quality.ok ? "border-solid border-green-400" : "border-dashed border-white/80",
+            "pointer-events-none absolute inset-[6%] rounded-md border-2 border-dashed transition-colors",
+            quality.message ? "border-amber-400" : "border-white/80",
           ].join(" ")}
         />
       </div>
@@ -296,14 +314,7 @@ export default function GuidedDocumentCapture({
       {problem ? (
         <p className="mt-2 text-center text-xs font-medium text-amber-300">{problem}</p>
       ) : quality.message ? (
-        <p
-          className={[
-            "mt-2 text-center text-xs font-medium",
-            quality.ok ? "text-green-400" : "text-amber-300",
-          ].join(" ")}
-        >
-          {quality.message}
-        </p>
+        <p className="mt-2 text-center text-xs font-medium text-amber-300">{quality.message}</p>
       ) : null}
 
       <div className="mt-3 flex items-center justify-center gap-3">
@@ -311,10 +322,12 @@ export default function GuidedDocumentCapture({
           className="rounded-lg px-3 py-2 text-xs font-medium text-white/70 hover:text-white">
           Cancel
         </button>
-        {/* Disabled until the crop is readable. The shutter still re-checks —
-            this stops the photograph being taken, rather than rejecting it
-            afterwards and leaving the applicant to guess what changed. */}
-        <button type="button" onClick={shoot} disabled={status !== "ready" || busy || !quality.ok}
+        {/* NOT gated on the live check. It was, briefly, and since that check
+            cannot tell a document from a tea cup the gate was meaningless — it
+            passed everything while implying it had judged something. The
+            shutter's own blur and glare test still rejects after capture, and
+            that one is measuring what it claims to. */}
+        <button type="button" onClick={shoot} disabled={status !== "ready" || busy}
           className="rounded-xl bg-white px-6 py-2.5 text-sm font-bold text-black disabled:opacity-40">
           {busy ? "Checking…" : "Take photo"}
         </button>
