@@ -816,6 +816,14 @@ export default function WaitlistPage() {
             <KpiCard label="Flagged Suspicious" value={stats.suspicious}
               sub="Review in table below" color="orange" icon="⚠️" />
           )}
+          {/* Duplicates earn a card of their own because they are not a data
+              tidiness problem — each one is a founding spot that cannot become
+              an account. The server now refuses to invite both halves of a
+              pair, so this is the count still waiting to be resolved. */}
+          {(stats.duplicates?.length > 0) && (
+            <KpiCard label="Duplicate People" value={stats.duplicates.length}
+              sub="Only one of each pair can register" color="amber" icon="👥" />
+          )}
         </div>
       )}
 
