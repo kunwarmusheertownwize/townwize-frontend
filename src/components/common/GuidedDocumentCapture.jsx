@@ -23,7 +23,26 @@ import { hasUsableCamera } from "../../utils/platform";
 // Rejection thresholds. Deliberately permissive: a false rejection strands an
 // applicant with no way forward, while a marginal photo still reaches a human
 // who can reject it. Tune against real photos in Karachi lighting.
-const BLUR_MIN_VARIANCE = 55;   // variance of the Laplacian
+/* Variance of the Laplacian, CALIBRATED against real BTK ID captures rather
+ * than guessed. Three photographs of the same card, same phone, same 1440px
+ * crop, measured with this exact function and then read by Textract:
+ *
+ *     variance  53   Textract 24.4% — read 9420986 for 9428986
+ *     variance 143   Textract found no CNIC on the card at all
+ *     variance 376   Textract 99.8% — correct
+ *
+ * The threshold was 55, so a photograph scoring 143 — nearly three times it —
+ * sailed through and produced a number nobody could read. The applicant was
+ * then told his CNIC did not match, which was our reading being wrong, not his
+ * typing.
+ *
+ * 200 sits above the worst failure and well below the one that worked. Note
+ * the text was 23-24px tall in ALL THREE: size was not the difference, focus
+ * was. The 97KB and 162KB files were the same picture, one of them sharp.
+ *
+ * ⚠️ Three samples, one card, one phone. Widen it if genuine captures start
+ * being refused — but 55 is demonstrably too permissive to leave. */
+const BLUR_MIN_VARIANCE = 200;  // variance of the Laplacian
 const GLARE_MAX_RATIO = 0.18;   // fraction of near-blown-out pixels
 const ANALYSIS_WIDTH = 320;     // downscale before analysis; full res is wasted work
 
