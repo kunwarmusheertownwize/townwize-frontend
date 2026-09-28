@@ -39,9 +39,10 @@ const ANALYSIS_WIDTH = 320;     // downscale before analysis; full res is wasted
  * filling the guide but sitting on a busy desk read as "sharp" because the desk
  * was sharp.
  */
-const cropRect = (video, aspect) => {
-  const vw = video.videoWidth;
-  const vh = video.videoHeight;
+const cropRect = (source, aspect) => {
+  // A video element reports videoWidth; an ImageBitmap reports width.
+  const vw = source.videoWidth || source.width;
+  const vh = source.videoHeight || source.height;
   const wanted = Number(aspect) || vw / vh;
 
   let sw = vw;
@@ -54,13 +55,13 @@ const cropRect = (video, aspect) => {
   return { sx: Math.round((vw - sw) / 2), sy: Math.round((vh - sh) / 2), sw, sh };
 };
 
-/** Draw just that region onto a canvas. */
-const cropToCanvas = (video, aspect) => {
-  const { sx, sy, sw, sh } = cropRect(video, aspect);
+/** Draw just that region onto a canvas. Works for a video or a still. */
+const cropToCanvas = (source, aspect) => {
+  const { sx, sy, sw, sh } = cropRect(source, aspect);
   const canvas = document.createElement("canvas");
   canvas.width = sw;
   canvas.height = sh;
-  canvas.getContext("2d").drawImage(video, sx, sy, sw, sh, 0, 0, sw, sh);
+  canvas.getContext("2d").drawImage(source, sx, sy, sw, sh, 0, 0, sw, sh);
   return canvas;
 };
 
@@ -103,6 +104,49 @@ const measureBlurAndGlare = (canvas) => {
   const variance = n ? sumSq / n - mean * mean : 0;
 
   return { variance, glareRatio: blown / (w * h) };
+};
+
+/**
+ * A full-resolution photograph, not a frame of the video preview.
+ *
+ * getUserMedia hands back a VIDEO stream, and a video stream is small: asking
+ * for 2560 returned 1440 on a real phone whose camera is twelve megapixels. We
+ * were photographing the preview and discarding the sensor.
+ *
+ * It showed up as unreadable text. On a BTK ID card the CNIC came out 24px
+ * tall and Textract reported 24.4% confidence on it — openly guessing — while
+ * the same number on the CNIC card, 32px tall, read at 100%. One digit came
+ * back wrong and refused a genuine applicant. Below roughly 20px, 8 and 0 and
+ * 6 stop being distinguishable.
+ *
+ * ImageCapture.takePhoto() uses the still-image path instead, which is the
+ * camera's real resolution — three to four times the linear size, so that 24px
+ * number becomes 70-90px and stops being a guess.
+ *
+ * ⚠️ Chrome on Android has it; Safari on iOS does not. So it is tried and the
+ * video frame remains the fallback — which is what everyone was getting
+ * already, so nobody is worse off than before.
+ *
+ * @returns {Promise<CanvasImageSource|null>} something drawable, or null to
+ *          tell the caller to use the video element.
+ */
+const takeFullResolutionPhoto = async (stream) => {
+  try {
+    if (typeof window.ImageCapture !== "function") return null;
+    const track = stream?.getVideoTracks?.()[0];
+    if (!track) return null;
+
+    const capture = new window.ImageCapture(track);
+    const blob = await capture.takePhoto();
+    // createImageBitmap is drawable straight onto a canvas and avoids an
+    // object URL that would have to be revoked.
+    return await createImageBitmap(blob);
+  } catch {
+    // Every failure here is the browser declining, not the applicant doing
+    // anything wrong: unsupported, a track that will not do stills, a
+    // permissions quirk. Fall back silently.
+    return null;
+  }
 };
 
 export default function GuidedDocumentCapture({
@@ -222,11 +266,17 @@ export default function GuidedDocumentCapture({
     return () => clearInterval(id);
   }, [status, busy, aspect]);
 
-  const shoot = useCallback(() => {
+  const shoot = useCallback(async () => {
     const video = videoRef.current;
     if (!video || busy) return;
     setBusy(true);
     setProblem("");
+
+    /* A real photograph if the browser will take one, the preview frame if
+     * not. Both are cropped identically, so what is saved is still exactly the
+     * rectangle the applicant framed — just with far more pixels in it. */
+    const still = await takeFullResolutionPhoto(streamRef.current);
+    const source = still || video;
 
     /* Save the rectangle the applicant actually SAW.
      *
@@ -247,7 +297,7 @@ export default function GuidedDocumentCapture({
      * is a target, not a boundary, and someone who aligned loosely would lose
      * an edge. This keeps everything they could see and drops everything they
      * could not. */
-    const canvas = cropToCanvas(video, aspect);
+    const canvas = cropToCanvas(source, aspect);
 
     // Re-checked at the moment of capture, not trusted from the live loop —
     // the frame can move between the last sample and the shutter.
@@ -272,12 +322,14 @@ export default function GuidedDocumentCapture({
         }
         const safe = String(label).toLowerCase().replace(/[^a-z0-9]+/g, "-");
         onCapture(new File([blob], `${safe}-${Date.now()}.jpg`, { type: "image/jpeg" }));
+        still?.close?.(); // release the bitmap; the fallback has nothing to free
         stop();
       },
       "image/jpeg",
       0.92
     );
   }, [aspect, busy, label, onCapture, stop]);
+
 
   if (status === "error") {
     return (
