@@ -171,6 +171,20 @@ const takeFullResolutionPhoto = async (stream) => {
 export default function GuidedDocumentCapture({
   label = "Document",
   aspect = 1.585,          // CNIC / licence ratio; 4/3 suits vehicle photos
+  /* How much of the view the dashed target occupies, as an inset from the
+   * container edge.
+   *
+   * A BIGGER target (smaller inset) makes people bring the subject CLOSER to
+   * fill it, which puts more pixels on the thing we have to read. That is the
+   * whole lever: three captures of one BTK card showed the text at 23-24px
+   * every time, and the only thing separating unreadable from perfect was how
+   * sharp and how close it was.
+   *
+   * The crop is to the CONTAINER, not to this target, so the inset is slack —
+   * anything between the target and the container edge is still saved. 6%
+   * leaves comfortable room for a loosely aligned card; a vehicle does not
+   * need that margin and is easier to line up against a larger box. */
+  guideInset = "6%",
   onCapture,               // (File) => void
   onCancel,
 }) {
@@ -374,9 +388,10 @@ export default function GuidedDocumentCapture({
             the user a photograph of a tea cup was good. */}
         <div
           className={[
-            "pointer-events-none absolute inset-[6%] rounded-md border-2 border-dashed transition-colors",
+            "pointer-events-none absolute rounded-md border-2 border-dashed transition-colors",
             quality.message ? "border-amber-400" : "border-white/80",
           ].join(" ")}
+          style={{ inset: guideInset }}
         />
       </div>
 

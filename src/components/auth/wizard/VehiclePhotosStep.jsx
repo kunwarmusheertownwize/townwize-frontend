@@ -52,7 +52,7 @@ export default function VehiclePhotosStep() {
             // Live capture: the whole point is evidence of THIS vehicle, and a
             // gallery pick proves nothing. 8 MB because an unprocessed
             // full-resolution phone photo routinely exceeds 5.
-            requireCamera captureAspect={4 / 3} maxSizeMB={8}
+            requireCamera captureAspect={4 / 3} maxSizeMB={8} captureGuideInset="2%"
           />
         ))}
       </div>

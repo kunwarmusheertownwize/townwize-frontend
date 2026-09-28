@@ -21,6 +21,9 @@ export default function UploadPreview({
   requireCamera = false,
   // Guide-frame ratio: 1.585 matches a CNIC or licence, 4/3 suits a vehicle.
   captureAspect = 1.585,
+  // How much of the view the dashed target fills. A bigger target brings the
+  // subject closer, which is what puts readable pixels on a document.
+  captureGuideInset = "6%",
   /* One line telling the applicant how to take a USABLE photograph.
    *
    * Added after an invited Wizer's registration was stopped by documents that
@@ -155,6 +158,7 @@ export default function UploadPreview({
           <GuidedDocumentCapture
             label={label}
             aspect={captureAspect}
+            guideInset={captureGuideInset}
             onCancel={() => setCapturing(false)}
             onCapture={(captured) => {
               setCapturing(false);
