@@ -35,6 +35,7 @@ const CONDITION_SLOTS = [
   { field: "vehiclePhotoInteriorFront", key: "interior_front", label: "Interior Front" },
   { field: "vehiclePhotoInteriorRear",  key: "interior_rear",  label: "Interior Rear" },
   { field: "vehiclePhotoOdometer",      key: "odometer",       label: "Odometer" },
+  { field: "vehiclePhotoNumberPlate",   key: "number_plate",   label: "Number Plate" },
 ];
 
 const CONDITION_COLORS = {

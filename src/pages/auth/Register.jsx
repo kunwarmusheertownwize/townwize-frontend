@@ -65,13 +65,13 @@ const WIZER_STEPS = [
   { key: "faceCheck",     label: "Face",      fields: ["selfie"] },
   { key: "residency",     label: "Residency", fields: ["btkAddress", "btkRegNo", "residencyType", "btkProofFile", "btkIdFront", "btkIdBack"] },
   { key: "vehicle",       label: "Vehicle",   fields: ["vehicleType", "carType", "vehicleMake", "vehicleModel", "vehicleYear", "vehicleSeats", "vehicleNumber", "vehicleColor", "vehicleReg", "mTagPhoto"] },
-  { key: "vehiclePhotos", label: "Photos",    fields: ["vehiclePhotoFront", "vehiclePhotoRear", "vehiclePhotoLeft", "vehiclePhotoRight", "vehiclePhotoInteriorFront", "vehiclePhotoInteriorRear", "vehiclePhotoOdometer"] },
+  { key: "vehiclePhotos", label: "Photos",    fields: ["vehiclePhotoFront", "vehiclePhotoRear", "vehiclePhotoLeft", "vehiclePhotoRight", "vehiclePhotoInteriorFront", "vehiclePhotoInteriorRear", "vehiclePhotoOdometer", "vehiclePhotoNumberPlate"] },
   { key: "review",        label: "Review",    fields: [] },
 ];
 
 // ─── draft helpers ────────────────────────────────────────────────────────────
 
-const FILE_FIELDS = ["btkProofFile", "btkIdFront", "btkIdBack", "cnicFront", "cnicBack", "vehicleReg", "licenseFront", "licenseBack", "vehiclePhotoFront", "vehiclePhotoRear", "vehiclePhotoLeft", "vehiclePhotoRight", "vehiclePhotoInteriorFront", "vehiclePhotoInteriorRear", "vehiclePhotoOdometer", "selfie", "mTagPhoto"];
+const FILE_FIELDS = ["btkProofFile", "btkIdFront", "btkIdBack", "cnicFront", "cnicBack", "vehicleReg", "licenseFront", "licenseBack", "vehiclePhotoFront", "vehiclePhotoRear", "vehiclePhotoLeft", "vehiclePhotoRight", "vehiclePhotoInteriorFront", "vehiclePhotoInteriorRear", "vehiclePhotoOdometer", "vehiclePhotoNumberPlate", "selfie", "mTagPhoto"];
 // Draft persistence lives in utils/registrationDraft.js — it keeps uploaded
 // files in IndexedDB (localStorage cannot hold 16 images), stores the step KEY
 // rather than an index so reordering steps cannot strand anyone, and persists
@@ -94,6 +94,7 @@ const FIELD_LABELS = {
   vehiclePhotoInteriorFront: "Interior front photo",
   vehiclePhotoInteriorRear: "Interior rear photo",
   vehiclePhotoOdometer: "Dashboard / odometer photo",
+  vehiclePhotoNumberPlate: "Number plate photo",
 };
 
 // Reports what is actually wrong, which is not always "missing".
@@ -132,6 +133,7 @@ const defaultValues = {
   vehicleReg: null, licenseFront: null, licenseBack: null,
   vehiclePhotoFront: null, vehiclePhotoRear: null, vehiclePhotoLeft: null, vehiclePhotoRight: null,
   vehiclePhotoInteriorFront: null, vehiclePhotoInteriorRear: null, vehiclePhotoOdometer: null,
+  vehiclePhotoNumberPlate: null,
   cnicFront: null, cnicBack: null, selfie: "", selfieAngles: null,
 };
 
@@ -258,7 +260,7 @@ const ReviewStep = ({ role, values, isGuestTowner, referralOwnerName }) => {
           <Row label="Year"         value={values.vehicleYear} />
           <Row label="Plate"        value={values.vehicleNumber} />
           <Row label="Class"        value={values.carType} />
-          <Row label="Condition photos" value={[values.vehiclePhotoFront, values.vehiclePhotoRear, values.vehiclePhotoLeft, values.vehiclePhotoRight, values.vehiclePhotoInteriorFront, values.vehiclePhotoInteriorRear, values.vehiclePhotoOdometer].filter(Boolean).length + " / 7 uploaded"} />
+          <Row label="Condition photos" value={[values.vehiclePhotoFront, values.vehiclePhotoRear, values.vehiclePhotoLeft, values.vehiclePhotoRight, values.vehiclePhotoInteriorFront, values.vehiclePhotoInteriorRear, values.vehiclePhotoOdometer, values.vehiclePhotoNumberPlate].filter(Boolean).length + " / 8 uploaded"} />
         </div>
       )}
     </div>
@@ -748,6 +750,7 @@ export default function Register() {
         if (values.vehiclePhotoInteriorFront) formData.append("vehiclePhotoInteriorFront",  values.vehiclePhotoInteriorFront);
         if (values.vehiclePhotoInteriorRear)  formData.append("vehiclePhotoInteriorRear",   values.vehiclePhotoInteriorRear);
         if (values.vehiclePhotoOdometer)      formData.append("vehiclePhotoOdometer",       values.vehiclePhotoOdometer);
+        if (values.vehiclePhotoNumberPlate)   formData.append("vehiclePhotoNumberPlate",    values.vehiclePhotoNumberPlate);
         if (values.cnicFront) formData.append("cnicFront", values.cnicFront);
         if (values.cnicBack)  formData.append("cnicBack",  values.cnicBack);
         if (values.selfie?.startsWith?.("data:")) {

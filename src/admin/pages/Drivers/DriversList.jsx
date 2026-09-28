@@ -14,6 +14,7 @@ const REQUIRED_PHOTO_KEYS = [
   "interior_front",
   "interior_rear",
   "odometer",
+  "number_plate",
 ];
 
 const labelForPhoto = (key) =>
@@ -25,6 +26,7 @@ const labelForPhoto = (key) =>
     interior_front: "Interior Front",
     interior_rear: "Interior Rear",
     odometer: "Odometer",
+    number_plate: "Number Plate",
   }[key] || key);
 
 function VehicleReviewPanel({ driver, onClose, onSaved }) {

@@ -128,6 +128,7 @@ export const schema = yup.object().shape({
   vehiclePhotoInteriorFront: fileValidation("Vehicle Interior Front"),
   vehiclePhotoInteriorRear: fileValidation("Vehicle Interior Rear"),
   vehiclePhotoOdometer: fileValidation("Vehicle Odometer"),
+  vehiclePhotoNumberPlate: fileValidation("Vehicle Number Plate"),
   mTagPhoto: fileValidation("M-Tag Photo"),
   cnicFront: fileValidation("CNIC Front"),
   cnicBack: fileValidation("CNIC Back"),
@@ -163,6 +164,7 @@ export const enforceBusinessRules = (data, role, isGuestTowner = false) => {
     if (!data.vehiclePhotoInteriorFront) errors.vehiclePhotoInteriorFront = "Interior front photo is required";
     if (!data.vehiclePhotoInteriorRear) errors.vehiclePhotoInteriorRear = "Interior rear photo is required";
     if (!data.vehiclePhotoOdometer) errors.vehiclePhotoOdometer = "Odometer photo is required";
+    if (!data.vehiclePhotoNumberPlate) errors.vehiclePhotoNumberPlate = "Number plate photo is required";
     if (!data.cnicFront) errors.cnicFront = "CNIC front is required";
     if (!data.cnicBack) errors.cnicBack = "CNIC back is required";
     if (!data.vehicleType) errors.vehicleType = "Vehicle type is required";

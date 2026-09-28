@@ -52,6 +52,7 @@ export default function RegistrationProgress({
   const vehiclePhotoInteriorFront = watch("vehiclePhotoInteriorFront");
   const vehiclePhotoInteriorRear = watch("vehiclePhotoInteriorRear");
   const vehiclePhotoOdometer = watch("vehiclePhotoOdometer");
+  const vehiclePhotoNumberPlate = watch("vehiclePhotoNumberPlate");
   const cnicNumber = watch("cnicNumber");
   const cnicFront = watch("cnicFront");
   const cnicBack = watch("cnicBack");
@@ -123,6 +124,7 @@ export default function RegistrationProgress({
             { valid: vehiclePhotoInteriorFront && !errors.vehiclePhotoInteriorFront, error: errors.vehiclePhotoInteriorFront?.message },
             { valid: vehiclePhotoInteriorRear && !errors.vehiclePhotoInteriorRear, error: errors.vehiclePhotoInteriorRear?.message },
             { valid: vehiclePhotoOdometer && !errors.vehiclePhotoOdometer, error: errors.vehiclePhotoOdometer?.message },
+            { valid: vehiclePhotoNumberPlate && !errors.vehiclePhotoNumberPlate, error: errors.vehiclePhotoNumberPlate?.message },
           ]
           : [],
       uploading:
