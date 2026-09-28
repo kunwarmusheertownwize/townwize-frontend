@@ -27,6 +27,43 @@ const BLUR_MIN_VARIANCE = 55;   // variance of the Laplacian
 const GLARE_MAX_RATIO = 0.18;   // fraction of near-blown-out pixels
 const ANALYSIS_WIDTH = 320;     // downscale before analysis; full res is wasted work
 
+/**
+ * The region of the sensor frame the applicant can actually SEE.
+ *
+ * The preview is a container at the guide aspect with the video set to
+ * object-cover, so the browser crops the sensor frame to fit. Everything
+ * outside this rectangle is hidden from them — and used to be saved anyway.
+ *
+ * Shared by the live quality check and the shutter, deliberately: judging the
+ * whole sensor frame while saving a crop of it meant the two disagreed. A card
+ * filling the guide but sitting on a busy desk read as "sharp" because the desk
+ * was sharp.
+ */
+const cropRect = (video, aspect) => {
+  const vw = video.videoWidth;
+  const vh = video.videoHeight;
+  const wanted = Number(aspect) || vw / vh;
+
+  let sw = vw;
+  let sh = vh;
+  if (vw / vh > wanted) {
+    sw = Math.round(vh * wanted); // sensor wider than the guide — trim the sides
+  } else {
+    sh = Math.round(vw / wanted); // taller — trim top and bottom
+  }
+  return { sx: Math.round((vw - sw) / 2), sy: Math.round((vh - sh) / 2), sw, sh };
+};
+
+/** Draw just that region onto a canvas. */
+const cropToCanvas = (video, aspect) => {
+  const { sx, sy, sw, sh } = cropRect(video, aspect);
+  const canvas = document.createElement("canvas");
+  canvas.width = sw;
+  canvas.height = sh;
+  canvas.getContext("2d").drawImage(video, sx, sy, sw, sh, 0, 0, sw, sh);
+  return canvas;
+};
+
 /** Variance of the Laplacian — the standard cheap blur detector. */
 const measureBlurAndGlare = (canvas) => {
   const scale = ANALYSIS_WIDTH / canvas.width;
@@ -98,7 +135,23 @@ export default function GuidedDocumentCapture({
       }
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: { ideal: "environment" }, width: { ideal: 1920 } },
+          /* Ask for as many pixels as the device will give.
+           *
+           * `width: { ideal: 1920 }` returned an 886 x 1920 stream on a phone
+           * held portrait — width is the SHORT side there, so the request was
+           * being read as a cap on the wrong axis. With the card filling about
+           * a third of that, a BTK registration number is roughly 150 pixels
+           * across, and Textract read BTKA-XYS1461 as BTKA-XYS1401. One digit,
+           * and a genuine applicant refused five times.
+           *
+           * Both axes are asked for, and `ideal` is a preference rather than a
+           * requirement — a device that cannot manage it returns what it has
+           * instead of failing to open the camera at all. */
+          video: {
+            facingMode: { ideal: "environment" },
+            width: { ideal: 2560 },
+            height: { ideal: 1440 },
+          },
           audio: false,
         });
         if (cancelled) { stream.getTracks().forEach((t) => t.stop()); return; }
@@ -112,6 +165,46 @@ export default function GuidedDocumentCapture({
     })();
     return () => { cancelled = true; stop(); };
   }, [stop]);
+
+  /* Live quality, checked on the crop region several times a second.
+   *
+   * Until now the only feedback was AFTER the shutter, and only for blur and
+   * glare. Nothing ever told an applicant the card was too small in the frame —
+   * which is precisely what went wrong twice on 28 Sep: a genuine BTK card
+   * photographed from too far away, occupying a third of the frame, so the
+   * registration number was about 150 pixels wide and Textract read
+   * BTKA-XYS1461 as BTKA-XYS1401. One digit, and a real Wizer refused five
+   * times.
+   *
+   * The face capture has had a red/green guide since it was written. The
+   * document capture had a static white rectangle and no signal at all.
+   *
+   * Distance and focus are not separated, because they cannot be from variance
+   * alone and because the remedy is the same for both: come closer and hold
+   * still. A card that is small in the frame leaves the crop full of flat
+   * background, which reads as low detail exactly as blur does. */
+  const [quality, setQuality] = useState({ ok: false, message: "" });
+
+  useEffect(() => {
+    if (status !== "ready") return undefined;
+
+    const id = setInterval(() => {
+      const video = videoRef.current;
+      if (!video || !video.videoWidth || busy) return;
+
+      const { variance, glareRatio } = measureBlurAndGlare(cropToCanvas(video, aspect));
+
+      if (glareRatio > GLARE_MAX_RATIO) {
+        setQuality({ ok: false, message: "Too much glare — tilt away from the light." });
+      } else if (variance < BLUR_MIN_VARIANCE) {
+        setQuality({ ok: false, message: "Move closer — fill the frame, and hold steady." });
+      } else {
+        setQuality({ ok: true, message: "Looks good — take the photo." });
+      }
+    }, 400);
+
+    return () => clearInterval(id);
+  }, [status, busy, aspect]);
 
   const shoot = useCallback(() => {
     const video = videoRef.current;
@@ -138,25 +231,10 @@ export default function GuidedDocumentCapture({
      * is a target, not a boundary, and someone who aligned loosely would lose
      * an edge. This keeps everything they could see and drops everything they
      * could not. */
-    const vw = video.videoWidth;
-    const vh = video.videoHeight;
-    const wanted = Number(aspect) || vw / vh;
+    const canvas = cropToCanvas(video, aspect);
 
-    let sw = vw;
-    let sh = vh;
-    if (vw / vh > wanted) {
-      sw = Math.round(vh * wanted); // sensor is wider than the guide — trim the sides
-    } else {
-      sh = Math.round(vw / wanted); // taller — trim top and bottom
-    }
-    const sx = Math.round((vw - sw) / 2);
-    const sy = Math.round((vh - sh) / 2);
-
-    const canvas = document.createElement("canvas");
-    canvas.width = sw;
-    canvas.height = sh;
-    canvas.getContext("2d").drawImage(video, sx, sy, sw, sh, 0, 0, sw, sh);
-
+    // Re-checked at the moment of capture, not trusted from the live loop —
+    // the frame can move between the last sample and the shutter.
     const { variance, glareRatio } = measureBlurAndGlare(canvas);
     if (variance < BLUR_MIN_VARIANCE) {
       setProblem("Too blurry — hold steady and make sure the document is in focus.");
@@ -203,20 +281,40 @@ export default function GuidedDocumentCapture({
 
       <div className="relative mx-auto overflow-hidden rounded-lg" style={{ aspectRatio: String(aspect) }}>
         <video ref={videoRef} autoPlay playsInline muted className="h-full w-full object-cover" />
-        {/* Guide frame — the applicant fills it. Not detection, just a target. */}
-        <div className="pointer-events-none absolute inset-[6%] rounded-md border-2 border-dashed border-white/80" />
+        {/* Guide frame. Green only when the crop would actually be readable,
+            so filling it is a thing the applicant can SEE themselves doing. */}
+        <div
+          className={[
+            "pointer-events-none absolute inset-[6%] rounded-md border-2 transition-colors",
+            quality.ok ? "border-solid border-green-400" : "border-dashed border-white/80",
+          ].join(" ")}
+        />
       </div>
 
-      {problem && (
+      {/* A rejection from the shutter outranks the live hint — it is about the
+          photograph they just tried to take, not the one they are lining up. */}
+      {problem ? (
         <p className="mt-2 text-center text-xs font-medium text-amber-300">{problem}</p>
-      )}
+      ) : quality.message ? (
+        <p
+          className={[
+            "mt-2 text-center text-xs font-medium",
+            quality.ok ? "text-green-400" : "text-amber-300",
+          ].join(" ")}
+        >
+          {quality.message}
+        </p>
+      ) : null}
 
       <div className="mt-3 flex items-center justify-center gap-3">
         <button type="button" onClick={() => { stop(); onCancel(); }}
           className="rounded-lg px-3 py-2 text-xs font-medium text-white/70 hover:text-white">
           Cancel
         </button>
-        <button type="button" onClick={shoot} disabled={status !== "ready" || busy}
+        {/* Disabled until the crop is readable. The shutter still re-checks —
+            this stops the photograph being taken, rather than rejecting it
+            afterwards and leaving the applicant to guess what changed. */}
+        <button type="button" onClick={shoot} disabled={status !== "ready" || busy || !quality.ok}
           className="rounded-xl bg-white px-6 py-2.5 text-sm font-bold text-black disabled:opacity-40">
           {busy ? "Checking…" : "Take photo"}
         </button>
