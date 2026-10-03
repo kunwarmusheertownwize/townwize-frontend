@@ -516,9 +516,20 @@ function DetailPanel({ entry: initial, onClose, onSaved }) {
                        *
                        * A named target reuses the same tab: the second click
                        * replaces the message in the window the first one
-                       * opened, and WhatsApp Web stays loaded and signed in. */
+                       * opened, and WhatsApp Web stays loaded and signed in.
+                       *
+                       * ⚠️ NO rel="noopener" — naming the target is not enough
+                       * on its own. noopener makes the browser create a fresh
+                       * top-level context and never look up the name, so every
+                       * click still opened its own window. The two cannot be
+                       * combined; this was the first attempt at the fix and it
+                       * changed nothing.
+                       *
+                       * What that costs: web.whatsapp.com can see window.opener
+                       * and our referrer. It is WhatsApp, in a tab the admin
+                       * opened on purpose, so that is an acceptable trade for a
+                       * tool that is clicked dozens of times in a sitting. */
                       target="townwize-whatsapp"
-                      rel="noopener noreferrer"
                       title={`WhatsApp — ${WA_MESSAGES[kind].hint}. Opens with the message written; you still press send.`}
                       className="rounded px-1.5 py-0.5 text-[11px] font-semibold text-green-700 ring-1 ring-green-600/30 hover:bg-green-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-600 dark:text-green-400 dark:hover:bg-green-900/20"
                     >
