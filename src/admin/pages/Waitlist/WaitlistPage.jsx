@@ -509,7 +509,15 @@ function DetailPanel({ entry: initial, onClose, onSaved }) {
                     <a
                       key={kind}
                       href={waLink(entry, kind)}
-                      target="_blank"
+                      /* A NAME, not _blank. Every _blank click opens another
+                       * window, so working through a wave of invites buried the
+                       * admin under one WhatsApp Web tab per person — each one
+                       * reloading and re-syncing the whole client.
+                       *
+                       * A named target reuses the same tab: the second click
+                       * replaces the message in the window the first one
+                       * opened, and WhatsApp Web stays loaded and signed in. */
+                      target="townwize-whatsapp"
                       rel="noopener noreferrer"
                       title={`WhatsApp — ${WA_MESSAGES[kind].hint}. Opens with the message written; you still press send.`}
                       className="rounded px-1.5 py-0.5 text-[11px] font-semibold text-green-700 ring-1 ring-green-600/30 hover:bg-green-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-600 dark:text-green-400 dark:hover:bg-green-900/20"
